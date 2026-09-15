@@ -126,6 +126,18 @@ A aplicação estará disponível em:
 - **Documentação Swagger (API REST):** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - **Documentação ReDoc:** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
+### Aplicativo móvel Flutter
+
+O aplicativo fica em [`mobile/`](mobile/README.md). Ele é uma única instalação para todos os perfis e, antes do login, permite informar e salvar no aparelho o endereço-base do servidor PatriFlow.
+
+```bash
+cd mobile
+flutter pub get
+flutter run
+```
+
+Informe a origem do servidor sem `/api/v1`, como `http://192.168.0.10:8000`. Para acessar a API local pelo emulador Android, use `http://10.0.2.2:8000`.
+
 ---
 
 ## 👥 Equipe
