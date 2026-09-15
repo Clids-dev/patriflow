@@ -15,6 +15,13 @@
         contador INT DEFAULT 0
     );
 
+    CREATE TABLE categorias (
+        id SERIAL PRIMARY KEY,
+        nome VARCHAR(100) NOT NULL,
+        sigla VARCHAR(10) UNIQUE NOT NULL,
+        ativo BOOLEAN NOT NULL DEFAULT TRUE
+    );
+
     CREATE TABLE bens (
         id SERIAL PRIMARY KEY,
         nome VARCHAR(100) NOT NULL,
@@ -23,13 +30,8 @@
         valor DECIMAL(10, 2) NOT NULL,
         status VARCHAR(50) NOT NULL,
         ativo BOOLEAN NOT NULL DEFAULT TRUE,
+        id_categoria INTEGER NOT NULL REFERENCES categorias(id),
         data_cadastro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE categorias (
-        id SERIAL PRIMARY KEY,
-        nome VARCHAR(100) NOT NULL,
-        ativo BOOLEAN NOT NULL DEFAULT TRUE
     );
 
     CREATE TABLE responsaveis(
@@ -68,11 +70,11 @@
     BEGIN;
 
 
-    INSERT INTO categorias (nome, ativo) VALUES
-    ('Informática', TRUE),
-    ('Mobiliário', TRUE),
-    ('Veículos', TRUE),
-    ('Eletrônicos', TRUE);
+    INSERT INTO categorias (nome, sigla, ativo) VALUES
+    ('Informática', 'INF', TRUE),
+    ('Mobiliário', 'MOB', TRUE),
+    ('Veículos', 'VEI', TRUE),
+    ('Eletrônicos', 'ELE', TRUE);
 
 
     INSERT INTO responsaveis (nome, cargo, ativo) VALUES
@@ -108,27 +110,27 @@
     ('Drone', 'drn', 1);
 
 -- 5. Inserir Bens usando o formato gerador de códigos (prefixo-0000)
-    INSERT INTO bens (nome, tipo, codigo_tombamento, valor, status, ativo, data_cadastro) VALUES
-    ('Notebook Dell Latitude', 'Notebook', 'ntb-0001', 4500.00, 'Em Uso', TRUE, '2024-01-15 09:30:00-03'),
-    ('Monitor LG 29 Pol', 'Monitor', 'mon-0001', 1200.00, 'Em Uso', TRUE, '2024-02-10 14:00:00-03'),
-    ('Cadeira Ergonômica', 'Cadeira', 'cad-0001', 850.50, 'Disponível', TRUE, '2024-03-05 10:15:00-03'),
-    ('Teclado Mecânico Logitech', 'Teclado', 'tcl-0001', 350.00, 'Em Uso', TRUE, '2024-05-20 16:45:00-03'),
-    ('Mouse Gamer Razer', 'Mouse', 'ms-0001', 280.00, 'Manutenção', TRUE, '2024-06-12 11:00:00-03'),
-    ('Projetor Epson 4K', 'Projetor', 'prj-0001', 3200.00, 'Em Uso', TRUE, '2024-08-01 08:00:00-03'),
-    ('Servidor HP ProLiant', 'Servidor', 'srv-0001', 15000.00, 'Em Uso', TRUE, '2024-09-15 13:20:00-03'),
-    ('Switch Cisco 24 Portas', 'Equipamento de Rede', 'red-0001', 2100.00, 'Disponível', TRUE, '2024-11-30 09:00:00-03'),
-    ('Nobreak APC 1500VA', 'Nobreak', 'nbk-0001', 1100.00, 'Em Uso', TRUE, '2025-01-05 15:30:00-03'),
-    ('Tablet Samsung S9', 'Tablet', 'tab-0001', 3800.00, 'Em Uso', TRUE, '2025-02-14 10:00:00-03'),
-    ('Webcam Logitech C920', 'Periférico', 'prf-0001', 450.00, 'Disponível', TRUE, '2025-03-22 17:10:00-03'),
-    ('Impressora HP LaserJet', 'Impressora', 'imp-0001', 1800.00, 'Manutenção', TRUE, '2025-05-10 14:40:00-03'),
-    ('Ar Condicionado Split', 'Ar Condicionado', 'ar-0001', 2500.00, 'Em Uso', TRUE, '2025-07-08 09:20:00-03'),
-    ('Mesa de Reunião', 'Mesa', 'mes-0001', 1300.00, 'Disponível', TRUE, '2025-09-12 11:50:00-03'),
-    ('Roteador Wi-Fi 6', 'Equipamento de Rede', 'red-0002', 750.00, 'Em Uso', TRUE, '2025-11-02 08:30:00-03'),
-    ('Headset HyperX Cloud', 'Periférico', 'prf-0002', 500.00, 'Em Uso', TRUE, '2026-01-20 13:00:00-03'),
-    ('Estabilizador SMS', 'Estabilizador', 'est-0001', 150.00, 'Disponível', TRUE, '2026-02-15 10:45:00-03'),
-    ('MacBook Air M2', 'Notebook', 'ntb-0002', 8500.00, 'Em Uso', TRUE, '2026-03-01 09:00:00-03'),
-    ('Smartphone iPhone 15', 'Smartphone', 'cel-0001', 6200.00, 'Em Uso', TRUE, '2026-04-10 15:00:00-03'),
-    ('Drone DJI Mini 4', 'Drone', 'drn-0001', 5400.00, 'Disponível', TRUE, '2026-04-20 11:20:00-03');
+    INSERT INTO bens (nome, tipo, codigo_tombamento, valor, status, ativo, id_categoria, data_cadastro) VALUES
+    ('Notebook Dell Latitude', 'Notebook', 'ntb-0001', 4500.00, 'Em Uso', TRUE, 1, '2024-01-15 09:30:00-03'),
+    ('Monitor LG 29 Pol', 'Monitor', 'mon-0001', 1200.00, 'Em Uso', TRUE, 1, '2024-02-10 14:00:00-03'),
+    ('Cadeira Ergonômica', 'Cadeira', 'cad-0001', 850.50, 'Disponível', TRUE, 2, '2024-03-05 10:15:00-03'),
+    ('Teclado Mecânico Logitech', 'Teclado', 'tcl-0001', 350.00, 'Em Uso', TRUE, 1, '2024-05-20 16:45:00-03'),
+    ('Mouse Gamer Razer', 'Mouse', 'ms-0001', 280.00, 'Manutenção', TRUE, 1, '2024-06-12 11:00:00-03'),
+    ('Projetor Epson 4K', 'Projetor', 'prj-0001', 3200.00, 'Em Uso', TRUE, 4, '2024-08-01 08:00:00-03'),
+    ('Servidor HP ProLiant', 'Servidor', 'srv-0001', 15000.00, 'Em Uso', TRUE, 1, '2024-09-15 13:20:00-03'),
+    ('Switch Cisco 24 Portas', 'Equipamento de Rede', 'red-0001', 2100.00, 'Disponível', TRUE, 1, '2024-11-30 09:00:00-03'),
+    ('Nobreak APC 1500VA', 'Nobreak', 'nbk-0001', 1100.00, 'Em Uso', TRUE, 4, '2025-01-05 15:30:00-03'),
+    ('Tablet Samsung S9', 'Tablet', 'tab-0001', 3800.00, 'Em Uso', TRUE, 4, '2025-02-14 10:00:00-03'),
+    ('Webcam Logitech C920', 'Periférico', 'prf-0001', 450.00, 'Disponível', TRUE, 1, '2025-03-22 17:10:00-03'),
+    ('Impressora HP LaserJet', 'Impressora', 'imp-0001', 1800.00, 'Manutenção', TRUE, 1, '2025-05-10 14:40:00-03'),
+    ('Ar Condicionado Split', 'Ar Condicionado', 'ar-0001', 2500.00, 'Em Uso', TRUE, 4, '2025-07-08 09:20:00-03'),
+    ('Mesa de Reunião', 'Mesa', 'mes-0001', 1300.00, 'Disponível', TRUE, 2, '2025-09-12 11:50:00-03'),
+    ('Roteador Wi-Fi 6', 'Equipamento de Rede', 'red-0002', 750.00, 'Em Uso', TRUE, 1, '2025-11-02 08:30:00-03'),
+    ('Headset HyperX Cloud', 'Periférico', 'prf-0002', 500.00, 'Em Uso', TRUE, 1, '2026-01-20 13:00:00-03'),
+    ('Estabilizador SMS', 'Estabilizador', 'est-0001', 150.00, 'Disponível', TRUE, 4, '2026-02-15 10:45:00-03'),
+    ('MacBook Air M2', 'Notebook', 'ntb-0002', 8500.00, 'Em Uso', TRUE, 1, '2026-03-01 09:00:00-03'),
+    ('Smartphone iPhone 15', 'Smartphone', 'cel-0001', 6200.00, 'Em Uso', TRUE, 4, '2026-04-10 15:00:00-03'),
+    ('Drone DJI Mini 4', 'Drone', 'drn-0001', 5400.00, 'Disponível', TRUE, 4, '2026-04-20 11:20:00-03');
 
     INSERT INTO usuarios (username, senha, tipo)
     VALUES ('admin', '123', 'admin'),
