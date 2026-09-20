@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class AppLoading extends StatelessWidget {
   const AppLoading({super.key, this.label = 'Carregando...'});
 
@@ -32,14 +34,14 @@ class AppErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _StateLayout(
-    icon: Icons.error_outline,
+    icon: AppIcons.error,
     title: title,
     description: description,
     action: onRetry == null
         ? null
         : OutlinedButton.icon(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.retry),
             label: const Text('Tentar novamente'),
           ),
   );
@@ -59,7 +61,7 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _StateLayout(
-    icon: Icons.inventory_2_outlined,
+    icon: AppIcons.empty,
     title: title,
     description: description,
     action: action,

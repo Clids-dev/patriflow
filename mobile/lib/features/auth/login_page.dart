@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/storage/server_config_storage.dart';
+import '../../core/theme/app_theme.dart';
 import '../home/home_placeholder_page.dart';
 import '../server_config/server_config_page.dart';
 
@@ -32,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
           tooltip: 'Alterar servidor',
           onPressed: () =>
               Navigator.of(context).pushNamed(ServerConfigPage.routeName),
-          icon: const Icon(Icons.settings_outlined),
+          icon: const Icon(AppIcons.settings),
         ),
       ],
     ),
@@ -44,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             const Spacer(),
             Icon(
-              Icons.lock_outline,
+              AppIcons.login,
               size: 60,
               color: Theme.of(context).colorScheme.primary,
             ),

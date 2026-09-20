@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_states.dart';
 import '../auth/login_page.dart';
 
@@ -24,7 +25,7 @@ class HomePlaceholderPage extends StatelessWidget {
             onPressed: () =>
                 Navigator.of(context)
                     .pushNamedAndRemoveUntil(LoginPage.routeName, (_) => false),
-            icon: const Icon(Icons.logout),
+            icon: const Icon(AppIcons.logout),
           ),
         ],
       ),

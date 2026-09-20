@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/storage/server_config_storage.dart';
+import '../../core/theme/app_theme.dart';
 import '../auth/login_page.dart';
 
 class ServerConfigPage extends StatefulWidget {
@@ -61,7 +62,7 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
         padding: const EdgeInsets.all(24),
         children: [
           Icon(
-            Icons.dns_outlined,
+            AppIcons.server,
             size: 54,
             color: Theme.of(context).colorScheme.primary,
           ),
@@ -84,7 +85,7 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
               decoration: const InputDecoration(
                 labelText: 'Endereço do servidor',
                 hintText: 'http://192.168.0.10:8000',
-                prefixIcon: Icon(Icons.link),
+                prefixIcon: Icon(AppIcons.link),
               ),
               validator: _validateAddress,
             ),
@@ -102,7 +103,7 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.save_outlined),
+                : const Icon(AppIcons.save),
             label: Text(_saving ? 'Salvando...' : 'Salvar e continuar'),
           ),
         ],

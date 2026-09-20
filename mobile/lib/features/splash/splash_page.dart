@@ -43,18 +43,10 @@ class _SplashPageState extends State<SplashPage> {
               color: AppColors.primary,
               borderRadius: BorderRadius.circular(28),
             ),
-            child: const Icon(
-              Icons.account_balance_wallet_outlined,
-              size: 52,
-              color: Colors.white,
-            ),
+            child: const Icon(AppIcons.brand, size: 52, color: Colors.white),
           ),
           const SizedBox(height: 20),
-          Text(
-            'PatriFlow',
-            style: Theme.of(context).textTheme.headlineMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
-          ),
+          Text('PatriFlow', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           const Text('Gestão patrimonial simplificada'),
           const SizedBox(height: 36),

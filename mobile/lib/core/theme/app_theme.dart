@@ -9,6 +9,19 @@ abstract final class AppColors {
   static const success = Color(0xFF1B6B46);
 }
 
+abstract final class AppIcons {
+  static const brand = Icons.account_balance_wallet_outlined;
+  static const server = Icons.dns_outlined;
+  static const link = Icons.link;
+  static const save = Icons.save_outlined;
+  static const settings = Icons.settings_outlined;
+  static const login = Icons.lock_outline;
+  static const logout = Icons.logout;
+  static const error = Icons.error_outline;
+  static const retry = Icons.refresh;
+  static const empty = Icons.inventory_2_outlined;
+}
+
 abstract final class AppTheme {
   static final light = ThemeData(
     useMaterial3: true,
@@ -20,6 +33,13 @@ abstract final class AppTheme {
       error: AppColors.error,
     ),
     scaffoldBackgroundColor: AppColors.background,
+    textTheme: const TextTheme(
+      headlineMedium: TextStyle(fontWeight: FontWeight.w700),
+      headlineSmall: TextStyle(fontWeight: FontWeight.w700),
+      titleLarge: TextStyle(fontWeight: FontWeight.w600),
+      bodyLarge: TextStyle(height: 1.5),
+      bodyMedium: TextStyle(height: 1.45),
+    ),
     appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
     inputDecorationTheme: const InputDecorationTheme(
       border: OutlineInputBorder(),
