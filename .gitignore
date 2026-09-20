@@ -15,6 +15,9 @@ downloads/
 eggs/
 .eggs/
 lib/
+# O código-fonte do aplicativo Flutter precisa ser versionado.
+!mobile/lib/
+!mobile/lib/**
 lib64/
 parts/
 sdist/
