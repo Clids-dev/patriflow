@@ -75,6 +75,27 @@ O projeto segue uma arquitetura modular por domínio:
 
 ## Configuração e Instalação
 
+### W03 — conferência física e identificação segura
+
+O cadastro de bens armazena marca, modelo, número de série, valor de aquisição, nota fiscal, data de entrada e estado de conservação. O estado é obrigatório e aceita `novo`, `bom`, `regular`, `ruim` ou `inservivel`; em novos registros, a interface inicia em `novo`.
+
+A localização segue a hierarquia **prédio → andar → sala → setor**. Cadastre cada nível pela API em `/api/v1/localizacao/predios`, `/api/v1/localizacao/andares` e `/api/v1/localizacao/salas`, nessa ordem. O cadastro de setor exige `sala_id`.
+
+#### Dígito verificador módulo 11
+
+O tombo tem o formato `BASE-DV`; por exemplo, `INF-001-0`. Para conferir o DV manualmente:
+
+1. Separe o último algarismo, que é o DV. O restante é a base. No exemplo, a base é `INF-001` e o DV informado é `0`.
+2. Remova os hífens e converta as letras para números: `A=10`, `B=11`, …, `Z=35`. Os algarismos mantêm o próprio valor. Assim, `INF-001` vira `18, 23, 15, 0, 0, 1`.
+3. Percorra esses valores da direita para a esquerda, multiplicando por pesos que começam em 2 e seguem `2, 3, 4, 5, 6, 7, 8, 9`; depois do 9, volte para 2.
+4. Some os produtos. Para `INF-001`: `1×2 + 0×3 + 0×4 + 15×5 + 23×6 + 18×7 = 341`.
+5. Calcule `DV = (11 − (soma mod 11)) mod 11`. Se o resultado for 10, use 0, pois o DV é sempre um único algarismo. No exemplo, `341 mod 11 = 0`, então o DV é `0`.
+6. Compare o resultado com o último algarismo do tombo. Se não coincidir, a API responde HTTP 400 com `Número de tombo inválido — verifique a digitação` antes de consultar o banco.
+
+O DV também é conferido pelo banco. O número não pode ser atualizado nem reutilizado após a baixa: o tombo é único, permanece registrado no bem inativo, e exclusões físicas ou limpeza da tabela são bloqueadas.
+
+Para atualizar uma base existente, aplique `database/migrations/20261018_w03_assets_locations_tombo.sql` após a migração W02. A migração acrescenta DV aos tombos históricos; reimprima as etiquetas com os novos códigos. Ela também associa os setores atuais a um local temporário “não informado”; atualize esses locais com os endereços reais depois.
+
 ### Pré-requisitos
 - Python 3.10+ instalado.
 - Banco de Dados PostgreSQL ativo.
@@ -114,6 +135,14 @@ DB_NAME = "sistema_tombamento"
 ```
 
 ### 4. Executar o Servidor de Desenvolvimento
+
+Antes de iniciar a aplicação, configure a chave de assinatura JWT com um valor aleatório e privado (pelo menos 32 bytes). Para desenvolvimento local, crie um `.env` na raiz do projeto (ele é ignorado pelo Git):
+
+```bash
+python -c 'from pathlib import Path; import secrets; p=Path(".env"); p.exists() or p.write_text("PATRIFLOW_JWT_SECRET=" + secrets.token_urlsafe(48) + "\n")'
+```
+
+O `core/config.py` carrega essa chave automaticamente. Em produção, configure `PATRIFLOW_JWT_SECRET` no ambiente do serviço; essa variável tem prioridade sobre o `.env`. Não altere a chave a cada reinício, pois isso invalida os tokens emitidos anteriormente.
 
 Execute o comando Uvicorn para iniciar a aplicação:
 

@@ -5,6 +5,8 @@ from modules.categoria.repository import CategoriaRepository
 from modules.bem.queries_stats import QUERY_STATS_CATEGORIA, QUERY_STATS_STATUS
 from core.database import DataBase
 from psycopg2 import errors
+from core.tombamento import format_tombo, require_valid_tombo
+import re
 
 class BemService:
     def get_bens(self):
@@ -39,6 +41,8 @@ class BemService:
         return bem
 
     def create_bem(self, bem : BemCreate):
+        require_valid_tombo(bem.codigo_tombamento)
+        bem.codigo_tombamento = bem.codigo_tombamento.upper()
         repository = BemRepository()
         return repository.save(bem)
 
@@ -57,6 +61,8 @@ class BemService:
             raise HTTPException(status_code=404, detail=f"Bem com id {id} não encontrado")
 
     def get_by_codTomb(self, codigo_tombamento: str):
+        require_valid_tombo(codigo_tombamento)
+        codigo_tombamento = codigo_tombamento.upper()
         repository = BemRepository()
         bem = repository.get_by_codTombamento(codigo_tombamento)
         if not bem:
@@ -77,8 +83,11 @@ class BemService:
         quantidade = repo_bem.count_by_categoria(id_categoria)
         proximo_numero = quantidade + 1
         
-        # Formata com zeros à esquerda (ex: INF-001)
-        return f"{categoria.sigla}-{str(proximo_numero).zfill(3)}"
+        sigla = re.sub(r"[^A-Za-z0-9]", "", categoria.sigla)
+        if not sigla:
+            raise HTTPException(status_code=400, detail="A sigla da categoria não pode gerar um número de tombo")
+        base = f"{sigla}-{str(proximo_numero).zfill(3)}"
+        return format_tombo(base)
 
     def quantidade_bens(self):
         repo = BemRepository()

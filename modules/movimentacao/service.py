@@ -7,6 +7,7 @@ from modules.setor.repository import SetorRepository
 from modules.bem.repository import BemRepository
 from modules.movimentacao.repository import MovimentacaoRepository
 from modules.movimentacao.schemas import MovimentacaoCreate
+from core.tombamento import require_valid_tombo
 
 
 class MovimentacaoService:
@@ -19,6 +20,7 @@ class MovimentacaoService:
         return repository.get_detailed()
 
     def get_movimentacoes_por_bem(self, codigo: str):
+        require_valid_tombo(codigo)
         repository = MovimentacaoRepository()
         return repository.get_by_bem_codigo(codigo)
 

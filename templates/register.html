@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PatriFlow - Criar conta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="login-body">
+    <main class="container d-flex align-items-center justify-content-center min-vh-100">
+        <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 w-100" style="max-width: 540px">
+            <h1 class="h2 text-primary fw-bold">Criar conta</h1>
+            <p class="text-muted">O cadastro cria uma conta de Agente de Campo.</p>
+            {% if erro %}<div class="alert alert-danger" role="alert">{{ erro }}</div>{% endif %}
+            <form action="/criar-conta" method="POST">
+                <div class="mb-3">
+                    <label for="nome" class="form-label">Nome completo</label>
+                    <input id="nome" name="nome" class="form-control form-control-lg" maxlength="120" value="{{ nome or '' }}" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="username" class="form-label">Utilizador</label>
+                    <input id="username" name="username" class="form-control form-control-lg" minlength="3" maxlength="50" pattern="[A-Za-z0-9_.-]+" value="{{ username or '' }}" autocomplete="username" required>
+                    <div class="form-text">Use letras, números, ponto, hífen ou sublinhado.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="setor_id" class="form-label">Setor (opcional)</label>
+                    <input id="setor_id" name="setor_id" type="number" min="1" class="form-control form-control-lg" placeholder="ID do setor">
+                </div>
+                <div class="mb-3">
+                    <label for="senha" class="form-label">Senha</label>
+                    <input id="senha" name="senha" type="password" class="form-control form-control-lg" minlength="8" autocomplete="new-password" required>
+                    <div class="form-text">Mínimo de 8 caracteres.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="confirmar_senha" class="form-label">Confirme a senha</label>
+                    <input id="confirmar_senha" name="confirmar_senha" type="password" class="form-control form-control-lg" minlength="8" autocomplete="new-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">Criar conta</button>
+            </form>
+            <p class="text-center mt-4 mb-0"><a href="/login">Voltar ao login</a></p>
+        </div>
+    </main>
+</body>
+</html>

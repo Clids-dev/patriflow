@@ -13,6 +13,30 @@
     </button>
 </div>
 
+<div class="card mb-4"><div class="card-body">
+    <h5 class="fw-bold mb-3">Locais físicos</h5>
+    <div class="row g-3">
+        <form id="formPredio" class="col-lg-4">
+            <label class="form-label">Cadastrar prédio</label>
+            <input id="predioNome" class="form-control mb-2" placeholder="Nome do prédio" required>
+            <input id="predioEndereco" class="form-control mb-2" placeholder="Endereço (opcional)">
+            <button class="btn btn-outline-primary w-100">Adicionar prédio</button>
+        </form>
+        <form id="formAndar" class="col-lg-4">
+            <label class="form-label">Cadastrar andar</label>
+            <select id="andarPredio" class="form-select mb-2" required><option value="">Selecione o prédio</option></select>
+            <input id="andarNome" class="form-control mb-2" placeholder="Ex.: Térreo, 1º andar" required>
+            <button class="btn btn-outline-primary w-100">Adicionar andar</button>
+        </form>
+        <form id="formSala" class="col-lg-4">
+            <label class="form-label">Cadastrar sala</label>
+            <select id="salaAndar" class="form-select mb-2" required><option value="">Selecione o andar</option></select>
+            <input id="salaNome" class="form-control mb-2" placeholder="Ex.: Sala 12, Laboratório" required>
+            <button class="btn btn-outline-primary w-100">Adicionar sala</button>
+        </form>
+    </div>
+</div></div>
+
 <!-- Tabela de Setores -->
 <div class="card border-0 shadow-sm rounded-3">
     <div class="table-responsive">
@@ -21,6 +45,7 @@
                 <tr>
                     <th class="px-4 py-3 border-0">ID</th>
                     <th class="py-3 border-0">Nome do Setor</th>
+                    <th class="py-3 border-0">Localização</th>
                     <th class="py-3 border-0">Responsável Atual</th>
                     <th class="py-3 border-0">Status</th>
                     <th class="px-4 py-3 border-0 text-end">Ações</th>
@@ -47,6 +72,10 @@
                     <div class="mb-3">
                         <label for="nome" class="form-label fw-medium small text-muted">Nome do Setor</label>
                         <input type="text" class="form-control" id="nome" required placeholder="Ex: Financeiro, TI">
+                    </div>
+                    <div class="mb-3">
+                        <label for="sala_id" class="form-label fw-medium small text-muted">Sala</label>
+                        <select class="form-select" id="sala_id" required><option value="">Selecione prédio, andar e sala...</option></select>
                     </div>
                     <div class="mb-3">
                         <label for="responsavel_id" class="form-label fw-medium small text-muted">Responsável</label>

@@ -2,9 +2,12 @@ import { $, $$, api, ui } from './utils.js';
 
 let todosSetores = [];
 let todosResponsaveis = [];
+let todosPredios = [];
+let todosAndares = [];
+let todasSalas = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await Promise.all([carregarSetores(), carregarResponsaveis()]);
+    await Promise.all([carregarSetores(), carregarResponsaveis(), carregarLocais()]);
     configurarEventos();
 });
 
@@ -14,6 +17,22 @@ async function carregarSetores() {
         renderizarSetores(todosSetores);
     } catch (error) {
         ui.showNotification('Erro ao carregar setores', 'error');
+    }
+}
+
+async function carregarLocais() {
+    try {
+        [todosPredios, todosAndares, todasSalas] = await Promise.all([
+            api.get('/api/v1/localizacao/predios'),
+            api.get('/api/v1/localizacao/andares'),
+            api.get('/api/v1/localizacao/salas')
+        ]);
+        const option = (id, label) => `<option value="${id}">${label}</option>`;
+        $('#andarPredio').innerHTML = '<option value="">Selecione o prédio</option>' + todosPredios.map(p => option(p.id, p.nome)).join('');
+        $('#salaAndar').innerHTML = '<option value="">Selecione o andar</option>' + todosAndares.map(a => option(a.id, `${a.predio_nome} — ${a.identificacao}`)).join('');
+        $('#sala_id').innerHTML = '<option value="">Selecione prédio, andar e sala...</option>' + todasSalas.map(s => option(s.id, `${s.predio_nome} — ${s.andar_identificacao} — ${s.identificacao}`)).join('');
+    } catch (error) {
+        ui.showNotification('Erro ao carregar locais físicos.', 'error');
     }
 }
 
@@ -36,7 +55,7 @@ function renderizarSetores(setores) {
     if (!lista) return;
 
     if (setores.length === 0) {
-        lista.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted">Nenhum setor encontrado.</td></tr>`;
+        lista.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">Nenhum setor encontrado.</td></tr>`;
         return;
     }
 
@@ -44,6 +63,7 @@ function renderizarSetores(setores) {
         <tr>
             <td class="px-4 fw-bold text-muted">#${setor.id}</td>
             <td><div class="fw-bold text-dark">${setor.nome}</div></td>
+            <td><span class="small">${setor.predio_nome} — ${setor.andar_identificacao} — ${setor.sala_nome}</span></td>
             <td><span class="text-muted small">${setor.responsavel_nome || 'Não definido'}</span></td>
             <td>
                 <span class="badge ${setor.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3">
@@ -61,6 +81,27 @@ function renderizarSetores(setores) {
 }
 
 function configurarEventos() {
+    $('#formPredio')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/api/v1/localizacao/predios', { nome: $('#predioNome').value, endereco: $('#predioEndereco').value || null });
+            e.target.reset(); await carregarLocais(); ui.showNotification('Prédio cadastrado!');
+        } catch (error) { ui.showNotification(error.message, 'error'); }
+    });
+    $('#formAndar')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/api/v1/localizacao/andares', { predio_id: Number($('#andarPredio').value), identificacao: $('#andarNome').value });
+            e.target.reset(); await carregarLocais(); ui.showNotification('Andar cadastrado!');
+        } catch (error) { ui.showNotification(error.message, 'error'); }
+    });
+    $('#formSala')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/api/v1/localizacao/salas', { andar_id: Number($('#salaAndar').value), identificacao: $('#salaNome').value });
+            e.target.reset(); await carregarLocais(); ui.showNotification('Sala cadastrada!');
+        } catch (error) { ui.showNotification(error.message, 'error'); }
+    });
     $('#formSetor')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         await salvarSetor();
@@ -77,7 +118,8 @@ async function salvarSetor() {
     const id = $('#setorId').value;
     const dados = {
         nome: $('#nome').value,
-        responsavel_id: parseInt($('#responsavel_id').value)
+        responsavel_id: parseInt($('#responsavel_id').value),
+        sala_id: parseInt($('#sala_id').value)
     };
 
     ui.setLoading('btnSalvar', true);
@@ -85,7 +127,7 @@ async function salvarSetor() {
     try {
         if (id) {
             // Rota: PUT /setores/{id}?novo_nome=...&novo_responsavel_id=...
-            await api.put(`/api/v1/setores/${id}?novo_nome=${encodeURIComponent(dados.nome)}&novo_responsavel_id=${dados.responsavel_id}`);
+            await api.put(`/api/v1/setores/${id}?novo_nome=${encodeURIComponent(dados.nome)}&novo_responsavel_id=${dados.responsavel_id}&novo_sala_id=${dados.sala_id}`);
             ui.showNotification('Setor atualizado!');
         } else {
             await api.post('/api/v1/setores/', dados);
@@ -109,6 +151,7 @@ function vincularAcoesTabela() {
                 $('#setorId').value = setor.id;
                 $('#nome').value = setor.nome;
                 $('#responsavel_id').value = setor.responsavel_id;
+                $('#sala_id').value = setor.sala_id;
                 $('#tituloModal').innerText = 'Editar Setor';
                 new bootstrap.Modal($('#modalSetor')).show();
             }

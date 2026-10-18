@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import '../../core/services/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_states.dart';
-import '../auth/login_page.dart';
+import '../../core/services/session_manager.dart';
+import 'admin_dashboard_page.dart';
 import '../server_config/server_config_page.dart';
 
-enum AppRole { admin, common }
+class HomeMenuItem {
+  const HomeMenuItem(this.label, this.icon, this.contentTab);
+  final String label;
+  final IconData icon;
+  final HomeTab contentTab;
+}
 
 enum HomeTab {
   bens('Bens', Icons.inventory_2_outlined),
@@ -22,11 +28,9 @@ enum HomeTab {
 }
 
 class HomePlaceholderPage extends StatefulWidget {
-  const HomePlaceholderPage({super.key, required this.role});
+  const HomePlaceholderPage({super.key, required this.profile});
 
-  static const adminRoute = '/area-admin';
-  static const commonRoute = '/area-comum';
-  final AppRole role;
+  final Map<String, dynamic> profile;
 
   @override
   State<HomePlaceholderPage> createState() => _HomePlaceholderPageState();
@@ -34,46 +38,84 @@ class HomePlaceholderPage extends StatefulWidget {
 
 class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
   HomeTab _currentTab = HomeTab.bens;
+  int _currentMenuIndex = 0;
 
   Future<List<dynamic>> _fetchBens() => ApiClient.get('/bem/');
   Future<List<dynamic>> _fetchCategorias() => ApiClient.get('/categoria/');
-  Future<List<dynamic>> _fetchSetores() => ApiClient.get('/setor/');
+  Future<List<dynamic>> _fetchSetores() => ApiClient.get('/setores/');
   Future<List<dynamic>> _fetchResponsaveis() => ApiClient.get('/responsavel/');
-  Future<List<dynamic>> _fetchMovimentacoes() => ApiClient.get('/movimentacao/detailed/');
+  Future<List<dynamic>> _fetchMovimentacoes() =>
+      ApiClient.get('/movimentacao/detailed/');
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin = widget.role == AppRole.admin;
-    
-    final allowedTabs = isAdmin 
-        ? HomeTab.values 
-        : [HomeTab.bens, HomeTab.movimentacoes];
-
-    if (!allowedTabs.contains(_currentTab)) {
-      _currentTab = allowedTabs.first;
+    final role = widget.profile['perfil']?.toString();
+    if (role == 'setor_patrimonio') {
+      return AdminDashboardPage(profile: widget.profile);
     }
+    final isPatrimonio = role == 'setor_patrimonio';
+    // A ocultação destes botões é apenas conveniência de UI. A API valida as
+    // permissões e recusa acessos indevidos.
+    final allowedTabs = switch (role) {
+      'agente_campo' => const [
+        HomeMenuItem('Leitura', Icons.qr_code_scanner, HomeTab.bens),
+        HomeMenuItem('Conferência', Icons.fact_check_outlined, HomeTab.bens),
+        HomeMenuItem(
+          'Movimentação',
+          Icons.swap_horiz_outlined,
+          HomeTab.movimentacoes,
+        ),
+        HomeMenuItem('Inventário', Icons.inventory_2_outlined, HomeTab.bens),
+        HomeMenuItem('Sincronização', Icons.sync, HomeTab.relatorios),
+      ],
+      'responsavel_setor' => const [
+        HomeMenuItem(
+          'Transferências Pendentes',
+          Icons.move_to_inbox_outlined,
+          HomeTab.movimentacoes,
+        ),
+        HomeMenuItem(
+          'Acervo sob sua guarda',
+          Icons.inventory_2_outlined,
+          HomeTab.bens,
+        ),
+      ],
+      'setor_patrimonio' => const [
+        HomeMenuItem('Consulta', Icons.search, HomeTab.bens),
+        HomeMenuItem('Histórico', Icons.history, HomeTab.movimentacoes),
+      ],
+      _ => const <HomeMenuItem>[],
+    };
+    final selectedMenu = allowedTabs.isEmpty
+        ? const HomeMenuItem(
+            'Acesso indisponível',
+            Icons.lock_outline,
+            HomeTab.bens,
+          )
+        : allowedTabs[_currentMenuIndex.clamp(0, allowedTabs.length - 1)];
+    _currentTab = selectedMenu.contentTab;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_currentTab.label),
+        title: Text(selectedMenu.label),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: isAdmin 
-                  ? AppColors.primary.withOpacity(0.1) 
+              color: isPatrimonio
+                  ? AppColors.primary.withOpacity(0.1)
                   : AppColors.success.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isAdmin ? AppColors.primary : AppColors.success,
+                color: isPatrimonio ? AppColors.primary : AppColors.success,
                 width: 1,
               ),
             ),
             child: Text(
-              isAdmin ? 'Administrador' : 'Consulta',
+              roleLabel(role),
               style: TextStyle(
-                color: isAdmin ? AppColors.primary : AppColors.success,
+                color: isPatrimonio ? AppColors.primary : AppColors.success,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -85,9 +127,7 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
         child: Column(
           children: [
             UserAccountsDrawerHeader(
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-              ),
+              decoration: const BoxDecoration(color: AppColors.primary),
               currentAccountPicture: Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
@@ -100,11 +140,16 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                 ),
               ),
               accountName: Text(
-                isAdmin ? 'Administrador PatriFlow' : 'Operador de Consulta',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                widget.profile['nome']?.toString() ??
+                    widget.profile['username']?.toString() ??
+                    'Usuário',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               accountEmail: Text(
-                isAdmin ? 'admin@patriflow.com.br' : 'consulta@patriflow.com.br',
+                'Perfil: ${roleLabel(role)}${widget.profile['setor_id'] == null ? '' : ' • Setor ${widget.profile['setor_id']}'}',
                 style: const TextStyle(color: Colors.white70),
               ),
             ),
@@ -115,7 +160,7 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                   const Padding(
                     padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
                     child: Text(
-                      'MÓDULOS DE GESTÃO (SERVIDOR)',
+                      'MÓDULOS DISPONÍVEIS',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -123,41 +168,63 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                       ),
                     ),
                   ),
-                  ...allowedTabs.map((tab) => ListTile(
-                    leading: Icon(
-                      tab.icon,
-                      color: _currentTab == tab ? AppColors.primary : Colors.black87,
-                    ),
-                    title: Text(
-                      tab.label,
-                      style: TextStyle(
-                        fontWeight: _currentTab == tab ? FontWeight.bold : FontWeight.normal,
-                        color: _currentTab == tab ? AppColors.primary : Colors.black87,
+                  ...allowedTabs.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    return ListTile(
+                      leading: Icon(
+                        item.icon,
+                        color: _currentMenuIndex == index
+                            ? AppColors.primary
+                            : Colors.black87,
                       ),
-                    ),
-                    selected: _currentTab == tab,
-                    selectedTileColor: AppColors.primary.withOpacity(0.08),
-                    onTap: () {
-                      setState(() => _currentTab = tab);
-                      Navigator.of(context).pop();
-                    },
-                  )),
+                      title: Text(
+                        item.label,
+                        style: TextStyle(
+                          fontWeight: _currentMenuIndex == index
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _currentMenuIndex == index
+                              ? AppColors.primary
+                              : Colors.black87,
+                        ),
+                      ),
+                      selected: _currentMenuIndex == index,
+                      selectedTileColor: AppColors.primary.withOpacity(0.08),
+                      onTap: () {
+                        setState(() {
+                          _currentMenuIndex = index;
+                          _currentTab = item.contentTab;
+                        });
+                        Navigator.of(context).pop();
+                      },
+                    );
+                  }),
                   const Divider(),
                   ListTile(
                     leading: const Icon(AppIcons.settings),
                     title: const Text('Configurar Servidor'),
                     onTap: () {
                       Navigator.of(context).pop();
-                      Navigator.of(context).pushNamed(ServerConfigPage.routeName);
+                      Navigator.of(context)
+                          .pushNamed(ServerConfigPage.routeName);
                     },
                   ),
                   ListTile(
-                    leading: const Icon(AppIcons.logout, color: AppColors.error),
-                    title: const Text('Sair do Aplicativo', style: TextStyle(color: AppColors.error)),
-                    onTap: () {
+                    leading: const Icon(
+                      AppIcons.logout,
+                      color: AppColors.error,
+                    ),
+                    title: const Text(
+                      'Sair do Aplicativo',
+                      style: TextStyle(color: AppColors.error),
+                    ),
+                    onTap: () async {
+                      await SessionManager.logout();
+                      if (!context.mounted) return;
                       Navigator.of(context).pop();
                       Navigator.of(context)
-                          .pushNamedAndRemoveUntil(LoginPage.routeName, (_) => false);
+                          .pushNamedAndRemoveUntil('/login', (_) => false);
                     },
                   ),
                 ],
@@ -171,7 +238,11 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                 children: [
                   Text(
                     'PatriFlow v1.0.0 (API Conectada)',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                    ),
                   ),
                   SizedBox(height: 4),
                   Text(
@@ -184,18 +255,25 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
           ],
         ),
       ),
-      body: _buildTabBody(isAdmin),
+      body: allowedTabs.isEmpty
+          ? const AppEmptyState(
+              title: 'Perfil sem módulos',
+              description: 'Solicite ao setor de patrimônio a revisão do seu perfil de acesso.',
+            )
+          : _buildTabBody(),
     );
   }
 
-  Widget _buildTabBody(bool isAdmin) {
+  Widget _buildTabBody() {
     switch (_currentTab) {
       case HomeTab.bens:
         return FutureBuilder<List<dynamic>>(
           future: _fetchBens(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const AppLoading(label: 'Buscando bens do banco de dados...');
+              return const AppLoading(
+                label: 'Buscando bens do banco de dados...',
+              );
             }
             if (snapshot.hasError) {
               return AppErrorState(
@@ -218,7 +296,15 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                 final bem = bens[index];
                 final codigo = bem['codigo_tombamento'] ?? 'N/D';
                 final nome = bem['nome'] ?? 'Sem Nome';
-                final valor = (bem['valor'] ?? 0).toDouble();
+                final valor = (bem['valor_aquisicao'] ?? bem['valor'] ?? 0)
+                    .toDouble();
+                final marcaModelo = [bem['marca'], bem['modelo']]
+                    .where(
+                      (value) => value != null && value.toString().isNotEmpty,
+                    )
+                    .join(' ');
+                final numeroSerie = bem['numero_serie'];
+                final conservacao = bem['estado_conservacao'] ?? 'novo';
                 final status = bem['status'] ?? 'Em Uso';
                 final statusColor = _getStatusColor(status);
 
@@ -233,7 +319,10 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
@@ -248,7 +337,10 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: statusColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
@@ -267,18 +359,43 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                         const SizedBox(height: 12),
                         Text(
                           nome,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontSize: 18),
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(Icons.sell_outlined, size: 14, color: Colors.grey),
+                            const Icon(
+                              Icons.sell_outlined,
+                              size: 14,
+                              color: Colors.grey,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'Valor: R\$ ${valor.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
                             ),
                           ],
+                        ),
+                        if (marcaModelo.isNotEmpty || numeroSerie != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            [
+                              if (marcaModelo.isNotEmpty) marcaModelo,
+                              if (numeroSerie != null &&
+                                  numeroSerie.toString().isNotEmpty)
+                                'Série: $numeroSerie',
+                            ].join(' • '),
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                        ],
+                        const SizedBox(height: 6),
+                        Text(
+                          'Conservação: $conservacao',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -294,7 +411,9 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
           future: _fetchCategorias(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const AppLoading(label: 'Buscando categorias do servidor...');
+              return const AppLoading(
+                label: 'Buscando categorias do servidor...',
+              );
             }
             if (snapshot.hasError) {
               return AppErrorState(
@@ -322,10 +441,17 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                       backgroundColor: AppColors.primary.withOpacity(0.1),
                       child: Text(
                         cat['sigla'] ?? 'CAT',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
-                    title: Text(cat['nome'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(
+                      cat['nome'] ?? '',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     subtitle: Text('ID: ${cat['id']}'),
                   ),
                 );
@@ -363,9 +489,19 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
-                    leading: const Icon(Icons.business, color: AppColors.primary),
-                    title: Text(set['nome'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Responsável: ${set['responsavel_nome'] ?? 'Não definido'}'),
+                    leading: const Icon(
+                      Icons.business,
+                      color: AppColors.primary,
+                    ),
+                    title: Text(
+                      set['nome'] ?? '',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    isThreeLine: true,
+                    subtitle: Text(
+                      'Local: ${set['predio_nome'] ?? '—'} — ${set['andar_identificacao'] ?? '—'} — ${set['sala_nome'] ?? '—'}\n'
+                      'Responsável: ${set['responsavel_nome'] ?? 'Não definido'}',
+                    ),
                   ),
                 );
               },
@@ -378,7 +514,9 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
           future: _fetchResponsaveis(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const AppLoading(label: 'Buscando responsáveis do servidor...');
+              return const AppLoading(
+                label: 'Buscando responsáveis do servidor...',
+              );
             }
             if (snapshot.hasError) {
               return AppErrorState(
@@ -403,8 +541,13 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     leading: const Icon(Icons.person, color: AppColors.primary),
-                    title: Text(resp['nome'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${resp['cargo'] ?? ''} • Matrícula: ${resp['matricula'] ?? ''}'),
+                    title: Text(
+                      resp['nome'] ?? '',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      '${resp['cargo'] ?? ''} • Matrícula: ${resp['matricula'] ?? ''}',
+                    ),
                   ),
                 );
               },
@@ -417,7 +560,9 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
           future: _fetchMovimentacoes(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const AppLoading(label: 'Buscando movimentações do servidor...');
+              return const AppLoading(
+                label: 'Buscando movimentações do servidor...',
+              );
             }
             if (snapshot.hasError) {
               return AppErrorState(
@@ -450,21 +595,45 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                           children: [
                             Text(
                               mov['codigo_tombamento'] ?? '',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
                             ),
                             Text(
-                              mov['data_movimentacao'] != null ? mov['data_movimentacao'].toString().substring(0, 10) : '',
-                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                              mov['data_movimentacao'] != null
+                                  ? mov['data_movimentacao']
+                                        .toString()
+                                        .substring(0, 10)
+                                  : '',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(mov['bem_nome'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(
+                          mov['bem_nome'] ?? '',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text('Origem: ${mov['setor_origem_nome'] ?? 'Depósito'} ➔ Destino: ${mov['setor_destino_nome'] ?? ''}'),
+                        Text(
+                          'Origem: ${mov['setor_origem_nome'] ?? 'Depósito'} ➔ Destino: ${mov['setor_destino_nome'] ?? ''}',
+                        ),
                         if (mov['justificativa'] != null) ...[
                           const SizedBox(height: 4),
-                          Text('Justificativa: ${mov['justificativa']}', style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
+                          Text(
+                            'Justificativa: ${mov['justificativa']}',
+                            style: const TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey,
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -501,4 +670,11 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
         return Colors.grey;
     }
   }
+
+  String roleLabel(String? role) => switch (role) {
+    'agente_campo' => 'Agente de Campo',
+    'responsavel_setor' => 'Responsável de Setor',
+    'setor_patrimonio' => 'Setor de Patrimônio',
+    _ => 'Perfil não reconhecido',
+  };
 }

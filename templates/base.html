@@ -22,7 +22,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
         <div class="container-fluid">
             <div class="d-flex align-items-center ms-lg-280">
-                <button class="btn btn-link d-lg-none text-dark me-2" id="sidebarToggle">
+                <button class="btn btn-link d-lg-none text-dark me-2" id="sidebarToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebarMenu">
                     <i class="fas fa-bars"></i>
                 </button>
                 <span class="navbar-brand fw-bold text-primary">PatriFlow</span>
@@ -38,7 +38,7 @@
                         <li class="px-3 py-2"><small class="text-muted">{{tipo|capitalize}}</small></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Meu Perfil</a></li>
-                        <li><a class="dropdown-item text-danger" href="/login">
+                        <li><a class="dropdown-item text-danger" href="/logout">
                             <i class="fas fa-sign-out-alt me-2"></i> Sair
                         </a></li>
                     </ul>
@@ -48,7 +48,7 @@
     </nav>
 
     <!-- Sidebar Principal -->
-    <div class="sidebar shadow-lg">
+    <div class="sidebar shadow-lg" id="sidebarMenu">
         <div class="p-4 text-center border-bottom border-secondary border-opacity-10">
             <h4 class="fw-bold mb-0 text-white">PatriFlow</h4>
             <small class="text-white-50">Sistema de Tombamento</small>
@@ -59,7 +59,7 @@
                 <i class="fas fa-home me-3"></i> Home
             </a>
 
-            {% if tipo == "admin" %}
+            {% if tipo in ["admin", "setor_patrimonio"] %}
             <a href="/bens" class="nav-link {% if active_page == 'bens' %}active{% endif %} p-3 rounded-3 mb-2">
                 <i class="fas fa-box me-3"></i> Equipamentos
             </a>
@@ -86,6 +86,7 @@
             </a>
         </div>
     </div>
+    <button type="button" class="sidebar-backdrop border-0 p-0" aria-label="Fechar menu" tabindex="-1"></button>
 
     <!-- Main Content -->
     <main class="ms-lg-280 pt-5 mt-4">
@@ -116,9 +117,25 @@
     <script type="module">
         import { ui } from '/static/js/utils.js';
         
-        // Listener global para mobile toggle
-        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-            document.querySelector('.sidebar').classList.toggle('active-mobile');
+        // Menu lateral em telas pequenas
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarBackdrop = document.querySelector('.sidebar-backdrop');
+        const setSidebarOpen = (open) => {
+            sidebar?.classList.toggle('active-mobile', open);
+            sidebarBackdrop?.classList.toggle('active-mobile', open);
+            sidebarToggle?.setAttribute('aria-expanded', String(open));
+        };
+
+        sidebarToggle?.addEventListener('click', () => {
+            setSidebarOpen(!sidebar?.classList.contains('active-mobile'));
+        });
+        sidebarBackdrop?.addEventListener('click', () => setSidebarOpen(false));
+        sidebar?.querySelectorAll('.nav-link').forEach((link) => {
+            link.addEventListener('click', () => setSidebarOpen(false));
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') setSidebarOpen(false);
         });
 
         // Expõe funções necessárias globalmente se houver legado

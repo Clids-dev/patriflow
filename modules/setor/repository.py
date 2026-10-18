@@ -17,7 +17,8 @@ class SetorRepository:
                 responsavel_nome=row[3],
                 cargo_responsavel=row[4],
                 flag_almoxarifado=bool(row[5]),
-                ativo=bool(row[6])
+                ativo=bool(row[6]), sala_id=row[7], sala_nome=row[8],
+                andar_identificacao=row[9], predio_nome=row[10]
             ))
         return results
 
@@ -34,19 +35,20 @@ class SetorRepository:
             responsavel_nome=row[3],
             cargo_responsavel=row[4],
             flag_almoxarifado=bool(row[5]),
-            ativo=bool(row[6])
+            ativo=bool(row[6]), sala_id=row[7], sala_nome=row[8],
+            andar_identificacao=row[9], predio_nome=row[10]
         )
 
     def save(self, setor: SetorCreate):
         db = DataBase()
-        result = db.commit(queries.QUERY_CREATE_SETOR, (setor.nome, setor.responsavel_id, setor.flag_almoxarifado))
+        result = db.commit(queries.QUERY_CREATE_SETOR, (setor.nome, setor.responsavel_id, setor.flag_almoxarifado, setor.sala_id))
         if result:
             return self.get_id(result[0])
         return None
 
-    def put(self, id: int, novo_nome: str, novo_responsavel_id: int, flag_almoxarifado: bool = False):
+    def put(self, id: int, novo_nome: str, novo_responsavel_id: int, sala_id: int | None = None, flag_almoxarifado: bool = False):
         db = DataBase()
-        result = db.commit(queries.QUERY_PUT_SETOR, (novo_nome, novo_responsavel_id, flag_almoxarifado, id))
+        result = db.commit(queries.QUERY_PUT_SETOR, (novo_nome, novo_responsavel_id, flag_almoxarifado, sala_id, id))
         if result:
             return self.get_id(id)
         return None

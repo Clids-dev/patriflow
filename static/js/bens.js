@@ -65,7 +65,7 @@ function renderizarTabela() {
             <td class="ps-4"><span class="text-muted">#${bem.id}</span></td>
             <td><span class="fw-bold text-dark">${bem.nome}</span></td>
             <td><code>${bem.codigo_tombamento}</code></td>
-            <td>R$ ${parseFloat(bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+            <td>R$ ${parseFloat(bem.valor_aquisicao ?? bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
             <td>${getStatusBadge(bem.status, bem.ativo)}</td>
             <td class="text-end pe-4">
                 <div class="btn-group">
@@ -152,6 +152,20 @@ async function verDetalhes(id) {
                         <small class="text-muted d-block mb-1">Status</small>
                         ${getStatusBadge(bem.status, bem.ativo)}
                     </div>
+                </div>
+            </div>
+
+            <div class="border-top pt-3 mb-4">
+                <small class="text-muted text-uppercase fw-bold d-block mb-2">Identificação e conservação</small>
+                <div class="row g-2 small">
+                    <div class="col-6"><strong>Marca:</strong> ${bem.marca || '—'}</div>
+                    <div class="col-6"><strong>Modelo:</strong> ${bem.modelo || '—'}</div>
+                    <div class="col-6"><strong>Nº de série:</strong> ${bem.numero_serie || '—'}</div>
+                    <div class="col-6"><strong>Conservação:</strong> ${bem.estado_conservacao || '—'}</div>
+                    <div class="col-12"><strong>Localização física:</strong> ${bem.predio_nome ? `${bem.predio_nome} — ${bem.andar_identificacao} — ${bem.sala_nome}` : '—'}</div>
+                    <div class="col-6"><strong>Aquisição:</strong> R$ ${Number(bem.valor_aquisicao ?? bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                    <div class="col-6"><strong>Nota fiscal:</strong> ${bem.nota_fiscal || '—'}</div>
+                    <div class="col-6"><strong>Entrada:</strong> ${bem.data_entrada ? new Date(`${bem.data_entrada}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</div>
                 </div>
             </div>
 
@@ -293,7 +307,14 @@ function setupListeners() {
             nome: $("#nome").value,
             codigo_tombamento: $("#codigo").value,
             valor: parseFloat($("#valor").value),
-            status: $("#status").value
+            valor_aquisicao: parseFloat($("#valor").value),
+            status: $("#status").value,
+            marca: $("#marca").value || null,
+            modelo: $("#modelo").value || null,
+            numero_serie: $("#numero_serie").value || null,
+            nota_fiscal: $("#nota_fiscal").value || null,
+            data_entrada: $("#data_entrada").value || null,
+            estado_conservacao: $("#estado_conservacao").value
         };
 
         try {
@@ -321,6 +342,7 @@ function setupListeners() {
         const bem = {
             nome: $("#editar_nome").value,
             valor: parseFloat($("#editar_valor").value),
+            valor_aquisicao: parseFloat($("#editar_valor").value),
             status: $("#editar_status").value
         };
 

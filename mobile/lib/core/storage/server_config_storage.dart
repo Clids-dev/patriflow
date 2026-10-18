@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'secure_token_storage.dart';
+
 class ServerConfigStorage {
   static const _baseUrlKey = 'server_base_url';
 
@@ -11,11 +13,14 @@ class ServerConfigStorage {
   Future<void> saveBaseUrl(String value) async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_baseUrlKey, normalize(value));
+    // A credencial pertence ao servidor configurado anteriormente.
+    await SecureTokenStorage().clearToken();
   }
 
   Future<void> clear() async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_baseUrlKey);
+    await SecureTokenStorage().clearToken();
   }
 
   static String normalize(String value) {

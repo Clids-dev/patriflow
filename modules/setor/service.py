@@ -38,25 +38,27 @@ class SetorService:
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    def put_setor(self, id: int, novo_nome: str, novo_responsavel_id: int):
+    def put_setor(self, id: int, novo_nome: str, novo_responsavel_id: int, novo_sala_id: int | None = None):
         try:
             setor_atual = self.get_setor_by_id(id)
             if setor_atual is None:
                 raise HTTPException(status_code=404, detail=f"Setor com id {id} não encontrado")
             
-            if not novo_nome and novo_responsavel_id is None:
+            if not novo_nome and novo_responsavel_id is None and novo_sala_id is None:
                     raise ValueError("Nenhum dado fornecido para atualização.")
             
             if not novo_nome:
                 novo_nome = setor_atual.nome
             if novo_responsavel_id is None:
                 novo_responsavel_id = setor_atual.responsavel_id
+            if novo_sala_id is None:
+                novo_sala_id = setor_atual.sala_id
             
-            if novo_nome == setor_atual.nome and novo_responsavel_id == setor_atual.responsavel_id:
+            if novo_nome == setor_atual.nome and novo_responsavel_id == setor_atual.responsavel_id and novo_sala_id == setor_atual.sala_id:
                 raise ValueError("Os dados fornecidos são iguais aos atuais.")
 
             repository = SetorRepository()
-            return repository.put(int(id), novo_nome, int(novo_responsavel_id))
+            return repository.put(int(id), novo_nome, int(novo_responsavel_id), int(novo_sala_id))
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
