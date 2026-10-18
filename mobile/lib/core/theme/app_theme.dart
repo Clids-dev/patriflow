@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const primary = Color(0xFF5B2C83);
-  static const secondary = Color(0xFF7B3FA1);
+  static const primary = Color(0xFF820AD1);     // #820ad1 (Nubank Moderno)
+  static const secondary = Color(0xFF6D08B1);   // #6d08b1
   static const surface = Color(0xFFFFFFFF);
-  static const background = Color(0xFFF7F5F8);
-  static const error = Color(0xFFBA1A1A);
-  static const success = Color(0xFF1B6B46);
+  static const background = Color(0xFFF0F2F5);  // #f0f2f5 (Cinza Facebook padrão do web)
+  static const error = Color(0xFFF02849);       // #f02849
+  static const success = Color(0xFF42B72A);     // #42b72a
 }
 
 abstract final class AppIcons {
@@ -40,24 +40,32 @@ abstract final class AppTheme {
       bodyLarge: TextStyle(height: 1.5),
       bodyMedium: TextStyle(height: 1.45),
     ),
-    appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
-    inputDecorationTheme: const InputDecorationTheme(
-      border: OutlineInputBorder(),
+    appBarTheme: const AppBarTheme(
+      centerTitle: false,
+      elevation: 0,
+      backgroundColor: Colors.white,
+      foregroundColor: Color(0xFF111111),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Color(0xFFD1CAD5)),
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFE0E4E7)),
       ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
     ),
     cardTheme: CardThemeData(
       elevation: 0,
       color: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
   );
 }
