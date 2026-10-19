@@ -25,7 +25,10 @@
                 <button class="btn btn-link d-lg-none text-dark me-2" id="sidebarToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebarMenu">
                     <i class="fas fa-bars"></i>
                 </button>
-                <span class="navbar-brand fw-bold text-primary">PatriFlow</span>
+                <a class="navbar-brand d-flex align-items-center text-decoration-none py-0" href="/index">
+                    <img src="/static/logo.png" alt="PatriFlow" style="height: 36px; width: auto;" class="rounded-2 me-2">
+                    <span class="fw-bold text-primary fs-5" style="letter-spacing: -0.02em;">PatriFlow</span>
+                </a>
             </div>
             
             <div class="ms-auto d-flex align-items-center">
@@ -49,8 +52,9 @@
 
     <!-- Sidebar Principal -->
     <div class="sidebar shadow-lg" id="sidebarMenu">
-        <div class="p-4 text-center border-bottom border-secondary border-opacity-10">
-            <h4 class="fw-bold mb-0 text-white">PatriFlow</h4>
+        <div class="p-4 text-center border-bottom border-secondary border-opacity-10 d-flex flex-column align-items-center">
+            <img src="/static/logo.png" alt="PatriFlow" style="height: 52px; width: auto;" class="rounded-3 mb-2 shadow-sm bg-white p-1">
+            <h4 class="fw-bold mb-0 text-white fs-5">PatriFlow</h4>
             <small class="text-white-50">Sistema de Tombamento</small>
         </div>
 
@@ -94,6 +98,36 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <!-- Mobile Bottom Navigation (iOS Style) -->
+    <nav class="mobile-bottom-nav">
+        <a href="/index" class="mobile-nav-item {% if active_page == 'index' %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        {% if tipo in ["admin", "setor_patrimonio"] %}
+        <a href="/bens" class="mobile-nav-item {% if active_page == 'bens' %}active{% endif %}">
+            <i class="fas fa-box"></i>
+            <span>Equipamentos</span>
+        </a>
+        <a href="/categoria" class="mobile-nav-item {% if active_page == 'categoria' %}active{% endif %}">
+            <i class="fas fa-tags"></i>
+            <span>Categorias</span>
+        </a>
+        <a href="/setores" class="mobile-nav-item {% if active_page == 'setores' %}active{% endif %}">
+            <i class="fas fa-building"></i>
+            <span>Setores</span>
+        </a>
+        {% endif %}
+        <a href="/movimentacao" class="mobile-nav-item {% if active_page == 'movimentacao' %}active{% endif %}">
+            <i class="fas fa-history"></i>
+            <span>Movimentações</span>
+        </a>
+        <a href="/relatorios" class="mobile-nav-item {% if active_page == 'relatorios' %}active{% endif %}">
+            <i class="fas fa-chart-bar"></i>
+            <span>Relatórios</span>
+        </a>
+    </nav>
 
     <!-- Toast Genérico -->
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">

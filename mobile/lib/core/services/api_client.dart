@@ -104,6 +104,27 @@ class ApiClient {
     return getMap('/auth/me');
   }
 
+  static Future<Map<String, dynamic>> register({
+    required String username,
+    required String senha,
+    required String nome,
+  }) async {
+    final apiUrl = await _getApiBaseUrl();
+    if (apiUrl == null) throw Exception('URL do servidor não configurada.');
+    final response = await http
+        .post(
+          Uri.parse('$apiUrl/auth/register'),
+          headers: await _headers(authenticated: false),
+          body: jsonEncode({
+            'username': username,
+            'senha': senha,
+            'nome': nome,
+          }),
+        )
+        .timeout(const Duration(seconds: 15));
+    return _decodeMap(response);
+  }
+
   static Future<List<dynamic>> get(String endpoint) async {
     final response = await _getResponse(endpoint);
     if (response.statusCode < 200 || response.statusCode >= 300) {

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../core/storage/server_config_storage.dart';
@@ -34,7 +35,7 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
   Future<bool> _runConnectionTest() async {
     final address = _controller.text.trim();
     if (address.isEmpty) return false;
-    
+
     try {
       final normalized = ServerConfigStorage.normalize(address);
       final uri = Uri.parse(normalized);
@@ -50,7 +51,7 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
 
   Future<void> _testConnection() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() {
       _testing = true;
       _connectionReached = null;
@@ -63,12 +64,12 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
         _testing = false;
         _connectionReached = success;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            success 
-                ? 'Conexão estabelecida com sucesso!' 
+            success
+                ? 'Conexão estabelecida com sucesso!'
                 : 'Não foi possível alcançar o servidor.',
           ),
           backgroundColor: success ? AppColors.success : AppColors.error,
@@ -95,6 +96,7 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
       final saveAnyway = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
+          scrollable: true,
           title: const Row(
             children: [
               Icon(AppIcons.error, color: AppColors.error),
@@ -221,17 +223,21 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
               child: Row(
                 children: [
                   Icon(
-                    _connectionReached! ? Icons.check_circle_outline : AppIcons.error,
-                    color: _connectionReached! ? AppColors.success : AppColors.error,
+                    _connectionReached!
+                        ? Icons.check_circle_outline
+                        : AppIcons.error,
+                    color: _connectionReached!
+                        ? AppColors.success
+                        : AppColors.error,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      _connectionReached!
-                          ? 'Servidor alcançado com sucesso!'
-                          : 'Inalcançável. Verifique se o servidor está rodando ou digite outro endereço.',
+                      _connectionReached! ? 'Servidor alcançado com sucesso!' : 'Inalcançável. Verifique se o servidor está rodando ou digite outro endereço.',
                       style: TextStyle(
-                        color: _connectionReached! ? AppColors.success : AppColors.error,
+                        color: _connectionReached!
+                            ? AppColors.success
+                            : AppColors.error,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -247,7 +253,9 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
             label: const Text('Testar conexão'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -257,7 +265,10 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Icon(AppIcons.save),
             label: Text(_saving ? 'Salvando...' : 'Salvar e continuar'),

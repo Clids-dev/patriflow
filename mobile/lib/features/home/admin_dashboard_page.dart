@@ -50,52 +50,89 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ],
     ),
     drawer: Drawer(
+      backgroundColor: AppColors.secondary,
       child: Column(
         children: [
-          UserAccountsDrawerHeader(
-            decoration: const BoxDecoration(color: AppColors.primary),
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(AppIcons.brand, color: AppColors.primary, size: 36),
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Colors.white.withOpacity(0.08)),
+              ),
             ),
-            accountName: Text(
-              widget.profile['nome']?.toString() ??
-                  widget.profile['username']?.toString() ??
-                  'Administrador',
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/logo.png',
+                  height: 38,
+                  width: 145,
+                  fit: BoxFit.contain,
+                ),
+              ],
             ),
-            accountEmail: const Text('Setor de Patrimônio'),
           ),
           Expanded(
             child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               children: [
-                ...AdminSection.values.map(
-                  (item) => ListTile(
-                    leading: Icon(
-                      item.icon,
-                      color: _section == item ? AppColors.primary : null,
+                ...AdminSection.values.map((item) {
+                  final selected = _section == item;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    decoration: BoxDecoration(
+                      color: selected ? AppColors.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    title: Text(item.label),
-                    selected: _section == item,
-                    onTap: () {
-                      setState(() => _section = item);
-                      Navigator.pop(context);
-                    },
-                  ),
+                    child: ListTile(
+                      leading: Icon(
+                        item.icon,
+                        color: selected ? Colors.white : Colors.white60,
+                      ),
+                      title: Text(
+                        item.label,
+                        style: TextStyle(
+                          color: selected ? Colors.white : Colors.white60,
+                          fontWeight: selected
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        setState(() => _section = item);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  );
+                }),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(color: Colors.white24),
                 ),
-                const Divider(),
                 ListTile(
-                  leading: const Icon(AppIcons.settings),
-                  title: const Text('Configurar servidor'),
+                  leading: const Icon(AppIcons.settings, color: Colors.white60),
+                  title: const Text(
+                    'Configurar servidor',
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, ServerConfigPage.routeName);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(AppIcons.logout, color: AppColors.error),
+                  leading: const Icon(
+                    AppIcons.logout,
+                    color: Color(0xFFFF3B30),
+                  ),
                   title: const Text(
                     'Sair',
-                    style: TextStyle(color: AppColors.error),
+                    style: TextStyle(
+                      color: Color(0xFFFF3B30),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   onTap: () async {
                     await SessionManager.logout();
@@ -283,8 +320,28 @@ class _AssetsScreen extends StatefulWidget {
 
 class _AssetsScreenState extends State<_AssetsScreen> {
   String _query = '';
+  final TextEditingController _searchController = TextEditingController();
   String? _statusFilter;
-  int _refresh = 0;
+  late Future<List<dynamic>> _dataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dataFuture = _loadData();
+  }
+
+  Future<List<dynamic>> _loadData() =>
+      Future.wait([ApiClient.get('/bem/'), ApiClient.get('/categoria/')]);
+
+  void _reloadData() {
+    setState(() => _dataFuture = _loadData());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Future<void> _editAsset(
     List<dynamic> categories, [
@@ -294,7 +351,7 @@ class _AssetsScreenState extends State<_AssetsScreen> {
       context: context,
       builder: (_) => _AssetDialog(categories: categories, asset: asset),
     );
-    if (saved == true && mounted) setState(() => _refresh++);
+    if (saved == true && mounted) _reloadData();
   }
 
   Future<void> _toggleActive(Map<String, dynamic> asset) async {
@@ -309,7 +366,7 @@ class _AssetsScreenState extends State<_AssetsScreen> {
         '/bem/${asset['id']}/${active ? 'desativar' : 'reativar'}',
         {},
       );
-      if (mounted) setState(() => _refresh++);
+      if (mounted) _reloadData();
     } catch (e) {
       if (mounted) _message(context, '$e');
     }
@@ -325,6 +382,11 @@ class _AssetsScreenState extends State<_AssetsScreen> {
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
+        backgroundColor: AppColors.surface,
+        showDragHandle: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
         builder: (ctx) => SafeArea(
           child: DraggableScrollableSheet(
             expand: false,
@@ -391,11 +453,14 @@ class _AssetsScreenState extends State<_AssetsScreen> {
     }
   }
 
+  void _applySearch() {
+    FocusScope.of(context).unfocus();
+    setState(() => _query = _searchController.text.trim());
+  }
+
   @override
   Widget build(BuildContext context) => FutureBuilder<List<dynamic>>(
-    key: ValueKey(_refresh),
-    future: Future.wait([ApiClient.get('/bem/'), ApiClient.get('/categoria/')])
-        .then((value) => value),
+    future: _dataFuture,
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting)
         return const AppLoading(label: 'Carregando bens...');
@@ -403,7 +468,7 @@ class _AssetsScreenState extends State<_AssetsScreen> {
         return AppErrorState(
           title: 'Erro ao carregar bens',
           description: '${snapshot.error}',
-          onRetry: () => setState(() => _refresh++),
+          onRetry: _reloadData,
         );
       final assets = snapshot.data![0];
       final categories = snapshot.data![1];
@@ -424,11 +489,13 @@ class _AssetsScreenState extends State<_AssetsScreen> {
               children: [
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(
+                    controller: _searchController,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
                       prefixIcon: Icon(Icons.search),
                       hintText: 'Buscar nome ou tombo',
                     ),
-                    onChanged: (v) => setState(() => _query = v),
+                    onSubmitted: (_) => _applySearch(),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -444,9 +511,7 @@ class _AssetsScreenState extends State<_AssetsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: DropdownButtonFormField<String>(
               value: _statusFilter,
-              decoration: const InputDecoration(
-                labelText: 'Filtrar por status',
-              ),
+              decoration: InputDecoration(labelText: 'Filtrar por status'),
               items: [
                 const DropdownMenuItem<String>(
                   value: null,
@@ -597,9 +662,13 @@ class _AssetDialogState extends State<_AssetDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
     title: Text(widget.asset == null ? 'Cadastrar bem' : 'Editar bem'),
-    content: SizedBox(
-      width: 520,
+    content: ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: 520,
+        maxHeight: MediaQuery.sizeOf(context).height * .68,
+      ),
       child: SingleChildScrollView(
         child: Form(
           key: _form,
@@ -690,6 +759,7 @@ class _CategoriesScreenState extends State<_CategoriesScreen> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        scrollable: true,
         title: Text(category == null ? 'Nova categoria' : 'Editar categoria'),
         content: Form(
           key: form,
@@ -831,6 +901,7 @@ class _ResponsibleScreenState extends State<_ResponsibleScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        scrollable: true,
         title: Text(row == null ? 'Novo responsável' : 'Editar responsável'),
         content: Form(
           key: form,
@@ -968,6 +1039,7 @@ class _SectorsScreenState extends State<_SectorsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, refresh) => AlertDialog(
+          scrollable: true,
           title: Text('Editar ${row['nome']}'),
           content: Form(
             key: form,
@@ -1058,6 +1130,7 @@ class _SectorsScreenState extends State<_SectorsScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        scrollable: true,
         title: Text(title),
         content: Form(
           key: form,
@@ -1159,6 +1232,7 @@ class _SectorsScreenState extends State<_SectorsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, refresh) => AlertDialog(
+          scrollable: true,
           title: const Text('Novo setor'),
           content: Form(
             key: form,
@@ -1360,8 +1434,32 @@ class _MovementsScreen extends StatefulWidget {
 }
 
 class _MovementsScreenState extends State<_MovementsScreen> {
-  int _refresh = 0;
   String _query = '';
+  final TextEditingController _searchController = TextEditingController();
+  late Future<List<dynamic>> _dataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dataFuture = _loadData();
+  }
+
+  Future<List<dynamic>> _loadData() => Future.wait([
+    ApiClient.get('/movimentacao/detailed/'),
+    ApiClient.get('/bem/'),
+    ApiClient.get('/setores/'),
+  ]);
+
+  void _reloadData() {
+    setState(() => _dataFuture = _loadData());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _create(List<dynamic> assets, List<dynamic> sectors) async {
     final code = TextEditingController();
     final reason = TextEditingController();
@@ -1372,6 +1470,7 @@ class _MovementsScreenState extends State<_MovementsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, refresh) => AlertDialog(
+          scrollable: true,
           title: const Text('Nova transferência'),
           content: Form(
             key: form,
@@ -1449,24 +1548,24 @@ class _MovementsScreenState extends State<_MovementsScreen> {
     );
     code.dispose();
     reason.dispose();
-    if (result == true && mounted) setState(() => _refresh++);
+    if (result == true && mounted) _reloadData();
+  }
+
+  void _applySearch() {
+    FocusScope.of(context).unfocus();
+    setState(() => _query = _searchController.text.trim());
   }
 
   @override
   Widget build(BuildContext context) => FutureBuilder<List<dynamic>>(
-    key: ValueKey(_refresh),
-    future: Future.wait([
-      ApiClient.get('/movimentacao/detailed/'),
-      ApiClient.get('/bem/'),
-      ApiClient.get('/setores/'),
-    ]),
+    future: _dataFuture,
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting)
         return const AppLoading(label: 'Carregando movimentações...');
       if (snapshot.hasError)
         return AppErrorState(
           description: '${snapshot.error}',
-          onRetry: () => setState(() => _refresh++),
+          onRetry: _reloadData,
         );
       final allMovements = snapshot.data![0];
       final assets = snapshot.data![1];
@@ -1493,11 +1592,13 @@ class _MovementsScreenState extends State<_MovementsScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: TextField(
-              decoration: const InputDecoration(
+              controller: _searchController,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
                 prefixIcon: Icon(Icons.search),
                 hintText: 'Buscar por tombo, bem ou setor',
               ),
-              onChanged: (value) => setState(() => _query = value),
+              onSubmitted: (_) => _applySearch(),
             ),
           ),
           if (movements.isEmpty)
@@ -1674,6 +1775,7 @@ Future<bool> _confirm(BuildContext context, String message) async =>
     await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        scrollable: true,
         title: const Text('Confirmar'),
         content: Text(message),
         actions: [

@@ -124,107 +124,125 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
         ],
       ),
       drawer: Drawer(
+        backgroundColor: AppColors.secondary,
         child: Column(
           children: [
-            UserAccountsDrawerHeader(
-              decoration: const BoxDecoration(color: AppColors.primary),
-              currentAccountPicture: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  AppIcons.brand,
-                  size: 38,
-                  color: AppColors.primary,
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.white.withOpacity(0.08)),
                 ),
               ),
-              accountName: Text(
-                widget.profile['nome']?.toString() ??
-                    widget.profile['username']?.toString() ??
-                    'Usuário',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              accountEmail: Text(
-                'Perfil: ${roleLabel(role)}${widget.profile['setor_id'] == null ? '' : ' • Setor ${widget.profile['setor_id']}'}',
-                style: const TextStyle(color: Colors.white70),
+              child: Row(
+                children: [
+                  Image.asset(
+                    'assets/logo.png',
+                    height: 38,
+                    width: 145,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      widget.profile['nome']?.toString() ??
+                          widget.profile['username']?.toString() ??
+                          'Usuário',
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
               child: ListView(
-                padding: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
-                    child: Text(
-                      'MÓDULOS DISPONÍVEIS',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
                   ...allowedTabs.asMap().entries.map((entry) {
                     final index = entry.key;
                     final item = entry.value;
-                    return ListTile(
-                      leading: Icon(
-                        item.icon,
-                        color: _currentMenuIndex == index
+                    final selected = _currentMenuIndex == index;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        color: selected
                             ? AppColors.primary
-                            : Colors.black87,
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      title: Text(
-                        item.label,
-                        style: TextStyle(
-                          fontWeight: _currentMenuIndex == index
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: _currentMenuIndex == index
-                              ? AppColors.primary
-                              : Colors.black87,
+                      child: ListTile(
+                        leading: Icon(
+                          item.icon,
+                          color: selected ? Colors.white : Colors.white60,
                         ),
+                        title: Text(
+                          item.label,
+                          style: TextStyle(
+                            color: selected ? Colors.white : Colors.white60,
+                            fontWeight: selected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                          ),
+                        ),
+                        onTap: () {
+                          setState(() {
+                            _currentMenuIndex = index;
+                            _currentTab = item.contentTab;
+                          });
+                          Navigator.pop(context);
+                        },
                       ),
-                      selected: _currentMenuIndex == index,
-                      selectedTileColor: AppColors.primary.withOpacity(0.08),
-                      onTap: () {
-                        setState(() {
-                          _currentMenuIndex = index;
-                          _currentTab = item.contentTab;
-                        });
-                        Navigator.of(context).pop();
-                      },
                     );
                   }),
-                  const Divider(),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(color: Colors.white24),
+                  ),
                   ListTile(
-                    leading: const Icon(AppIcons.settings),
-                    title: const Text('Configurar Servidor'),
+                    leading: const Icon(
+                      AppIcons.settings,
+                      color: Colors.white60,
+                    ),
+                    title: const Text(
+                      'Configurar servidor',
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context)
-                          .pushNamed(ServerConfigPage.routeName);
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, ServerConfigPage.routeName);
                     },
                   ),
                   ListTile(
                     leading: const Icon(
                       AppIcons.logout,
-                      color: AppColors.error,
+                      color: Color(0xFFFF3B30),
                     ),
                     title: const Text(
-                      'Sair do Aplicativo',
-                      style: TextStyle(color: AppColors.error),
+                      'Sair',
+                      style: TextStyle(
+                        color: Color(0xFFFF3B30),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     onTap: () async {
                       await SessionManager.logout();
                       if (!context.mounted) return;
-                      Navigator.of(context).pop();
-                      Navigator.of(context)
-                          .pushNamedAndRemoveUntil('/login', (_) => false);
+                      Navigator.pop(context);
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/login',
+                        (_) => false,
+                      );
                     },
                   ),
                 ],
@@ -232,7 +250,7 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
             ),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              color: Colors.grey.withOpacity(0.05),
+              color: Colors.white.withOpacity(0.05),
               width: double.infinity,
               child: const Column(
                 children: [
@@ -241,13 +259,13 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black54,
+                      color: Colors.white60,
                     ),
                   ),
                   SizedBox(height: 4),
                   Text(
                     'José • Pedro • Guilherme',
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                    style: TextStyle(fontSize: 10, color: Colors.white38),
                   ),
                 ],
               ),

@@ -40,9 +40,11 @@ class _SplashPageState extends State<SplashPage> {
       // A API valida o token e devolve o perfil atualizado para o auto-login.
       final profile = await ApiClient.getMap('/auth/me');
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-        builder: (_) => HomePlaceholderPage(profile: profile),
-      ));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => HomePlaceholderPage(profile: profile),
+        ),
+      );
     } catch (_) {
       // Em 401 o cliente já encerra a sessão e redireciona para o login.
       // Em falhas de rede, preserva-se o token para nova tentativa no próximo uso.
@@ -60,13 +62,21 @@ class _SplashPageState extends State<SplashPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 96,
-            height: 96,
+            width: 220,
+            height: 100,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(28),
+              color: AppColors.secondary,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.secondary.withValues(alpha: .18),
+                  blurRadius: 16,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-            child: const Icon(AppIcons.brand, size: 52, color: Colors.white),
+            child: Image.asset('assets/logo.png', fit: BoxFit.contain),
           ),
           const SizedBox(height: 20),
           Text('PatriFlow', style: Theme.of(context).textTheme.headlineMedium),

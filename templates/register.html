@@ -10,8 +10,11 @@
 <body class="login-body">
     <main class="container d-flex align-items-center justify-content-center min-vh-100">
         <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 w-100" style="max-width: 540px">
-            <h1 class="h2 text-primary fw-bold">Criar conta</h1>
-            <p class="text-muted">O cadastro cria uma conta de Agente de Campo.</p>
+            <div class="text-center mb-4">
+                <img src="/static/logo.png" alt="PatriFlow" style="height: 48px; width: auto;" class="rounded-3 shadow-sm bg-white p-1 mb-2">
+                <h1 class="h2 text-primary fw-bold">Criar conta</h1>
+                <p class="text-muted mb-0">O cadastro cria uma conta de Agente de Campo.</p>
+            </div>
             {% if erro %}<div class="alert alert-danger" role="alert">{{ erro }}</div>{% endif %}
             <form action="/criar-conta" method="POST">
                 <div class="mb-3">

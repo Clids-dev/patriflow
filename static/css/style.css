@@ -1,66 +1,70 @@
-/* ===== PALETA DE CORES (Estilo Nubank Moderno) ===== */
+/* ===== PALETA DE CORES (PatriFlow - Nubank & iOS Style) ===== */
 :root {
-    --primary-color: #820ad1;
-    --primary-dark: #6d08b1;
-    --primary-light: #f5f0fa;
-    --sidebar-bg: #1a052d; 
-    --bg-light: #f0f2f5;    /* Cinza Facebook para harmonia */
-    --text-dark: #111111;
-    --text-muted: #65676b;
-    --danger: #f02849;
-    --success: #42b72a;
-    --warning: #f1c40f;
+    --primary-color: #820AD1;     /* Roxo vibrante oficial */
+    --primary-dark: #19002B;      /* Roxo escuro */
+    --primary-light: #F3E8FF;     /* Variação suave para fundos de destaque */
+    --primary-accent: #A855F7;    /* Roxo claro de destaque */
+    
+    --bg-main: #F5F5F7;           /* Fundo principal cinza muito claro iOS */
+    --surface-color: #FFFFFF;     /* Superfícies e cartões brancos */
+    
+    --text-primary: #1C1C1E;      /* Texto principal quase preto */
+    --text-secondary: #6E6E73;    /* Texto secundário cinza */
+    --border-color: #E5E5EA;      /* Bordas cinza claro */
+    
+    --sidebar-bg: #19002B;        /* Sidebar em roxo escuro */
+    
+    --success: #34C759;           /* Verde status ativo */
+    --danger: #FF3B30;            /* Vermelho inativo/erro */
+    --warning: #FF9500;           /* Amarelo alerta */
 }
 
 /* ===== RESET / BASE ===== */
 body, .bg-light {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    background-color: var(--bg-light) !important;
-    color: var(--text-dark);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", Roboto, Helvetica, Arial, sans-serif !important;
+    background-color: var(--bg-main) !important;
+    color: var(--text-primary) !important;
+    letter-spacing: -0.01em;
 }
 
-/* ===== LOGIN PAGE ===== */
+/* ===== LOGIN & AUTH PAGES ===== */
 .login-body {
-    background-color: #f0f2f5 !important; /* Cor harmônica, não muito clara/branca */
+    background-color: var(--bg-main) !important;
 }
 
 .login-body .card {
-    background-color: #ffffff;
-    border-radius: 8px !important; /* Estilo Facebook */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .1), 0 8px 16px rgba(0, 0, 0, .1) !important;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
 }
 
 .login-body .form-control-lg {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.login-body .form-control-lg:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(130, 10, 209, 0.12);
 }
 
 .login-body .btn-primary {
     background-color: var(--primary-color) !important;
     border: none !important;
-    font-size: 1.25rem;
+    border-radius: 12px !important;
+    font-weight: 600;
 }
 
 .login-body .btn-primary:hover {
-    background-color: var(--primary-dark) !important;
+    background-color: #6D08B1 !important;
 }
 
-.login-body .text-primary {
-    color: var(--primary-color) !important;
-}
-
-/* Ajuste no branding do login */
-.login-body h1 {
-    font-size: 4rem;
-    letter-spacing: -2px;
-}
-
-/* ===== DASHBOARD LAYOUT ===== */
-
-/* Sidebar */
+/* ===== SIDEBAR & NAVIGATION ===== */
 .sidebar {
-    color: white;
+    background-color: var(--sidebar-bg);
     width: 260px;
     height: 100vh;
     position: fixed;
@@ -69,11 +73,11 @@ body, .bg-light {
     z-index: 1031;
     display: flex;
     flex-direction: column;
-    background-color: var(--sidebar-bg);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sidebar .p-4.text-center.border-bottom {
-    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 .ms-lg-280 {
@@ -84,27 +88,22 @@ body, .bg-light {
     .ms-lg-280 {
         margin-left: 0;
     }
-
     .sidebar {
         transform: translateX(-100%);
-        transition: transform 0.25s ease;
-        will-change: transform;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
     .sidebar.active-mobile {
         transform: translateX(0);
     }
-
     .sidebar-backdrop {
         position: fixed;
         inset: 0;
         z-index: 1029;
-        background: rgba(17, 17, 17, 0.45);
+        background: rgba(28, 28, 30, 0.4);
         opacity: 0;
         visibility: hidden;
-        transition: opacity 0.25s ease, visibility 0.25s ease;
+        transition: opacity 0.3s ease;
     }
-
     .sidebar-backdrop.active-mobile {
         opacity: 1;
         visibility: visible;
@@ -121,79 +120,102 @@ body, .bg-light {
 .sidebar .nav-link {
     transition: all 0.2s ease;
     font-weight: 500;
-    color: rgba(255,255,255,0.7) !important;
-    margin: 0.2rem 1rem;
+    color: rgba(255, 255, 255, 0.65) !important;
+    margin: 0.25rem 1rem;
+    border-radius: 12px;
 }
 
 .sidebar .nav-link:hover {
-    background-color: rgba(255,255,255,0.1);
+    background-color: rgba(255, 255, 255, 0.08);
     color: white !important;
 }
 
 .sidebar .nav-link.active {
     background-color: var(--primary-color) !important;
     color: white !important;
-    box-shadow: 0 4px 12px rgba(130, 10, 209, 0.3);
+    box-shadow: 0 4px 16px rgba(130, 10, 209, 0.35);
 }
 
 /* Navbar */
 .navbar {
     z-index: 1030;
-    background-color: white !important;
-    border-bottom: 1px solid #e0e4e7;
+    background-color: var(--surface-color) !important;
+    border-bottom: 1px solid var(--border-color);
 }
 
-/* Cards */
+/* ===== CARDS & SURFACES ===== */
 .card {
-    border: none !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 16px !important;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-    background-color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+    background-color: var(--surface-color);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .card:hover {
-    box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* Buttons & Badges */
+/* ===== BUTTONS & BADGES ===== */
 .btn-primary { 
     background-color: var(--primary-color) !important; 
     border-color: var(--primary-color) !important;
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 600;
+    padding: 10px 20px;
+    transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-dark) !important;
+    background-color: #6D08B1 !important;
+    border-color: #6D08B1 !important;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(130, 10, 209, 0.25);
 }
 
-.bg-primary-subtle { background-color: var(--primary-light) !important; color: var(--primary-color) !important; }
+.bg-primary-subtle { 
+    background-color: var(--primary-light) !important; 
+    color: var(--primary-color) !important; 
+}
 
-/* Utilities */
+/* Utilities & Inputs */
 .text-primary { color: var(--primary-color) !important; }
+.text-muted { color: var(--text-secondary) !important; }
 
-/* Inputs */
-input.form-control, select.form-select {
-    border-radius: 10px;
-    padding: 10px 15px;
-    border: 1px solid #e0e4e7;
+input.form-control, select.form-select, textarea.form-control {
+    border-radius: 12px;
+    padding: 11px 16px;
+    border: 1px solid var(--border-color);
+    background-color: var(--surface-color);
+    color: var(--text-primary);
+    font-size: 0.95rem;
 }
 
-input.form-control:focus, select.form-select:focus {
-    box-shadow: 0 0 0 3px rgba(130, 10, 209, 0.1);
+input.form-control:focus, select.form-select:focus, textarea.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(130, 10, 209, 0.12);
     border-color: var(--primary-color);
+    background-color: var(--surface-color);
 }
 
-/* Remover setas de input number */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+/* Tabelas limpas estilo iOS */
+.table {
+    color: var(--text-primary);
 }
 
-input[type=number] {
-    -moz-appearance: textfield;
+.table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    background-color: #FAFAFC !important;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.table td {
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    padding: 1rem 0.75rem;
 }
 
 /* ===== TIMELINE ===== */
@@ -210,7 +232,7 @@ input[type=number] {
     top: 5px;
     bottom: 5px;
     width: 2px;
-    background: #e0e4e7;
+    background: var(--border-color);
 }
 
 .timeline-item {
@@ -231,10 +253,10 @@ input[type=number] {
 }
 
 .timeline-content {
-    background: #f8f9fa;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid #e0e4e7;
+    background: #FAFAFC;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
     transition: all 0.2s ease;
 }
 
@@ -246,8 +268,53 @@ input[type=number] {
 .timeline-date {
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     text-transform: uppercase;
     display: block;
     margin-bottom: 4px;
+}
+
+/* ===== MOBILE BOTTOM NAVIGATION (iOS Style) ===== */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    z-index: 1040;
+    padding: 8px 12px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 991.98px) {
+    .mobile-bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+    main {
+        padding-bottom: 70px !important;
+    }
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.mobile-nav-item i {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+}
+
+.mobile-nav-item.active, .mobile-nav-item:hover {
+    color: var(--primary-color);
 }
