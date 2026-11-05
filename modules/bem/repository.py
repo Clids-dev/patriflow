@@ -60,8 +60,8 @@ class BemRepository(DataBase):
     def put(self, id: int, bem_atualizado: BemUpdate):
         values = bem_atualizado.model_dump()
         row = DataBase().commit(queries.QUERY_PUT_BEM, (
-            values["nome"], values["valor"], values["valor_aquisicao"], values["status"], values["marca"], values["modelo"],
-            values["numero_serie"], values["valor_aquisicao"], values["valor"], values["nota_fiscal"],
+            values["nome"], values["valor"], values["status"], values["marca"], values["modelo"],
+            values["numero_serie"], values["valor_aquisicao"], values["nota_fiscal"],
             values["data_entrada"], values["estado_conservacao"], id
         ))
         return self._model(row) if row else None

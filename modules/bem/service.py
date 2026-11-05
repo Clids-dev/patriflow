@@ -50,8 +50,19 @@ class BemService:
         repository = BemRepository()
         return repository.save(bem, almoxarifado.id, usuario["id"])
 
-    def put_bem(self, id: int, bem_atualizado: BemUpdate):
+    def put_bem(self, id: int, bem_atualizado: BemUpdate, usuario: dict):
         repository = BemRepository()
+        if bem_atualizado.status is not None:
+            atual = repository.get_by_id(id)
+            if atual is None:
+                raise HTTPException(status_code=404, detail=f"Bem com id {id} não encontrado")
+            # Tirar um bem da manutenção sem o reparo concluído é decisão do setor de patrimônio.
+            if (atual.status == "Manutenção" and bem_atualizado.status != "Manutenção"
+                    and usuario["perfil"] != "setor_patrimonio"):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Somente o setor de patrimônio pode tirar um bem da manutenção.",
+                )
         bem = repository.put(id, bem_atualizado)
         if not bem:
             raise HTTPException(status_code=404, detail=f"Bem com id {id} não encontrado")
