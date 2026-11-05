@@ -4,6 +4,9 @@ import { $, api, esc } from '/static/js/utils.js';
  * Dashboard.js - Lógica da página inicial com visualização de dados
  */
 
+// Cores vêm dos tokens de style.css, para os gráficos seguirem a paleta do sistema.
+const cor = (token) => getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+
 async function init() {
     console.log("Iniciando Dashboard...");
     await Promise.all([
@@ -38,8 +41,8 @@ async function renderizarGraficoCategorias() {
                 datasets: [{
                     label: 'Quantidade de Bens',
                     data: data,
-                    backgroundColor: 'rgba(130, 10, 209, 0.7)',
-                    borderColor: 'rgba(130, 10, 209, 1)',
+                    backgroundColor: cor('--primary-color'),
+                    borderColor: cor('--primary-color'),
                     borderWidth: 1,
                     borderRadius: 8
                 }]
@@ -91,16 +94,16 @@ async function renderizarGraficoStatus() {
 
         // Mapeamento semântico de cores intuitivas
         const colorMap = {
-            'disponivel': '#22c55e', // Verde (Disponível/Sucesso)
-            'emuso': '#3b82f6',      // Azul (Em Uso/Ativo)
-            'manutencao': '#f59e0b',  // Amarelo/Laranja (Manutenção/Atenção)
-            'baixado': '#ef4444',     // Vermelho (Baixado/Perigo)
-            'inativo': '#6c757d'      // Cinza (Inativo)
+            'disponivel': cor('--success'),        // Disponível
+            'emuso': cor('--primary-accent'),      // Em uso
+            'manutencao': cor('--warning'),        // Manutenção
+            'baixado': cor('--danger'),            // Baixado
+            'inativo': cor('--text-secondary')     // Inativo
         };
 
         const backgroundColors = labels.map(label => {
             const key = normalizarStatus(label);
-            return colorMap[key] || '#6c757d'; // Cinza como fallback
+            return colorMap[key] || cor('--text-secondary');
         });
 
         window.chartStat = new Chart(ctx, {
