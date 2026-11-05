@@ -26,6 +26,45 @@ async function carregarBens() {
     } catch (error) {
         ui.showNotification("Erro ao carregar bens.", "error");
     }
+    carregarBaixasPendentes();
+}
+
+// Baixas aguardando aprovação: só aparecem para o setor de patrimônio.
+async function carregarBaixasPendentes() {
+    const cartao = $("#cardBaixas");
+    try {
+        const pendentes = await api.get("/api/v1/bem/baixas/pendentes");
+        cartao.classList.toggle("d-none", pendentes.length === 0);
+        $("#listaBaixas").innerHTML = pendentes.map(b => `
+            <div class="border rounded-3 p-3 mb-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <div class="fw-semibold">${esc(b.bem_nome)} <code>${esc(b.codigo_tombamento)}</code></div>
+                    <div class="small text-muted">Motivo: ${esc(b.motivo)} · Valor R$ ${Number(b.valor).toLocaleString("pt-BR", {minimumFractionDigits: 2})} · Documento: ${esc(b.documento_ref)}</div>
+                    <div class="small text-muted">Pedida por ${esc(b.solicitante)}: ${esc(b.justificativa)}</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm pill-btn" data-aprovar-baixa="${esc(b.id)}">Aprovar</button>
+                    <button class="btn btn-outline-danger btn-sm pill-btn" data-recusar-baixa="${esc(b.id)}">Recusar</button>
+                </div>
+            </div>`).join("");
+    } catch (error) {
+        cartao.classList.add("d-none");
+    }
+}
+
+async function decidirBaixa(id, aprovar) {
+    let motivo = null;
+    if (!aprovar) {
+        motivo = window.prompt("Motivo da recusa (quem pediu vai ver):");
+        if (!motivo || motivo.trim().length < 3) return;
+    }
+    try {
+        await api.post(`/api/v1/bem/baixas/${id}/${aprovar ? "aprovar" : "recusar"}`, aprovar ? undefined : { motivo: motivo.trim() });
+        ui.showNotification(aprovar ? "Baixa aprovada." : "Baixa recusada.");
+        carregarBens();
+    } catch (error) {
+        ui.showNotification(error.message, "error");
+    }
 }
 
 async function carregarCategorias() {
@@ -453,11 +492,28 @@ function editarBem(id) {
     bootstrap.Modal.getOrCreateInstance($("#modalEditarBem")).show();
 }
 
+// Baixa: pede motivo, justificativa e documento. Acima da alçada, espera aprovação.
 async function deletar(id) {
-    if (!confirm("Tem certeza que deseja desativar este equipamento?")) return;
+    const bem = todosBens.find(b => String(b.id) === String(id));
+    $("#baixaBemId").value = id;
+    $("#baixaResumo").textContent = bem ? `${bem.nome} (${bem.codigo_tombamento})` : "";
+    $("#baixaAlcada").textContent = "Valores acima da alçada precisam ser aprovados por outro servidor do patrimônio.";
+    bootstrap.Modal.getOrCreateInstance($("#modalBaixa")).show();
+}
+
+async function confirmarBaixa(evento) {
+    evento.preventDefault();
+    const id = $("#baixaBemId").value;
+    const corpo = {
+        motivo: $("#baixaMotivo").value,
+        justificativa: $("#baixaJustificativa").value.trim(),
+        documento_ref: $("#baixaDocumento").value.trim(),
+    };
     try {
-        await api.post(`/api/v1/bem/${id}/desativar`);
-        ui.showNotification("Equipamento desativado.");
+        const resposta = await api.post(`/api/v1/bem/${id}/desativar`, corpo);
+        bootstrap.Modal.getInstance($("#modalBaixa"))?.hide();
+        $("#formBaixa").reset();
+        ui.showNotification(resposta.mensagem || "Bem baixado.");
         carregarBens();
     } catch (error) { ui.showNotification(error.message, "error"); }
 }
@@ -479,3 +535,11 @@ const limparFiltros = () => {
 init();
 
 $('#btnLimparFiltros')?.addEventListener('click', limparFiltros);
+
+$('#formBaixa')?.addEventListener('submit', confirmarBaixa);
+document.addEventListener('click', (e) => {
+    const aprovar = e.target.closest('[data-aprovar-baixa]');
+    if (aprovar) decidirBaixa(aprovar.dataset.aprovarBaixa, true);
+    const recusar = e.target.closest('[data-recusar-baixa]');
+    if (recusar) decidirBaixa(recusar.dataset.recusarBaixa, false);
+});

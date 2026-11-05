@@ -81,3 +81,13 @@ class BemDetalhes(Bem):
     depreciacao_mensal: Optional[float] = None
     depreciacao_acumulada: Optional[float] = None
     valor_contabil: Optional[float] = None
+
+
+class BaixaCreate(BaseModel):
+    motivo: Literal["doacao", "inservivel", "extravio", "venda", "sinistro", "descarte"]
+    justificativa: str = Field(min_length=3, max_length=500)
+    documento_ref: str = Field(min_length=2, max_length=120)
+
+
+class DecisaoRecusa(BaseModel):
+    motivo: str = Field(min_length=3, max_length=500)

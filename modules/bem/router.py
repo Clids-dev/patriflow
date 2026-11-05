@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from api.v1.auth import current_user
 from modules.auditoria.repository import AuditoriaRepository
 from modules.bem.service import BemService
-from modules.bem.schemas import BemCreate, BemUpdate
+from modules.bem.schemas import BemCreate, BemUpdate, BaixaCreate, DecisaoRecusa
 
 router = APIRouter(prefix="/bem", tags=["Bens"])
 
@@ -46,8 +46,28 @@ def get_proximo_codigo(id_categoria: int, service: BemService = Depends(get_serv
     return {"codigo": service.get_proximo_codigo(id_categoria)}
 
 @router.post("/{id}/desativar")
-def desativar_bem(id: int, service: BemService = Depends(get_service), usuario=Depends(current_user)):
-    return service.desativar_bem(id, usuario)
+def desativar_bem(id: int, dados: BaixaCreate, usuario=Depends(current_user)):
+    """Baixa com motivo e documento. Acima da alçada, fica aguardando aprovação de outro servidor."""
+    from modules.bem import baixa
+    return baixa.solicitar(id, dados, usuario)
+
+
+@router.get("/baixas/pendentes")
+def baixas_pendentes(usuario=Depends(current_user)):
+    from modules.bem import baixa
+    return baixa.pendentes(usuario)
+
+
+@router.post("/baixas/{baixa_id}/aprovar")
+def aprovar_baixa(baixa_id: int, usuario=Depends(current_user)):
+    from modules.bem import baixa
+    return baixa.decidir(baixa_id, True, None, usuario)
+
+
+@router.post("/baixas/{baixa_id}/recusar")
+def recusar_baixa(baixa_id: int, decisao: DecisaoRecusa, usuario=Depends(current_user)):
+    from modules.bem import baixa
+    return baixa.decidir(baixa_id, False, decisao.motivo, usuario)
 
 @router.post("/{id}/reativar")
 def reativar_bem(id: int, service: BemService = Depends(get_service), usuario=Depends(current_user)):

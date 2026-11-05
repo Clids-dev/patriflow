@@ -21,3 +21,6 @@ FOTO_MAX_BYTES = int(os.getenv("PATRIFLOW_FOTO_MAX_BYTES", str(5 * 1024 * 1024))
 
 # Transferências sem resposta do almoxarifado além deste prazo são escaladas ao setor de patrimônio.
 PRAZO_TRANSFERENCIA_DIAS = int(os.getenv("PATRIFLOW_PRAZO_TRANSFERENCIA_DIAS", "3"))
+
+# Baixas de bens com valor igual ou acima deste limite exigem aprovação de outro servidor do patrimônio.
+ALCADA_BAIXA_VALOR = float(os.getenv("PATRIFLOW_ALCADA_BAIXA_VALOR", "5000"))

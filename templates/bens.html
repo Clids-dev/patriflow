@@ -46,6 +46,15 @@
             </div>
         </div>
 
+        <!-- Baixas aguardando aprovação (só o setor de patrimônio vê) -->
+        <div class="card d-none" id="cardBaixas">
+            <div class="card-header">
+                <h4>Baixas aguardando aprovação</h4>
+                <p class="small text-muted mb-0">Baixas acima do valor de alçada só valem depois da aprovação de outro servidor do patrimônio.</p>
+            </div>
+            <div class="card-body" id="listaBaixas"></div>
+        </div>
+
         <!-- Tabela -->
         <div class="card">
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -179,6 +188,47 @@
                     <button class="btn btn-primary flex-fill" id="btnImportar" disabled>Importar</button>
                 </div>
                 <div id="resultadoImportar" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: baixa com motivo e documento -->
+<div class="modal fade" id="modalBaixa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Dar baixa no bem</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formBaixa">
+                    <input type="hidden" id="baixaBemId">
+                    <p class="small text-muted" id="baixaResumo"></p>
+                    <div class="mb-3">
+                        <label class="form-label" for="baixaMotivo">Motivo</label>
+                        <select id="baixaMotivo" class="form-select" required>
+                            <option value="inservivel">Inservível</option>
+                            <option value="doacao">Doação</option>
+                            <option value="venda">Venda</option>
+                            <option value="extravio">Extravio</option>
+                            <option value="sinistro">Sinistro</option>
+                            <option value="descarte">Descarte</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="baixaJustificativa">Justificativa</label>
+                        <textarea id="baixaJustificativa" class="form-control" rows="3" minlength="3" maxlength="500" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="baixaDocumento">Documento de referência</label>
+                        <input id="baixaDocumento" class="form-control" maxlength="120" required placeholder="Ex.: BO 123/2026, laudo LT-45">
+                    </div>
+                    <div class="form-text mb-3" id="baixaAlcada"></div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger" id="btnConfirmarBaixa">Confirmar baixa</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
