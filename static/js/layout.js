@@ -55,14 +55,21 @@ function onResize() {
 if (sidebar) {
     if (isDesktop()) sidebar.classList.add('active', 'sidebar-desktop');
 
-    // Estrutura: a seta abre e fecha as opções sem sair da página atual.
-    sidebar.querySelectorAll('.sidebar-toggle').forEach((botao) => {
-        botao.addEventListener('click', (event) => {
+    // Submenus (Estrutura): mesmo comportamento do Mazer. Clicar no item alterna o submenu.
+    sidebar.querySelectorAll('.sidebar-item.has-sub > .sidebar-link').forEach((link) => {
+        link.addEventListener('click', (event) => {
             event.preventDefault();
-            const item = botao.closest('.sidebar-item');
-            const aberto = item.classList.toggle('open');
-            botao.setAttribute('aria-expanded', String(aberto));
+            const item = link.parentElement;
+            const submenu = item.querySelector(':scope > .submenu');
+            const aberto = item.classList.toggle('active');
+            submenu.classList.toggle('submenu-open', aberto);
+            submenu.classList.toggle('submenu-closed', !aberto);
+            submenu.style.setProperty('--submenu-height', `${submenu.scrollHeight}px`);
         });
+    });
+    // Submenu já aberto pela página atual: define a altura real para a animação.
+    sidebar.querySelectorAll('.sidebar-item.has-sub.active > .submenu').forEach((submenu) => {
+        submenu.style.setProperty('--submenu-height', `${submenu.scrollHeight}px`);
     });
 
     document.querySelectorAll('.burger-btn').forEach((el) => el.addEventListener('click', toggleSidebar));
@@ -70,7 +77,8 @@ if (sidebar) {
     window.addEventListener('resize', onResize);
 
     // Ao escolher um item no celular, o menu fecha.
-    sidebar.querySelectorAll('.sidebar-link').forEach((link) => {
+    // (links '#' são só alternância de submenu e não fecham o menu)
+    sidebar.querySelectorAll('.sidebar-link[href]:not([href="#"])').forEach((link) => {
         link.addEventListener('click', () => { if (!isDesktop()) hideSidebar(); });
     });
 

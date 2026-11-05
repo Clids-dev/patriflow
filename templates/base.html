@@ -48,29 +48,26 @@
                         </a>
                     </li>
 
-                    <li class="sidebar-item has-sub {% if active_page in ['estrutura', 'categoria', 'setores', 'responsaveis', 'localizacoes'] %}active open{% endif %}">
-                        <div class="sidebar-row">
-                            <a href="/estrutura" class="sidebar-link">
-                                <i class="bi bi-folder2-open"></i>
-                                <span>Estrutura</span>
-                            </a>
-                            <button type="button" class="sidebar-toggle" aria-expanded="{% if active_page in ['estrutura', 'categoria', 'setores', 'responsaveis', 'localizacoes'] %}true{% else %}false{% endif %}" aria-label="Mostrar opções de Estrutura">
-                                <i class="bi bi-chevron-down"></i>
-                            </button>
-                        </div>
-                        <ul class="submenu">
-                            <li class="submenu-item {% if active_page == 'categoria' %}current{% endif %}">
-                                <a href="/categoria" class="sidebar-link submenu-link">Categorias</a>
+                    <li class="sidebar-item has-sub {% if active_page in ['categoria', 'setores', 'responsaveis', 'localizacoes'] %}active{% endif %}">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-folder2-open"></i>
+                            <span>Estrutura</span>
+                        </a>
+                        <ul class="submenu {% if active_page in ['categoria', 'setores', 'responsaveis', 'localizacoes'] %}submenu-open{% else %}submenu-closed{% endif %}">
+                            <li class="submenu-item {% if active_page == 'categoria' %}active{% endif %}">
+                                <a href="/categoria" class="submenu-link">Categorias</a>
                             </li>
-                            <li class="submenu-item {% if active_page == 'setores' or active_page == 'localizacoes' %}current{% endif %}">
-                                <a href="/setores" class="sidebar-link submenu-link">Setores e localização</a>
+                            <li class="submenu-item {% if active_page == 'setores' %}active{% endif %}">
+                                <a href="/setores" class="submenu-link">Setores</a>
                             </li>
-                            <li class="submenu-item {% if active_page == 'responsaveis' %}current{% endif %}">
-                                <a href="/responsaveis" class="sidebar-link submenu-link">Responsáveis</a>
+                            <li class="submenu-item {% if active_page == 'responsaveis' %}active{% endif %}">
+                                <a href="/responsaveis" class="submenu-link">Responsáveis</a>
+                            </li>
+                            <li class="submenu-item {% if active_page == 'localizacoes' %}active{% endif %}">
+                                <a href="/localizacoes" class="submenu-link">Localizações</a>
                             </li>
                         </ul>
                     </li>
-
                     {% endif %}
 
                     <li class="sidebar-item {% if active_page == 'movimentacao' %}active{% endif %}">
