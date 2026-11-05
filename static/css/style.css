@@ -144,7 +144,7 @@ body {
 .app-avatar { width: 36px; height: 36px; }
 .app-username { font-weight: 600; color: var(--text-primary); }
 /* Área principal ocupa pelo menos a tela: o rodapé fica sempre no fim da página */
-#main { display: flex; flex-direction: column; min-height: 100vh; }
+#main { display: flex; flex-direction: column; min-height: 100vh; min-width: 0; flex: 1 1 auto; }
 .page-content-wrap { flex: 1 0 auto; padding: 0 1.5rem; }
 .app-footer {
     margin-top: auto;
