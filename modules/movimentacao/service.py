@@ -2,7 +2,6 @@ from datetime import datetime
 from fastapi import HTTPException
 from psycopg2 import errors
 
-from fastapi import HTTPException
 from modules.setor.repository import SetorRepository
 from modules.bem.repository import BemRepository
 from modules.movimentacao.repository import MovimentacaoRepository
@@ -10,82 +9,135 @@ from modules.movimentacao.schemas import MovimentacaoCreate
 from core.tombamento import require_valid_tombo
 
 
+ROLE_ADMIN = "setor_patrimonio"
+ROLE_RESPONSAVEL = "responsavel_setor"
+
+
 class MovimentacaoService:
     def get_movimentacoes(self):
-        repository = MovimentacaoRepository()
-        return repository.get_all()
+        return MovimentacaoRepository().get_all()
 
     def get_detailed_movimentacoes(self):
-        repository = MovimentacaoRepository()
-        return repository.get_detailed()
+        return MovimentacaoRepository().get_detailed()
 
     def get_movimentacoes_por_bem(self, codigo: str):
         require_valid_tombo(codigo)
-        repository = MovimentacaoRepository()
-        return repository.get_by_bem_codigo(codigo)
+        return MovimentacaoRepository().get_by_bem_codigo(codigo)
 
     def get_movimentacao_by_id(self, id: int):
-        repository = MovimentacaoRepository()
-        return repository.get_id(id)
+        return MovimentacaoRepository().get_id(id)
 
-    def add_movimentacao(self, movimentacao: MovimentacaoCreate):
-        try:
-            if movimentacao.bem_id <= 0 or movimentacao.setor_destino_id <= 0:
-                raise HTTPException(status_code=400, detail="IDs devem ser números positivos.")
-            
-            if movimentacao.setor_origem_id is not None and movimentacao.setor_origem_id == movimentacao.setor_destino_id:
-                raise HTTPException(status_code=400, detail="Setor de origem e destino não podem ser iguais.")
-            
-            # --- Validação de Regras de Negócio ---
-            bem_repository = BemRepository()
-            bem = bem_repository.get_by_id(movimentacao.bem_id)
-            
-            if bem is None:
-                raise HTTPException(status_code=404, detail=f"Bem com id {movimentacao.bem_id} não encontrado")
+    def listar_pendentes(self):
+        return MovimentacaoRepository().get_pendentes()
 
-            # 1. Não permite movimentar bem inativo (Baixado)
-            if not bem.ativo:
+    def add_movimentacao(self, movimentacao: MovimentacaoCreate, usuario: dict):
+        """Registra uma movimentação aplicando as regras de almoxarifado.
+
+        - Administradores (setor de patrimônio) movimentam diretamente.
+        - Demais perfis só podem solicitar movimentações entre o almoxarifado
+          e o próprio setor. Essas solicitações ficam 'pendentes' até decisão.
+        """
+        if movimentacao.bem_id <= 0 or movimentacao.setor_destino_id <= 0:
+            raise HTTPException(status_code=400, detail="IDs devem ser números positivos.")
+
+        if movimentacao.setor_origem_id is not None and movimentacao.setor_origem_id == movimentacao.setor_destino_id:
+            raise HTTPException(status_code=400, detail="Setor de origem e destino não podem ser iguais.")
+
+        bem = BemRepository().get_by_id(movimentacao.bem_id)
+        if bem is None:
+            raise HTTPException(status_code=404, detail=f"Bem com id {movimentacao.bem_id} não encontrado")
+
+        if not bem.ativo:
+            raise HTTPException(status_code=400, detail="Este bem está baixado/inativo e não pode ser movimentado.")
+
+        if bem.status.lower() in ("manutenção", "manutencao"):
+            if not movimentacao.justificativa or "concluído" not in movimentacao.justificativa.lower():
                 raise HTTPException(
-                    status_code=400, 
-                    detail="Este bem está baixado/inativo e não pode ser movimentado."
+                    status_code=400,
+                    detail="Equipamentos em manutenção não podem ser movimentados sem a conclusão do reparo (informe na justificativa)."
                 )
 
-            # 2. Não permite movimentar bem que esteja em manutenção para uso comum
-            # (Aqui poderíamos validar o tipo do setor de destino, mas vamos simplificar com o status)
-            if bem.status.lower() == 'manutenção' or bem.status.lower() == 'manutencao':
-                # Regra: Se está em manutenção, só pode ser movimentado se a justificativa contiver 'concluído'
-                # Ou simplesmente impedir se o status não for alterado primeiro.
-                # Vamos seguir a regra: "Bem em manutenção não pode ser movimentado sem finalizar o reparo"
-                if not movimentacao.justificativa or "concluído" not in movimentacao.justificativa.lower():
-                    raise HTTPException(
-                        status_code=400, 
-                        detail="Equipamentos em manutenção não podem ser movimentados sem a conclusão do reparo (informe na justificativa)."
-                    )
+        setor_repository = SetorRepository()
+        if movimentacao.setor_origem_id is not None and setor_repository.get_id(movimentacao.setor_origem_id) is None:
+            raise HTTPException(status_code=404, detail=f"Setor de origem com id {movimentacao.setor_origem_id} não encontrado")
+        if setor_repository.get_id(movimentacao.setor_destino_id) is None:
+            raise HTTPException(status_code=404, detail=f"Setor de destino com id {movimentacao.setor_destino_id} não encontrado")
 
-            # 3. Validação de Setores
-            setor_repository = SetorRepository()
-            if movimentacao.setor_origem_id is not None:
-                if setor_repository.get_id(movimentacao.setor_origem_id) is None:
-                    raise HTTPException(status_code=404, detail=f"Setor de origem com id {movimentacao.setor_origem_id} não encontrado")
-            
-            if setor_repository.get_id(movimentacao.setor_destino_id) is None:
-                raise HTTPException(status_code=404, detail=f"Setor de destino com id {movimentacao.setor_destino_id} não encontrado")
-            
-            repository = MovimentacaoRepository()
-            return repository.save(movimentacao)
-        except HTTPException as e:
-            raise e
+        almoxarifado = setor_repository.get_almoxarifado()
+        if almoxarifado is None:
+            raise HTTPException(status_code=400, detail="Cadastre um almoxarifado antes de movimentar bens.")
 
-    def put_movimentacao(self, id: int, data: datetime, setor_destino_id: int, justificativa=None):
-        try:
-            repository = MovimentacaoRepository()
-            return repository.put(id, data, setor_destino_id, justificativa)
-        except errors.NoDataFound:
+        repository = MovimentacaoRepository()
+        atual = repository.get_localizacao_atual(movimentacao.bem_id)
+        perfil = usuario["perfil"]
+
+        if atual is None:
+            # Bem sem localização: a única entrada permitida é no almoxarifado.
+            if perfil != ROLE_ADMIN:
+                raise HTTPException(status_code=403, detail="Somente o setor de patrimônio registra a entrada de bens.")
+            if movimentacao.setor_destino_id != almoxarifado.id:
+                raise HTTPException(status_code=400, detail="A entrada de um bem deve ser feita no almoxarifado.")
+            return repository.save(movimentacao, None, "aprovada", usuario["id"], usuario["id"], datetime.now())
+
+        if movimentacao.setor_origem_id is not None and movimentacao.setor_origem_id != atual:
+            raise HTTPException(status_code=400, detail="A origem informada não corresponde ao local atual do bem.")
+
+        if perfil == ROLE_ADMIN:
+            return repository.save(movimentacao, atual, "aprovada", usuario["id"], usuario["id"], datetime.now())
+
+        setor_usuario = usuario.get("setor_id")
+        if setor_usuario is None:
+            raise HTTPException(status_code=403, detail="Seu usuário não está vinculado a um setor.")
+
+        saida = atual == almoxarifado.id and movimentacao.setor_destino_id == setor_usuario
+        devolucao = atual == setor_usuario and movimentacao.setor_destino_id == almoxarifado.id
+        if not (saida or devolucao):
+            raise HTTPException(
+                status_code=403,
+                detail="Movimentação permitida somente entre o almoxarifado e o seu setor.",
+            )
+        return repository.save(movimentacao, atual, "pendente", usuario["id"])
+
+    def decidir_movimentacao(self, id: int, usuario: dict, aprovar: bool):
+        repository = MovimentacaoRepository()
+        mov = repository.get_id(id)
+        if mov is None:
             raise HTTPException(status_code=404, detail=f"Movimentação com id {id} não encontrada")
+        if mov.status != "pendente":
+            raise HTTPException(status_code=409, detail="Esta movimentação já foi decidida.")
+        if mov.solicitante_id == usuario["id"]:
+            raise HTTPException(status_code=403, detail="Você não pode decidir a própria solicitação.")
+
+        almoxarifado = SetorRepository().get_almoxarifado()
+        if almoxarifado is None:
+            raise HTTPException(status_code=400, detail="Nenhum almoxarifado cadastrado.")
+
+        perfil = usuario["perfil"]
+        autorizado = perfil == ROLE_ADMIN or (
+            perfil == ROLE_RESPONSAVEL and usuario.get("setor_id") == almoxarifado.id
+        )
+        if not autorizado:
+            raise HTTPException(
+                status_code=403,
+                detail="Somente o responsável do almoxarifado ou o setor de patrimônio podem decidir.",
+            )
+
+        resultado, decidida = repository.decidir(
+            id, mov.bem_id, mov.setor_origem_id, aprovar, usuario["id"], datetime.now()
+        )
+        if resultado == "bem_inativo":
+            raise HTTPException(status_code=400, detail="Este bem foi baixado e não pode mais ser movimentado.")
+        if resultado == "ja_decidida":
+            raise HTTPException(status_code=409, detail="Esta movimentação já foi decidida.")
+        if resultado == "local_mudou":
+            raise HTTPException(
+                status_code=409,
+                detail="O bem mudou de local desde a solicitação. Recuse e solicite novamente.",
+            )
+        return decidida
 
     def delete_movimentacao(self, id: int):
         try:
-            repository = MovimentacaoRepository()
-            return repository.delete(id)
+            return MovimentacaoRepository().delete(id)
         except errors.NoDataFound:
             raise HTTPException(status_code=404, detail=f"Movimentação com id {id} não encontrada")

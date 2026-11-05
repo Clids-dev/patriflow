@@ -60,3 +60,19 @@ class SetorRepository:
         if result:
             return setor.model_copy(update={"ativo": False})
         return None
+
+    def get_almoxarifado(self):
+        rows = DataBase().execute(queries.QUERY_ALMOXARIFADO)
+        if not rows:
+            return None
+        row = rows[0]
+        return SetorFlat(
+            id=row[0],
+            nome=row[1],
+            responsavel_id=row[2],
+            responsavel_nome=row[3],
+            cargo_responsavel=row[4],
+            flag_almoxarifado=bool(row[5]),
+            ativo=bool(row[6]), sala_id=row[7], sala_nome=row[8],
+            andar_identificacao=row[9], predio_nome=row[10]
+        )

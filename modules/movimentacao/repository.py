@@ -4,115 +4,128 @@ from core.database import DataBase
 from modules.movimentacao.schemas import MovimentacaoCreate, Movimentacao
 from . import queries, schemas
 
+
+def _detailed(row) -> schemas.MovimentacaoDetailed:
+    return schemas.MovimentacaoDetailed(
+        id=row[0],
+        bem_nome=row[1],
+        codigo_tombamento=row[2],
+        setor_origem_nome=row[3],
+        setor_destino_nome=row[4],
+        data_movimentacao=row[5],
+        justificativa=row[6],
+        ativo=bool(row[7]),
+        status=row[8],
+    )
+
+
+def _model(row) -> Movimentacao:
+    return Movimentacao(
+        id=row[0],
+        bem_id=row[1],
+        setor_origem_id=row[2],
+        setor_destino_id=row[3],
+        data=row[4],
+        ativo=bool(row[5]),
+        status=row[6],
+    )
+
+
 class MovimentacaoRepository:
     def get_all(self):
-        db = DataBase()
-        rows = db.execute(queries.QUERY_MOVIMENTACOES)
-        results = []
-        if not rows:
-            return results
-        for row in rows:
-            results.append(
-                Movimentacao(
-                    id=row[0], 
-                    bem_id=row[1], 
-                    setor_origem_id=row[2], 
-                    setor_destino_id=row[3], 
-                    data=row[4], 
-                    ativo=bool(row[5])
-                )
-            )
-        return results
+        rows = DataBase().execute(queries.QUERY_MOVIMENTACOES)
+        return [_model(row) for row in rows or []]
 
     def get_detailed(self):
-        db = DataBase()
-        rows = db.execute(queries.QUERY_MOVIMENTACOES_DETALHADAS)
-        results = []
-        if not rows:
-            return results
-        for row in rows:
-            results.append(
-                schemas.MovimentacaoDetailed(
-                    id=row[0],
-                    bem_nome=row[1],
-                    codigo_tombamento=row[2],
-                    setor_origem_nome=row[3],
-                    setor_destino_nome=row[4],
-                    data_movimentacao=row[5],
-                    justificativa=row[6],
-                    ativo=bool(row[7])
-                )
-            )
-        return results
+        rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_DETALHADAS)
+        return [_detailed(row) for row in rows or []]
+
+    def get_pendentes(self):
+        rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_PENDENTES)
+        return [_detailed(row) for row in rows or []]
 
     def get_by_bem_codigo(self, codigo: str):
-        db = DataBase()
-        rows = db.execute(queries.QUERY_MOVIMENTACOES_POR_BEM_CODIGO, (codigo,))
-        results = []
-        if not rows:
-            return results
-        for row in rows:
-            results.append(
-                schemas.MovimentacaoDetailed(
-                    id=row[0],
-                    bem_nome=row[1],
-                    codigo_tombamento=row[2],
-                    setor_origem_nome=row[3],
-                    setor_destino_nome=row[4],
-                    data_movimentacao=row[5],
-                    justificativa=row[6],
-                    ativo=bool(row[7])
-                )
-            )
-        return results
+        rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_POR_BEM_CODIGO, (codigo,))
+        return [_detailed(row) for row in rows or []]
 
     def get_id(self, id: int):
-        db = DataBase()
-        rows = db.execute(queries.QUERY_MOVIMENTACOES_ID, (id,))
+        rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_ID, (id,))
         if not rows:
             return None
-        row = rows[0]
-        return Movimentacao(
-            id=row[0], 
-            bem_id=row[1], 
-            setor_origem_id=row[2], 
-            setor_destino_id=row[3], 
-            data=row[4], 
-            ativo=bool(row[5])
-        )
+        model = _model(rows[0])
+        model.solicitante_id = rows[0][7]
+        return model
 
-    def save(self, movimentacao: MovimentacaoCreate):
-        db = DataBase()
-        result = db.commit(queries.QUERY_CREATE_MOVIMENTACOES, (movimentacao.bem_id, movimentacao.setor_origem_id, movimentacao.setor_destino_id, datetime.now(), movimentacao.justificativa))
-        if result:
-            return Movimentacao(
-                id=result[0], 
-                bem_id=result[1], 
-                setor_origem_id=result[2], 
-                setor_destino_id=result[3], 
-                data=result[4], 
-                ativo=result[5]
-            )
-        return None
+    def get_localizacao_atual(self, bem_id: int) -> Optional[int]:
+        rows = DataBase().execute(queries.QUERY_LOCALIZACAO_ATUAL, (bem_id,), many=False)
+        return rows[0] if rows else None
 
-    def put(self, id: int, data: datetime, setor_destino_id: int, justificativa: Optional[str] = None):
-        db = DataBase()
-        movimentacao = db.commit(queries.QUERY_PUT_MOVIMENTACAO, (data, setor_destino_id, justificativa, id))
-        if movimentacao:
-            return Movimentacao(
-                id=movimentacao[0],
-                bem_id=movimentacao[1],
-                setor_origem_id=movimentacao[2],
-                setor_destino_id=movimentacao[3],
-                data=movimentacao[4],
-                justificativa=movimentacao[5],
-                ativo=movimentacao[6]
-            )
-        return None
+    def save(
+        self,
+        movimentacao: MovimentacaoCreate,
+        origem_id: Optional[int],
+        status: str,
+        solicitante_id: int,
+        decisor_id: Optional[int] = None,
+        data_decisao: Optional[datetime] = None,
+    ) -> Movimentacao:
+        result = DataBase().commit(queries.QUERY_CREATE_MOVIMENTACOES, (
+            movimentacao.bem_id, origem_id, movimentacao.setor_destino_id,
+            datetime.now(), movimentacao.justificativa, status,
+            solicitante_id, decisor_id, data_decisao,
+        ))
+        return _model(result)
+
+    def decidir(
+        self,
+        id: int,
+        bem_id: int,
+        origem_esperada: Optional[int],
+        aprovar: bool,
+        decisor_id: int,
+        data_decisao: datetime,
+    ) -> tuple[str, Optional[Movimentacao]]:
+        """Aplica a decisão numa única transação com o bem travado (FOR UPDATE).
+
+        Retorna (resultado, movimentação). Resultados possíveis: 'ok',
+        'bem_inativo', 'ja_decidida', 'local_mudou'.
+        """
+        status = "aprovada" if aprovar else "recusada"
+        conn = DataBase().get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT ativo FROM bens WHERE id = %s FOR UPDATE", (bem_id,))
+                bem = cur.fetchone()
+                if aprovar and (bem is None or not bem[0]):
+                    conn.rollback()
+                    return "bem_inativo", None
+
+                cur.execute("SELECT status FROM movimentacoes WHERE id = %s FOR UPDATE", (id,))
+                mov = cur.fetchone()
+                if mov is None or mov[0] != "pendente":
+                    conn.rollback()
+                    return "ja_decidida", None
+
+                if aprovar:
+                    cur.execute(queries.QUERY_LOCALIZACAO_ATUAL, (bem_id,))
+                    row = cur.fetchone()
+                    atual = row[0] if row else None
+                    if atual != origem_esperada:
+                        conn.rollback()
+                        return "local_mudou", None
+
+                cur.execute(queries.QUERY_DECIDIR_MOVIMENTACAO, (status, decisor_id, data_decisao, id))
+                result = cur.fetchone()
+            conn.commit()
+            return "ok", _model(result)
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            DataBase().put_conn(conn)
 
     def delete(self, id: int):
-        db = DataBase()
-        movimentacao = db.commit(queries.QUERY_DELETE_MOVIMENTACAO, (id,))
+        movimentacao = DataBase().commit(queries.QUERY_DELETE_MOVIMENTACAO, (id,))
         if movimentacao:
             return Movimentacao(
                 id=movimentacao[0],
@@ -120,6 +133,6 @@ class MovimentacaoRepository:
                 setor_origem_id=movimentacao[2],
                 setor_destino_id=movimentacao[3],
                 data=movimentacao[4],
-                ativo=False
+                ativo=False,
             )
         return None

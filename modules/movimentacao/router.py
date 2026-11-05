@@ -1,7 +1,7 @@
-from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from api.v1.auth import current_user
 from modules.movimentacao.schemas import Movimentacao
 from modules.movimentacao.schemas import MovimentacaoCreate, MovimentacaoDetailed
 from modules.movimentacao.service import MovimentacaoService
@@ -9,37 +9,47 @@ from modules.movimentacao import schemas
 
 router = APIRouter(prefix="/movimentacao", tags=["Movimentacao"])
 
+
 @router.get("/", response_model=list[Movimentacao])
 def get_movimentacoes():
-    service = MovimentacaoService()
-    return service.get_movimentacoes()
+    return MovimentacaoService().get_movimentacoes()
+
 
 @router.get("/detailed/", response_model=list[MovimentacaoDetailed])
 def get_detailed_movimentacoes():
-    service = MovimentacaoService()
-    return service.get_detailed_movimentacoes()
+    return MovimentacaoService().get_detailed_movimentacoes()
+
+
+@router.get("/pendentes", response_model=list[MovimentacaoDetailed])
+def listar_pendentes():
+    return MovimentacaoService().listar_pendentes()
+
 
 @router.get("/bem/{codigo}", response_model=list[MovimentacaoDetailed])
 def get_movimentacoes_por_bem(codigo: str):
-    service = MovimentacaoService()
-    return service.get_movimentacoes_por_bem(codigo)
+    return MovimentacaoService().get_movimentacoes_por_bem(codigo)
+
 
 @router.get("/{id}/", response_model=Optional[schemas.Movimentacao])
 def get_movimentacao_by_id(id: int):
-    service = MovimentacaoService()
-    return service.get_movimentacao_by_id(id)
+    return MovimentacaoService().get_movimentacao_by_id(id)
+
 
 @router.post("/", response_model=schemas.Movimentacao)
-def add_movimentacao(movimentacao: MovimentacaoCreate):
-    service = MovimentacaoService()
-    return service.add_movimentacao(movimentacao)
+def add_movimentacao(movimentacao: MovimentacaoCreate, usuario=Depends(current_user)):
+    return MovimentacaoService().add_movimentacao(movimentacao, usuario)
 
-@router.put("/{id}")
-def update_movimentacao(id: int, data: datetime, setor_destino_id, justificativa: Optional[str] = None):
-    service = MovimentacaoService()
-    return service.put_movimentacao(id, data, setor_destino_id, justificativa)
+
+@router.post("/{id}/aprovar", response_model=schemas.Movimentacao)
+def aprovar_movimentacao(id: int, usuario=Depends(current_user)):
+    return MovimentacaoService().decidir_movimentacao(id, usuario, aprovar=True)
+
+
+@router.post("/{id}/recusar", response_model=schemas.Movimentacao)
+def recusar_movimentacao(id: int, usuario=Depends(current_user)):
+    return MovimentacaoService().decidir_movimentacao(id, usuario, aprovar=False)
+
 
 @router.delete("/")
 def delete_movimentacao(id: int):
-    service = MovimentacaoService()
-    return service.delete_movimentacao(id)
+    return MovimentacaoService().delete_movimentacao(id)
