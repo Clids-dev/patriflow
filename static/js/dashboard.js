@@ -9,11 +9,80 @@ const cor = (token) => getComputedStyle(document.documentElement).getPropertyVal
 
 async function init() {
     console.log("Iniciando Dashboard...");
+    mostrarDataDeHoje();
     await Promise.all([
         renderizarGraficoCategorias(),
         renderizarGraficoStatus(),
-        renderizarUltimosRegistros()
+        renderizarUltimosRegistros(),
+        renderizarAtencao()
     ]);
+}
+
+function mostrarDataDeHoje() {
+    const el = $('#dataHoje');
+    if (!el) return;
+    const texto = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    el.textContent = texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+// "O que pede atenção": transferências aguardando aceite e garantias vencidas ou a vencer.
+// Cada consulta é independente: quem não tem permissão para uma delas só não vê aquele item.
+async function renderizarAtencao() {
+    const lista = $('#atencaoLista');
+    const total = $('#atencaoTotal');
+    const itens = [];
+
+    let garantias = [];
+    try {
+        garantias = await api.get('/api/v1/bem/alertas/garantias?dias=60');
+        const kpi = $('#kpiGarantias');
+        if (kpi) kpi.textContent = garantias.length;
+        garantias.filter(g => g.vencida).forEach(g => itens.push({
+            icone: 'bi-shield-exclamation',
+            titulo: `Garantia vencida: ${g.nome}`,
+            detalhe: `${g.codigo_tombamento} · venceu em ${new Date(g.garantia_fim + 'T00:00:00').toLocaleDateString('pt-BR')}`,
+            link: '/bens'
+        }));
+        garantias.filter(g => !g.vencida).forEach(g => itens.push({
+            icone: 'bi-shield-check',
+            titulo: `Garantia a vencer: ${g.nome}`,
+            detalhe: `${g.codigo_tombamento} · vence em ${new Date(g.garantia_fim + 'T00:00:00').toLocaleDateString('pt-BR')}`,
+            link: '/bens'
+        }));
+    } catch (erro) {
+        console.warn("Garantias indisponíveis:", erro);
+        const kpi = $('#kpiGarantias');
+        if (kpi) kpi.textContent = '--';
+    }
+
+    try {
+        const pendentes = await api.get('/api/v1/movimentacao/pendentes');
+        pendentes.forEach(m => itens.push({
+            icone: 'bi-arrow-left-right',
+            titulo: `Transferência aguardando aceite: ${m.bem_nome}`,
+            detalhe: `${m.codigo_tombamento} → ${m.setor_destino_nome}`,
+            link: '/movimentacao'
+        }));
+    } catch (erro) {
+        console.warn("Pendências indisponíveis:", erro);
+    }
+
+    total.textContent = `${itens.length} ${itens.length === 1 ? 'ponto' : 'pontos'}`;
+    if (itens.length === 0) {
+        lista.innerHTML = '<li class="atencao-vazio">Nada pendente agora. Tudo em ordem.</li>';
+        return;
+    }
+    lista.innerHTML = itens.slice(0, 6).map(item => `
+        <li>
+            <a href="${esc(item.link)}" class="atencao-item">
+                <span class="atencao-icone"><i class="bi ${esc(item.icone)}"></i></span>
+                <span class="atencao-texto">
+                    <strong>${esc(item.titulo)}</strong>
+                    <small>${esc(item.detalhe)}</small>
+                </span>
+                <i class="bi bi-chevron-right atencao-seta"></i>
+            </a>
+        </li>`).join('');
 }
 
 async function renderizarGraficoCategorias() {
