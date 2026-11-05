@@ -38,9 +38,11 @@ quando houver conflito. Ver seção 2.
   W08 (sincronização em lote), A03, A04, A06, A07, A10, A11, A12.
 - Parcial: W06, W09, W10, A02, A04, A05, A08, A09 (app: transferências, leitura por QR, ficha e importação).
 
-**Atenção à numeração:** o repositório usa W04 = "almoxarifado e autorização" e W05 =
-"aprovação de cadastros e perfil auditor" (migrações `20261104_*`). O quadro usa W04 = etiqueta
-QR e W05 = fotos. Confirmar com o professor qual lista vale antes de planejar.
+**Numeração (decidida):** o progresso é reportado pela numeração do quadro da disciplina (W04 = etiqueta
+QR e consulta por tombo; W05 = fotos). Os códigos internos antigos do repositório deixam de ser usados como
+número de requisito e passam a ser descritos por nome: "autorização de movimentações" (antigo W04 interno,
+migração `20261104_w04_almoxarifado_autorizacao`) e "aprovação de cadastros e perfil auditor" (antigo W05
+interno, migração `20261104_w05_usuarios_aprovacao_auditor`). A migração `20261105_w05_fotos` é o W05 do quadro.
 
 ---
 
@@ -262,7 +264,7 @@ Obs.: a solicitação é feita a partir de "Minhas solicitações", do Início e
 6. **W06 / A08 / A09** após decidir C2 e C3.
 7. **A05, A07** e o restante do app.
 
-Antes de começar: resolver C1 a C3 com o professor e confirmar a numeração de W04 e W05 (seção 1).
+Decisões de regra (C1 a C3) já foram confirmadas com o professor, e a numeração segue o quadro (seção 1).
 
 ---
 
