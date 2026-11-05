@@ -8,7 +8,7 @@ import '../../core/storage/secure_token_storage.dart';
 import '../../core/storage/server_config_storage.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_components.dart';
-import '../home/home_placeholder_page.dart';
+import '../home/home_page.dart';
 import '../server_config/server_config_page.dart';
 import 'register_page.dart';
 
@@ -62,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => HomePlaceholderPage(profile: profile),
+          builder: (_) => HomePage(profile: profile),
         ),
       );
     } catch (error) {

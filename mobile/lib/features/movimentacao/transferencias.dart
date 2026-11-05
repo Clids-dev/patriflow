@@ -5,6 +5,7 @@ import '../../core/services/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_helpers.dart';
 import '../../core/widgets/app_components.dart';
+import '../../core/widgets/app_states.dart';
 
 /// Regras de transferência usadas por todas as telas do app. A API valida tudo;
 /// aqui só coletamos os dados obrigatórios antes de enviar.
@@ -276,4 +277,73 @@ class TransferenciaCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Escolhe um bem do almoxarifado e envia a solicitação para o setor do usuário.
+Future<bool> escolherBemESolicitar(
+  BuildContext context, {
+  required int almoxId,
+  required int setorId,
+}) async {
+  final bem = await showModalBottomSheet<Map<String, dynamic>>(
+    context: context,
+    isScrollControlled: true,
+    builder: (ctx) => SafeArea(
+      child: FutureBuilder<List<dynamic>>(
+        future: ApiClient.get('/bem/setor/$almoxId'),
+        builder: (ctx, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox(
+              height: 200,
+              child: AppLoading(label: 'Buscando bens do almoxarifado...'),
+            );
+          }
+          if (snapshot.hasError) {
+            return SizedBox(
+              height: 240,
+              child: AppErrorState(
+                title: 'Erro ao carregar bens',
+                description: '${snapshot.error}',
+              ),
+            );
+          }
+          final bens = (snapshot.data ?? [])
+              .where((b) => b['ativo'] == true)
+              .toList();
+          if (bens.isEmpty) {
+            return const SizedBox(
+              height: 240,
+              child: AppEmptyState(
+                title: 'Nenhum bem no almoxarifado',
+                description: 'Não há bens disponíveis para solicitar.',
+              ),
+            );
+          }
+          return ListView(
+            shrinkWrap: true,
+            padding: AppSpacing.screen,
+            children: [
+              const AppSectionHeader(title: 'Escolha o bem para o seu setor'),
+              for (final raw in bens)
+                AppListCard(
+                  leading: const AppIconBadge(
+                    icon: Icons.inventory_2_outlined,
+                  ),
+                  title: '${raw['nome'] ?? ''}',
+                  subtitle: '${raw['codigo_tombamento'] ?? ''}',
+                  onTap: () => Navigator.pop(ctx, Map<String, dynamic>.from(raw)),
+                ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+  if (bem == null || !context.mounted) return false;
+  return solicitarTransferencia(
+    context,
+    bemId: bem['id'] as int,
+    origemId: almoxId,
+    destinoId: setorId,
+  );
 }

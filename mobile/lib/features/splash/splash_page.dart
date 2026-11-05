@@ -7,7 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_components.dart';
 import '../../core/widgets/app_states.dart';
 import '../auth/login_page.dart';
-import '../home/home_placeholder_page.dart';
+import '../home/home_page.dart';
 import '../server_config/server_config_page.dart';
 
 class SplashPage extends StatefulWidget {
@@ -43,7 +43,7 @@ class _SplashPageState extends State<SplashPage> {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => HomePlaceholderPage(profile: profile),
+          builder: (_) => HomePage(profile: profile),
         ),
       );
     } catch (_) {

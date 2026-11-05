@@ -1,117 +1,102 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/shell_item.dart';
 import '../theme/app_theme.dart';
 
-class AppNavItem {
-  const AppNavItem({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    this.selected = false,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool selected;
-}
-
-/// Gaveta lateral única usada por todos os perfis. Recebe os módulos já
-/// filtrados por perfil, então a lógica de acesso continua onde estava.
+/// Menu lateral no mesmo padrão da barra lateral da web: fundo roxo escuro,
+/// logo centralizada com o subtítulo, seção "Menu" e item ativo em roxo.
 class AppNavDrawer extends StatelessWidget {
   const AppNavDrawer({
     super.key,
     required this.items,
+    required this.selectedIndex,
+    required this.onSelect,
     required this.onSettings,
     required this.onLogout,
-    this.userName,
-    this.footer,
   });
 
-  final List<AppNavItem> items;
+  final List<ShellItem> items;
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
   final VoidCallback onSettings;
   final VoidCallback onLogout;
-  final String? userName;
-  final Widget? footer;
 
   @override
   Widget build(BuildContext context) => Drawer(
+    backgroundColor: AppColors.secondary,
     child: SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl,
-              AppSpacing.lg,
-              AppSpacing.xl,
-              AppSpacing.lg,
+          const SizedBox(height: AppSpacing.lg),
+          Center(
+            child: Image.asset(
+              'assets/logo.png',
+              width: 144,
+              fit: BoxFit.contain,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          const Text(
+            'Sistema de Tombamento',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: AppColors.navMuted),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const Divider(color: AppColors.navDivider, height: 1),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.lg,
+              AppSpacing.xl,
+              AppSpacing.sm,
+            ),
+            child: Text(
+              'MENU',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: AppColors.navFaint,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               children: [
-                Image.asset(
-                  'assets/logo.png',
-                  height: 36,
-                  width: 140,
-                  alignment: Alignment.centerLeft,
-                  fit: BoxFit.contain,
-                ),
-                if (userName != null && userName!.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    userName!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.navMuted,
-                      fontSize: 13,
-                    ),
+                for (var i = 0; i < items.length; i++)
+                  _NavTile(
+                    item: items[i],
+                    selected: i == selectedIndex,
+                    onTap: () {
+                      Navigator.pop(context);
+                      onSelect(i);
+                    },
                   ),
-                ],
               ],
             ),
           ),
           const Divider(color: AppColors.navDivider, height: 1),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm,
-                vertical: AppSpacing.md,
-              ),
-              children: [
-                for (final item in items) _NavTile(item: item),
-                const Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: AppSpacing.sm,
-                    horizontal: AppSpacing.sm,
-                  ),
-                  child: Divider(color: AppColors.navDivider),
-                ),
-                _ActionTile(
-                  icon: AppIcons.settings,
-                  label: 'Configurar servidor',
-                  color: AppColors.navMuted,
-                  onTap: onSettings,
-                ),
-                _ActionTile(
-                  icon: AppIcons.logout,
-                  label: 'Sair',
-                  color: AppColors.error,
-                  onTap: onLogout,
-                ),
-              ],
-            ),
+          _ActionTile(
+            icon: Icons.settings_outlined,
+            label: 'Configurar servidor',
+            color: AppColors.navMuted,
+            onTap: () {
+              Navigator.pop(context);
+              onSettings();
+            },
           ),
-          if (footer != null)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: AppColors.navDivider)),
-              ),
-              child: footer,
-            ),
+          _ActionTile(
+            icon: Icons.logout,
+            label: 'Sair',
+            color: AppColors.error,
+            onTap: () {
+              Navigator.pop(context);
+              onLogout();
+            },
+          ),
+          const SizedBox(height: AppSpacing.sm),
         ],
       ),
     ),
@@ -119,51 +104,52 @@ class AppNavDrawer extends StatelessWidget {
 }
 
 class _NavTile extends StatelessWidget {
-  const _NavTile({required this.item});
+  const _NavTile({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+  });
 
-  final AppNavItem item;
+  final ShellItem item;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final color = item.selected ? Colors.white : AppColors.navMuted;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Material(
-        color: item.selected ? AppColors.primary : Colors.transparent,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+    child: Material(
+      color: selected ? AppColors.primary : Colors.transparent,
+      borderRadius: AppRadius.controlBorder,
+      child: InkWell(
         borderRadius: AppRadius.controlBorder,
-        child: InkWell(
-          borderRadius: AppRadius.controlBorder,
-          onTap: () {
-            item.onTap();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: 12,
-            ),
-            child: Row(
-              children: [
-                Icon(item.icon, color: color, size: 22),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    item.label,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 15,
-                      fontWeight: item.selected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                    ),
-                  ),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                selected ? item.selectedIcon : item.icon,
+                color: selected ? Colors.white : AppColors.navMuted,
+                size: 22,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Text(
+                item.label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  color: selected ? Colors.white : AppColors.navMuted,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _ActionTile extends StatelessWidget {
@@ -180,34 +166,19 @@ class _ActionTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 4),
-    child: Material(
-      color: Colors.transparent,
-      borderRadius: AppRadius.controlBorder,
-      child: InkWell(
-        borderRadius: AppRadius.controlBorder,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: 12,
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 22),
-              const SizedBox(width: AppSpacing.md),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: AppSpacing.md),
+          Text(label, style: TextStyle(fontSize: 14, color: color)),
+        ],
       ),
     ),
   );
