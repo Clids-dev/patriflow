@@ -258,3 +258,30 @@ Antes de começar: resolver C1 a C3 com o professor e confirmar a numeração de
 - W01 · O que o PatriFlow já entrega — 13/13
 - W02 · Autenticação da API e os três perfis — 6/6
 - A01 · Casca do aplicativo, navegação e endereço do servidor — 6/6
+
+---
+
+## 7. Recomendações adicionais (status)
+
+Feito:
+- [x] Remover a exclusão de movimentações (histórico só recebe lançamentos)
+- [x] Auditoria de criação, edição, baixa e reativação de bens (`GET /bem/{id}/auditoria`)
+- [x] Baixa e reativação registram o usuário (antes não registravam)
+- [x] Depreciação linear com valor contábil na ficha (vida útil e valor residual)
+- [x] Garantia do bem e alerta de garantia vencida ou a vencer (`GET /bem/alertas/garantias`)
+- [x] Termo de responsabilidade por responsável (folha para impressão)
+- [x] Importação de bens por CSV, com simulação e relatório por linha
+
+Pendente (próximas etapas, em ordem sugerida):
+- [ ] Alçada por valor: baixa acima de determinado valor exige dupla aprovação
+- [ ] Recuperação de senha, bloqueio após tentativas erradas e expiração de sessão
+- [ ] Backup automático e teste de restauração do banco e da pasta de fotos
+- [ ] Card de alertas (garantias, transferências paradas) no dashboard
+- [ ] Ciclo de vida completo da baixa: venda, doação, sinistro, extravio e descarte, cada um com documento
+- [ ] Anexos em PDF (nota fiscal, laudo) nos cadastros
+- [ ] Inventário cíclico por setor e indicadores (KPIs) no painel
+- [ ] Fornecedor e ordem de compra ligados ao bem; centro de custo
+- [ ] Notificações por e-mail ou push
+- [ ] Exportação para contabilidade e fiscal (CIAP)
+- [ ] Chave de API própria para integrações
+- [ ] Leitura de código de barras/QR também nos setores e salas
