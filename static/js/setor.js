@@ -7,6 +7,9 @@ let todosAndares = [];
 let todasSalas = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (new URLSearchParams(window.location.search).get('novo') === '1') {
+        bootstrap.Modal.getOrCreateInstance($('#modalSetor')).show();
+    }
     await Promise.all([carregarSetores(), carregarResponsaveis(), carregarLocais()]);
     configurarEventos();
 });
@@ -62,7 +65,7 @@ function renderizarSetores(setores) {
     lista.innerHTML = setores.map(setor => `
         <tr>
             <td class="px-4 fw-bold text-muted">#${esc(setor.id)}</td>
-            <td><div class="fw-bold text-dark">${esc(setor.nome)}</div></td>
+            <td><a href="/setores/${esc(setor.id)}" class="fw-bold text-dark text-decoration-none">${esc(setor.nome)}</a></td>
             <td><span class="small">${esc(setor.predio_nome)} — ${esc(setor.andar_identificacao)} — ${esc(setor.sala_nome)}</span></td>
             <td><span class="text-muted small">${esc(setor.responsavel_nome || 'Não definido')}</span></td>
             <td>

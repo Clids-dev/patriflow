@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import cabecalho_pagina %}
+
+{% block title %}Cadastros{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    {{ cabecalho_pagina("Cadastros", "Categorias, setores e responsáveis usados no tombamento e na guarda dos bens.", "Cadastros") }}
+</div>
+
+<section class="section">
+    <div class="row g-4">
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card cadastro-card h-100">
+                <div class="card-body">
+                    <div class="cadastro-chip"><i class="bi bi-tags"></i></div>
+                    <h4 class="mt-3 mb-1">Categorias</h4>
+                    <p class="text-muted small">Tipos de bens e a sigla que inicia o número de tombamento.</p>
+                    <p class="cadastro-total"><span id="totalCategorias">--</span> cadastradas</p>
+                </div>
+                <div class="card-footer d-flex gap-2">
+                    <a href="/categoria" class="btn btn-outline-primary flex-fill">Ver lista</a>
+                    <a href="/categoria?novo=1" class="btn btn-primary flex-fill"><i class="bi bi-plus-lg me-1"></i>Cadastrar</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card cadastro-card h-100">
+                <div class="card-body">
+                    <div class="cadastro-chip"><i class="bi bi-building"></i></div>
+                    <h4 class="mt-3 mb-1">Setores</h4>
+                    <p class="text-muted small">Departamentos e salas onde os bens estão, com o responsável de cada um.</p>
+                    <p class="cadastro-total"><span id="totalSetores">--</span> cadastrados</p>
+                </div>
+                <div class="card-footer d-flex gap-2">
+                    <a href="/setores" class="btn btn-outline-primary flex-fill">Ver lista</a>
+                    <a href="/setores?novo=1" class="btn btn-primary flex-fill"><i class="bi bi-plus-lg me-1"></i>Cadastrar</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card cadastro-card h-100">
+                <div class="card-body">
+                    <div class="cadastro-chip"><i class="bi bi-people"></i></div>
+                    <h4 class="mt-3 mb-1">Responsáveis</h4>
+                    <p class="text-muted small">Pessoas que respondem pela guarda dos bens e assinam o termo.</p>
+                    <p class="cadastro-total"><span id="totalResponsaveis">--</span> cadastrados</p>
+                </div>
+                <div class="card-footer d-flex gap-2">
+                    <a href="/responsaveis" class="btn btn-outline-primary flex-fill">Ver lista</a>
+                    <a href="/responsaveis?novo=1" class="btn btn-primary flex-fill"><i class="bi bi-plus-lg me-1"></i>Cadastrar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/cadastros.js"></script>
+{% endblock %}

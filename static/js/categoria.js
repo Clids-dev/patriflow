@@ -6,6 +6,9 @@ let todasCategorias = [];
  * Inicialização da página
  */
 document.addEventListener('DOMContentLoaded', async () => {
+    if (new URLSearchParams(window.location.search).get('novo') === '1') {
+        bootstrap.Modal.getOrCreateInstance($('#modalCategoria')).show();
+    }
     await carregarCategorias();
     configurarEventos();
 });
@@ -46,7 +49,7 @@ function renderizarCategorias(categorias) {
         <tr>
             <td class="px-4 fw-bold text-muted">#${esc(cat.id)}</td>
             <td>
-                <div class="fw-bold text-dark">${esc(cat.nome)}</div>
+                <a href="/categoria/${esc(cat.id)}" class="fw-bold text-dark text-decoration-none">${esc(cat.nome)}</a>
             </td>
             <td class="text-center">
                 <span class="badge bg-light text-primary border border-primary border-opacity-25 px-3 py-2">

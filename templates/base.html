@@ -48,26 +48,13 @@
                         </a>
                     </li>
 
-                    <li class="sidebar-item {% if active_page == 'categoria' %}active{% endif %}">
-                        <a href="/categoria" class="sidebar-link">
-                            <i class="bi bi-tags-fill"></i>
-                            <span>Categorias</span>
+                    <li class="sidebar-item {% if active_page in ['cadastros', 'categoria', 'setores', 'responsaveis'] %}active{% endif %}">
+                        <a href="/cadastros" class="sidebar-link">
+                            <i class="bi bi-folder2-open"></i>
+                            <span>Cadastros</span>
                         </a>
                     </li>
 
-                    <li class="sidebar-item {% if active_page == 'setores' %}active{% endif %}">
-                        <a href="/setores" class="sidebar-link">
-                            <i class="bi bi-building-fill"></i>
-                            <span>Setores</span>
-                        </a>
-                    </li>
-
-                    <li class="sidebar-item {% if active_page == 'responsaveis' %}active{% endif %}">
-                        <a href="/responsaveis" class="sidebar-link">
-                            <i class="bi bi-people-fill"></i>
-                            <span>Responsáveis</span>
-                        </a>
-                    </li>
                     {% endif %}
 
                     <li class="sidebar-item {% if active_page == 'movimentacao' %}active{% endif %}">

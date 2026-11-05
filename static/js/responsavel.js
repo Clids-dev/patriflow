@@ -3,6 +3,9 @@ import { $, $$, api, ui, esc } from './utils.js';
 let todosResponsaveis = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (new URLSearchParams(window.location.search).get('novo') === '1') {
+        bootstrap.Modal.getOrCreateInstance($('#modalResponsavel')).show();
+    }
     await carregarResponsaveis();
     configurarEventos();
 });
@@ -28,7 +31,7 @@ function renderizarResponsaveis(responsaveis) {
     lista.innerHTML = responsaveis.map(resp => `
         <tr>
             <td class="px-4 fw-bold text-muted">#${esc(resp.id)}</td>
-            <td><div class="fw-bold text-dark">${esc(resp.nome)}</div></td>
+            <td><a href="/responsaveis/${esc(resp.id)}" class="fw-bold text-dark text-decoration-none">${esc(resp.nome)}</a></td>
             <td><span class="text-muted small">${esc(resp.cargo)}</span></td>
             <td>
                 <span class="badge ${esc(resp.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">

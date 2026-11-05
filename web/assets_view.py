@@ -69,3 +69,37 @@ def tela_relatorios(request: Request):
         "tipo": tipo,
         "active_page": "relatorios"
     })
+
+def _contexto(request: Request, active_page: str, **extra) -> dict:
+    return {
+        "request": request,
+        "username": request.cookies.get("username"),
+        "tipo": request.cookies.get("tipo"),
+        "active_page": active_page,
+        **extra,
+    }
+
+
+@router.get("/cadastros")
+def tela_cadastros(request: Request):
+    return templates.TemplateResponse("cadastros.html", _contexto(request, "cadastros"))
+
+
+# Registro de um cadastro, com abas (dados, bens ligados e ação específica).
+# A entidade vai no caminho: /categoria/{id}, /setores/{id}, /responsaveis/{id}.
+@router.get("/categoria/{registro_id}")
+def registro_categoria(registro_id: int, request: Request):
+    return templates.TemplateResponse("registro.html", _contexto(
+        request, "categoria", entidade="categoria", registro_id=registro_id))
+
+
+@router.get("/setores/{registro_id}")
+def registro_setor(registro_id: int, request: Request):
+    return templates.TemplateResponse("registro.html", _contexto(
+        request, "setores", entidade="setor", registro_id=registro_id))
+
+
+@router.get("/responsaveis/{registro_id}")
+def registro_responsavel(registro_id: int, request: Request):
+    return templates.TemplateResponse("registro.html", _contexto(
+        request, "responsaveis", entidade="responsavel", registro_id=registro_id))
