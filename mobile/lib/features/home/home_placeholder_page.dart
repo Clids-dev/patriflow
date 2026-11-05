@@ -8,10 +8,12 @@ import '../../core/widgets/app_components.dart';
 import '../../core/widgets/app_nav_drawer.dart';
 import '../../core/widgets/app_states.dart';
 import '../admin/admin_dashboard_page.dart';
+import '../movimentacao/transferencias.dart';
 import '../server_config/server_config_page.dart';
 
 enum HomeTab {
   pendentes,
+  minhas,
   bens,
   categorias,
   setores,
@@ -39,6 +41,11 @@ List<HomeMenuItem> menuForRole(String? role) => switch (role) {
       Icons.swap_horiz_outlined,
       HomeTab.movimentacoes,
     ),
+    HomeMenuItem(
+      'Minhas solicitações',
+      Icons.outbox_outlined,
+      HomeTab.minhas,
+    ),
     HomeMenuItem('Inventário', Icons.inventory_2_outlined, HomeTab.bens),
     HomeMenuItem('Sincronização', Icons.sync, HomeTab.relatorios),
   ],
@@ -47,6 +54,11 @@ List<HomeMenuItem> menuForRole(String? role) => switch (role) {
       'Autorizações pendentes',
       Icons.move_to_inbox_outlined,
       HomeTab.pendentes,
+    ),
+    HomeMenuItem(
+      'Minhas solicitações',
+      Icons.outbox_outlined,
+      HomeTab.minhas,
     ),
     HomeMenuItem(
       'Acervo sob sua guarda',
@@ -90,31 +102,15 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
       ApiClient.get('/movimentacao/detailed/');
   Future<List<dynamic>> _fetchPendentes() =>
       ApiClient.get('/movimentacao/pendentes');
+  Future<List<dynamic>> _fetchMinhas() => ApiClient.get('/movimentacao/minhas');
 
-  /// Aprovação ou recusa de uma solicitação. A API valida a autorização:
-  /// esta tela só mostra o resultado devolvido pelo servidor.
-  Future<void> _decidir(int id, {required bool aprovar}) async {
-    final confirmado = await confirmAction(
-      context,
-      aprovar
-          ? 'Autorizar esta movimentação do almoxarifado?'
-          : 'Recusar esta solicitação?',
-    );
-    if (!confirmado || !mounted) return;
-    try {
-      await ApiClient.post(
-        '/movimentacao/$id/${aprovar ? 'aprovar' : 'recusar'}',
-        {},
-      );
-      if (mounted)
-        showAppMessage(
-          context,
-          aprovar ? 'Movimentação autorizada.' : 'Solicitação recusada.',
-        );
-    } catch (e) {
-      if (mounted) showAppMessage(context, '$e');
-    }
-    if (mounted) _retry();
+  /// Autorização e recusa seguem as regras de transferência (foto e motivo).
+  /// A API valida a permissão e devolve o erro se algo faltar.
+  Future<void> _decidir(Map<String, dynamic> mov, {required bool aprovar}) async {
+    final ok = aprovar
+        ? await autorizarTransferencia(context, mov)
+        : await recusarTransferencia(context, mov);
+    if (ok && mounted) _retry();
   }
 
   void _retry() => setState(() {});
@@ -208,18 +204,13 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
       ),
     );
     if (bem == null || !mounted) return;
-    try {
-      await ApiClient.post('/movimentacao/', {
-        'bem_id': bem['id'],
-        'setor_origem_id': _almoxId,
-        'setor_destino_id': setorUsuario,
-      });
-      if (mounted)
-        showAppMessage(context, 'Solicitação enviada ao almoxarifado.');
-    } catch (e) {
-      if (mounted) showAppMessage(context, '$e');
-    }
-    if (mounted) _retry();
+    final ok = await solicitarTransferencia(
+      context,
+      bemId: bem['id'] as int,
+      origemId: _almoxId!,
+      destinoId: setorUsuario,
+    );
+    if (ok && mounted) _retry();
   }
 
   @override
@@ -306,7 +297,16 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
   }
 
   Widget _buildTab(HomeTab tab) => switch (tab) {
-    HomeTab.pendentes => Column(
+    HomeTab.pendentes => _ListTab(
+      load: _fetchPendentes,
+      loadingLabel: 'Buscando solicitações...',
+      errorTitle: 'Erro ao carregar solicitações',
+      emptyTitle: 'Nenhuma autorização pendente',
+      emptyDescription: 'As solicitações que aguardam a decisão do almoxarifado aparecem aqui.',
+      onRetry: _retry,
+      itemBuilder: _pendingCard,
+    ),
+    HomeTab.minhas => Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -326,13 +326,13 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
         ),
         Expanded(
           child: _ListTab(
-            load: _fetchPendentes,
-            loadingLabel: 'Buscando solicitações...',
+            load: _fetchMinhas,
+            loadingLabel: 'Buscando suas solicitações...',
             errorTitle: 'Erro ao carregar solicitações',
-            emptyTitle: 'Nenhuma autorização pendente',
-            emptyDescription: 'As solicitações do seu setor e as que aguardam o almoxarifado aparecem aqui.',
+            emptyTitle: 'Nenhuma solicitação',
+            emptyDescription: 'As solicitações que você fizer aparecem aqui, com a decisão e o motivo.',
             onRetry: _retry,
-            itemBuilder: _pendingCard,
+            itemBuilder: (mov) => TransferenciaCard(mov: mov),
           ),
         ),
       ],
@@ -456,65 +456,34 @@ class _HomePlaceholderPageState extends State<HomePlaceholderPage> {
     );
   }
 
-  Widget _pendingCard(Map<String, dynamic> mov) {
-    final id = mov['id'] as int;
-    return AppPanel(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget _pendingCard(Map<String, dynamic> mov) => TransferenciaCard(
+    mov: mov,
+    acoes: _podeDecidir
+        ? Row(
             children: [
               Expanded(
-                child: Text(
-                  '${mov['bem_nome'] ?? ''}',
-                  style: Theme.of(context).textTheme.titleSmall,
+                child: OutlinedButton(
+                  onPressed: () => _decidir(mov, aprovar: false),
+                  child: const Text('Recusar'),
                 ),
               ),
-              AppStatusChip(label: 'Pendente', color: AppColors.warning),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(44),
+                  ),
+                  onPressed: () => _decidir(mov, aprovar: true),
+                  child: const Text('Autorizar com foto'),
+                ),
+              ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            '${mov['codigo_tombamento'] ?? ''} • ${shortDate(mov['data_movimentacao'])}',
+          )
+        : Text(
+            'Aguardando a autorização do responsável do almoxarifado.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            '${mov['setor_origem_nome'] ?? 'Origem não informada'} → ${mov['setor_destino_nome'] ?? ''}',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (!_podeDecidir)
-            Text(
-              'Aguardando a autorização do responsável do almoxarifado.',
-              style: Theme.of(context).textTheme.bodySmall,
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _decidir(id, aprovar: false),
-                    child: const Text('Recusar'),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(44),
-                    ),
-                    onPressed: () => _decidir(id, aprovar: true),
-                    child: const Text('Autorizar'),
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
+  );
 
   Widget _movementCard(Map<String, dynamic> mov) => AppListCard(
     leading: const AppIconBadge(icon: Icons.swap_horiz_outlined),
