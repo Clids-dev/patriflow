@@ -162,3 +162,6 @@ test_*.py
 # Documentações internas e de suporte ao agente
 GEMINI.md
 DOCUMENTACAO.md
+
+# Build do CSS do Mazer (tools/mazer)
+tools/mazer/node_modules/

@@ -1,0 +1,22 @@
+// Import mazer Variables
+@import "./palette";
+@import "./variables";
+
+// Bootstrap + Icons
+$bootstrap-icons-font-src: url('bootstrap-icons/font/fonts/bootstrap-icons.woff2') format("woff") !default;
+@import "bootstrap/scss/bootstrap";
+@import "bootstrap-icons/font/bootstrap-icons";
+
+// Fix icon placement
+body .bi::before, [class^=bi-]::before, [class*=" bi-"]::before {
+    vertical-align: sub;
+}
+
+// Import fonts
+// fontes: Inter via link no HTML (ver base.html)
+
+// Perfect Scrollbar
+@import "perfect-scrollbar/css/perfect-scrollbar.css";
+
+// Mazer CSS
+@import "./mazer";

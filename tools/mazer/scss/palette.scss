@@ -1,0 +1,74 @@
+// Paleta do PatriFlow aplicada sobre o Mazer.
+// Carregada antes de qualquer variável do Mazer/Bootstrap; como elas usam !default,
+// estes valores prevalecem. Mantém a política de cores do projeto (style.css :root).
+
+// Cores de marca
+$blue:    #820AD1;   // primary
+$indigo:  #19002B;   // primary-dark
+$purple:  #3D0070;   // meio do gradiente
+$pink:    #A855F7;   // primary-accent
+$red:     #FF3B30;   // danger
+$orange:  #FF9500;   // warning
+$yellow:  #FF9500;   // warning
+$green:   #34C759;   // success
+$teal:    #A855F7;   // info (accent, sem cor nova)
+$cyan:    #A855F7;   // info
+
+// Neutros (iOS)
+$gray-100: #F5F5F7;
+$gray-200: #F2F2F7;
+$gray-300: #E5E5EA;
+$gray-400: #C7C7CC;
+$gray-500: #AEAEB2;
+$gray-600: #6E6E73;
+$gray-700: #3A3A3C;
+$gray-800: #1C1C1E;
+$gray-900: #000000;
+
+$body-bg:    #F5F5F7;
+$body-color: #1C1C1E;
+$border-color: #E5E5EA;
+$headings-color: #1C1C1E;
+
+// Formas da diretriz de design
+$border-radius:       12px;
+$border-radius-lg:    16px;
+$btn-border-radius:   12px;
+$input-border-radius: 12px;
+$card-border-radius:  16px;
+$card-border-color:   #E5E5EA;
+$card-cap-bg:         #FFFFFF;
+
+// Sidebar em roxo escuro, como no projeto
+$sidebar-bg:                #19002B;
+$sidebar-link-color:        rgba(255, 255, 255, 0.78);
+$sidebar-link-hover-bg:     rgba(255, 255, 255, 0.08);
+$sidebar-link-hover-color:  #FFFFFF;
+$sidebar-submenu-color:     rgba(255, 255, 255, 0.7);
+$sidebar-submenu-hover-color: #FFFFFF;
+
+$divider-bg: #E5E5EA;
+$divider-text-bg: #F5F5F7;
+
+// Alertas com as cores do projeto
+$alert-colors: (
+    primary: (text-color: #fff, background-color: #820AD1),
+    secondary: (text-color: #3A3A3C, background-color: #F2F2F7),
+    success: (text-color: #fff, background-color: #34C759),
+    warning: (text-color: #1C1C1E, background-color: #FF9500),
+    danger: (text-color: #fff, background-color: #FF3B30),
+    dark: (text-color: #fff, background-color: #19002B),
+    light: (text-color: #6E6E73, background-color: #F5F5F7),
+    info: (text-color: #fff, background-color: #A855F7),
+) !default;
+
+// Cores claras das variantes (fundos *-subtle), derivadas da paleta
+$theme-colors-light: (
+  'primary':   #F3E8FF,
+  'secondary': #F2F2F7,
+  'success':   #E8F9EE,
+  'danger':    #FFECEB,
+  'warning':   #FFF4E0,
+  'info':      #F3E8FF,
+  'dark':      #E5E5EA
+) !default;
