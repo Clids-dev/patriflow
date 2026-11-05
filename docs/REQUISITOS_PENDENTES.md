@@ -261,27 +261,96 @@ Antes de começar: resolver C1 a C3 com o professor e confirmar a numeração de
 
 ---
 
-## 7. Recomendações adicionais (status)
+## 7. Recomendações adicionais — andamento
 
-Feito:
+Concluídas (ver seção 8 para o detalhamento):
 - [x] Remover a exclusão de movimentações (histórico só recebe lançamentos)
-- [x] Auditoria de criação, edição, baixa e reativação de bens (`GET /bem/{id}/auditoria`)
-- [x] Baixa e reativação registram o usuário (antes não registravam)
-- [x] Depreciação linear com valor contábil na ficha (vida útil e valor residual)
-- [x] Garantia do bem e alerta de garantia vencida ou a vencer (`GET /bem/alertas/garantias`)
-- [x] Termo de responsabilidade por responsável (folha para impressão)
+- [x] Auditoria de criação, edição, baixa e reativação de bens
+- [x] Baixa e reativação registram o usuário
+- [x] Depreciação linear com valor contábil na ficha
+- [x] Garantia do bem e alerta de garantia vencida ou a vencer
+- [x] Termo de responsabilidade por responsável
 - [x] Importação de bens por CSV, com simulação e relatório por linha
 
-Pendente (próximas etapas, em ordem sugerida):
-- [ ] Alçada por valor: baixa acima de determinado valor exige dupla aprovação
-- [ ] Recuperação de senha, bloqueio após tentativas erradas e expiração de sessão
-- [ ] Backup automático e teste de restauração do banco e da pasta de fotos
-- [ ] Card de alertas (garantias, transferências paradas) no dashboard
-- [ ] Ciclo de vida completo da baixa: venda, doação, sinistro, extravio e descarte, cada um com documento
-- [ ] Anexos em PDF (nota fiscal, laudo) nos cadastros
-- [ ] Inventário cíclico por setor e indicadores (KPIs) no painel
-- [ ] Fornecedor e ordem de compra ligados ao bem; centro de custo
-- [ ] Notificações por e-mail ou push
-- [ ] Exportação para contabilidade e fiscal (CIAP)
-- [ ] Chave de API própria para integrações
-- [ ] Leitura de código de barras/QR também nos setores e salas
+Pendentes: REQ-EX-01 a REQ-EX-12 da seção 8.
+
+
+---
+
+## 8. Requisitos extras (pendentes)
+
+Origem: recomendações de funções e regras de negócio para uso de sistemas de patrimônio em
+empresas e órgãos públicos. Não fazem parte do quadro da disciplina. Cada item traz a
+descrição e os critérios de aceite. Prioridade: P1 (fazer antes), P2 (médio prazo), P3 (opcional).
+
+### REQ-EX-01 · Alçada por valor na baixa — P1
+Baixa de bem acima de um valor configurável (ex.: R$ 5.000) só se efetiva após aprovação de um
+segundo usuário do setor de patrimônio.
+- [ ] Valor limite configurável pelo setor de patrimônio
+- [ ] Baixa acima do limite fica "aguardando aprovação"; não altera o bem até aprovada
+- [ ] Quem solicita não pode aprovar a própria baixa
+- [ ] Aprovação e recusa entram na auditoria
+
+### REQ-EX-02 · Segurança de acesso: senha e sessão — P1
+Recuperação de senha, bloqueio após tentativas erradas e expiração de sessão no login web e no app.
+- [ ] Recuperação de senha por link de uso único com validade curta
+- [ ] Conta bloqueada temporariamente após N tentativas erradas, com aviso claro
+- [ ] Sessão expira por inatividade; app pede login de novo sem perder a fila offline
+- [ ] Tentativas de login (sucesso e falha) registradas, sem guardar a senha
+
+### REQ-EX-03 · Backup e restauração — P1
+Cópia automática do banco e da pasta de fotos, com teste de restauração.
+- [ ] Backup diário do banco (pg_dump) e da pasta de fotos, com retenção definida
+- [ ] Script de restauração documentado
+- [ ] Teste de restauração feito em banco separado e registrado
+
+### REQ-EX-04 · Card de alertas no dashboard — P1
+Painel com os alertas que pedem ação: garantias vencendo, transferências paradas, bens sem conferência há muito tempo.
+- [ ] Card lista os alertas com a contagem e link para a tela correspondente
+- [ ] Dados vêm de endpoints já existentes ou novos, sem cálculo no navegador
+
+### REQ-EX-05 · Ciclo de vida completo da baixa — P2
+Venda, doação, sinistro, extravio e descarte, cada um com documento próprio.
+- [ ] Motivo da baixa obrigatório, com lista fechada de destinos
+- [ ] Documento obrigatório conforme o destino (ex.: boletim de ocorrência para extravio e sinistro)
+- [ ] Bem baixado sai das listagens ativas e do inventário, mas continua no histórico
+
+### REQ-EX-06 · Anexos em PDF nos cadastros — P2
+Nota fiscal, laudo técnico e outros documentos anexados ao bem.
+- [ ] Upload de PDF até 10 MB, com verificação do conteúdo (não só da extensão)
+- [ ] Anexos não são apagados nem substituídos; correção é anexo novo
+- [ ] Download pela API e exibição na ficha do bem
+
+### REQ-EX-07 · Inventário cíclico e indicadores — P2
+Contagem rotativa por setor, sem parar todo o acervo, e indicadores no painel.
+- [ ] Ciclo de inventário por setor com período e responsável definidos
+- [ ] Indicadores: percentual conferido por setor, divergências abertas, idade média do acervo, valor sob guarda por responsável
+- [ ] Indicadores calculados no servidor
+
+### REQ-EX-08 · Fornecedor, ordem de compra e centro de custo — P2
+Vincular o bem a quem vendeu, à ordem de compra e ao centro de custo.
+- [ ] Cadastro de fornecedor (CNPJ/CPF validado)
+- [ ] Bem guarda fornecedor, número da ordem de compra e centro de custo
+- [ ] Relatório de custo por centro de custo
+
+### REQ-EX-09 · Notificações — P2
+Avisos por e-mail ou push para pendências e alertas.
+- [ ] Notificação para o responsável quando há transferência a aceitar
+- [ ] Resumo diário de alertas para o setor de patrimônio
+- [ ] Usuário escolhe o canal; envio registrado
+
+### REQ-EX-10 · Exportação para contabilidade e fiscal (CIAP) — P3
+Exportar bens e valores no formato usado pela contabilidade e pelo crédito de ICMS sobre o ativo imobilizado.
+- [ ] Exportação com valor de aquisição, data de entrada, depreciação e valor contábil
+- [ ] Layout definido junto com a contabilidade antes de implementar
+
+### REQ-EX-11 · Chave de API para integrações — P3
+Integrações com outros sistemas usam chave própria, separada da sessão do usuário.
+- [ ] Chave criada e revogada pelo setor de patrimônio, com nome e validade
+- [ ] Chave só aparece uma vez na criação; no banco fica apenas o hash
+- [ ] Permissões da chave são limitadas por escopo
+
+### REQ-EX-12 · Leitura de código de barras/QR nos setores e salas — P3
+Confirmar a localização física lendo a etiqueta da sala ou do setor.
+- [ ] Etiqueta de sala e de setor gerada no mesmo modelo das etiquetas de bens
+- [ ] App lê a etiqueta e confirma o local antes de conferir bens
