@@ -48,7 +48,18 @@ class BemService:
         if almoxarifado is None:
             raise HTTPException(status_code=400, detail="Cadastre um almoxarifado antes de cadastrar bens.")
         repository = BemRepository()
-        return repository.save(bem, almoxarifado.id, usuario["id"])
+        try:
+            return repository.save(bem, almoxarifado.id, usuario["id"])
+        except errors.UniqueViolation as exc:
+            # O índice único cobre também bens baixados: tombo nunca é reaproveitado.
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Já existe um bem com o tombo {bem.codigo_tombamento}. "
+                    "Números de tombo não são reaproveitados, mesmo de bens baixados."
+                ),
+            ) from exc
+
 
     def put_bem(self, id: int, bem_atualizado: BemUpdate, usuario: dict):
         repository = BemRepository()
