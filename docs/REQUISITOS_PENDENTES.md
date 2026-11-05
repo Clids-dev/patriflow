@@ -33,7 +33,7 @@ quando houver conflito. Ver seção 2.
   por maior sequência (sem reaproveitar número de bem baixado).
 - Sem nenhuma implementação: W04 (etiqueta QR), W05 (fotos), W07 (inventário),
   W08 (sincronização em lote), A03, A04, A06, A07, A10, A11, A12.
-- Parcial: W06, W09, W10, A02, A05, A08, A09.
+- Parcial: W06, W09, W10, A02, A04, A05, A08, A09 (app: transferências, leitura por QR, ficha e importação).
 
 **Atenção à numeração:** o repositório usa W04 = "almoxarifado e autorização" e W05 =
 "aprovação de cadastros e perfil auditor" (migrações `20261104_*`). O quadro usa W04 = etiqueta
@@ -138,13 +138,14 @@ Obs.: o PDF "Relatório de Inventário de Bens" existe, mas é só exportação 
 
 ## 4. Backlog — APP (agente de campo, responsável de setor)
 
-Estado do app: versão administrativa **online**. Não há armazenamento local, fila offline,
-câmera nem leitor de QR (`mobile/pubspec.yaml`: só `http`, `shared_preferences`,
-`flutter_secure_storage`, `share_plus`).
+Estado do app (atualizado): versão **online**, com menu e barra inferior no padrão da web. Já existem
+câmera para leitura de etiqueta (`mobile_scanner`, só QR Code), busca por tombo, ficha do bem, transferências
+com motivo, foto na autorização e recusa com motivo, baixa com motivo e documento, importação CSV, etiquetas
+(individual e em lote), termo de responsabilidade e o menu do agente sem itens sem função. Ainda **não há**
+armazenamento local, fila offline nem conferência no app (A03, A06, A11, A12).
 
-**Problema de apresentação:** no menu do agente, "Leitura", "Conferência" e "Inventário" abrem a
-lista genérica de bens (`mobile/lib/features/home/home_placeholder_page.dart`, `HomeTab.bens`), e
-"Sincronização" abre uma tela vazia de Relatórios. Itens sem função real.
+Branches com esse trabalho: `feat/app-regras-transferencia` (já na `main`), `feat/app-importacao-etiquetas-termo`
+e `feat/app-leitura-qr-ficha` (ainda não mescladas na `main`).
 
 ### A02 · Login e sessão no aplicativo — `[~]` 5/6 (card em "Fazendo")
 - [x] Tela de login envia usuário e senha à API e recebe o token
@@ -162,22 +163,21 @@ lista genérica de bens (`mobile/lib/features/home/home_placeholder_page.dart`, 
 - [ ] Baixar de novo não apaga a fila de sincronização
 - [ ] Falha no download avisa e mantém o acervo anterior
 
-### A04 · Leitura da etiqueta pela câmera e digitação do tombo — `[ ]` 0/6
-- [ ] Câmera abre na tela de leitura e decodifica o QR sem confirmação
-- [ ] Tombo lido busca o bem no banco local e abre a ficha
-- [ ] Campo de digitação manual na mesma tela da câmera
-- [ ] Tombo digitado com DV inválido avisa antes de buscar
-- [ ] Tombo válido fora do acervo oferece registrar como bem não cadastrado
-- [ ] Leitura e busca funcionam sem internet
+### A04 · Leitura da etiqueta pela câmera e digitação do tombo — `[~]` 3/6
+- [x] Câmera abre na tela de leitura e decodifica o QR sem confirmação (atalho central da barra inferior)
+- [x] Tombo lido busca o bem pela API (`/bem/buscar`) e abre a ficha
+- [x] Campo de digitação manual na mesma tela da câmera
+- [~] Tombo digitado com DV inválido: a API recusa e o app mostra a mensagem, mas a checagem ainda não é feita no aparelho, antes da busca
+- [ ] Tombo válido fora do acervo oferece registrar como bem não cadastrado (depende de A07)
+- [ ] Leitura e busca funcionam sem internet (depende de A03)
 
-### A05 · Ficha do bem e histórico no aplicativo — `[~]` 0/6 completos
-- [~] Detalhe online (tela admin de ativos) mostra nome, tombo e status
-- [ ] Ficha mostra tombo, descrição, categoria, marca, modelo, série, estado, setor, localização e responsável
-- [ ] Foto mais recente aparece na ficha
-- [ ] Ações de conferir, transferir, emprestar e enviar para manutenção partem da ficha
-- [ ] Histórico vem da API em ordem, com data, autor, tipo e foto
-- [ ] Nenhum evento pode ser editado ou apagado pelo app
-- [ ] Sem rede, ficha e histórico baixados continuam abrindo, com data de atualização
+### A05 · Ficha do bem e histórico no aplicativo — `[~]` 4/7 completos
+- [x] Ficha mostra tombo, nome, categoria, marca, modelo, série, estado, setor, localização, responsável, garantia e depreciação/valor contábil
+- [~] Foto mais recente aparece na ficha: falta a API listar fotos por bem (hoje as fotos são por registro)
+- [ ] Ações de conferir, transferir, emprestar e enviar para manutenção partem da ficha (a ficha é somente leitura)
+- [~] Histórico vem da API em ordem, com data, autor e tipo; falta a foto em cada evento
+- [x] Nenhum evento pode ser editado ou apagado pelo app
+- [ ] Sem rede, ficha e histórico baixados continuam abrindo (depende de A03)
 
 ### A06 · Conferência do bem, com foto — `[ ]` 0/6
 - [ ] Tela mostra dados do bem e estado de conservação cadastrado
@@ -195,24 +195,23 @@ lista genérica de bens (`mobile/lib/features/home/home_placeholder_page.dart`, 
 - [ ] Sincronizado, chega com foto e aparece na caixa de pendências do patrimônio
 - [ ] Continua aberto até o patrimônio tratar
 
-### A08 · Solicitar a transferência de um bem — `[ ]` 0/6 (parcial no backend)
-- [ ] Solicitação parte da ficha do bem e exige setor de destino e motivo
-- [ ] Tela deixa claro que o bem continua na origem enquanto SOLICITADA
-- [~] Solicitação vai à API (`POST /movimentacao/` existe, mas só almoxarifado ↔ setor, ver C2)
-- [ ] Agente vê a lista das transferências que solicitou, com estado
-- [ ] Solicitação sem rede entra na fila e aparece como pendente de envio
-- [ ] Transferência já solicitada não pode ser solicitada de novo
+### A08 · Solicitar a transferência de um bem — `[~]` 4/6
+- [x] Solicitação exige setor de destino e motivo
+- [~] Tela deixa claro que o bem continua na origem enquanto SOLICITADA (a mensagem ainda não aparece na ficha)
+- [x] Solicitação vai à API (almoxarifado ↔ setor, ver C2)
+- [x] Agente vê a lista das transferências que solicitou, com estado e motivo da decisão
+- [ ] Solicitação sem rede entra na fila e aparece como pendente de envio (depende de A12)
+- [ ] Transferência já solicitada não pode ser solicitada de novo (não verificado na API)
 
-Obs.: o diálogo "Nova transferência" existe em `movements_screen.dart`, mas só é acessível pelo
-painel do setor de patrimônio. Não há ação de solicitar na tela de movimentações do agente.
+Obs.: a solicitação já é feita a partir de "Minhas solicitações" e do atalho "Solicitar bem do almoxarifado" no Início. Falta o atalho na ficha.
 
-### A09 · Aceitar ou recusar a transferência, com foto — `[~]` 0/6 completos
-- [~] Lista de pendentes vem da API (tela do responsável com Autorizar/Recusar, pedindo confirmação)
-- [ ] Aceite exige foto do recebimento
-- [~] Aceita, guarda passa ao destino (existe via aprovar; sem foto)
-- [~] Recusa exige justificativa (a verificar)
-- [ ] Aceite ou recusa sem rede entra na fila
-- [ ] Respondida, sai da lista e fica no histórico
+### A09 · Aceitar ou recusar a transferência, com foto — `[~]` 5/6
+- [x] Lista de pendentes vem da API (aba Autorizações e Movimentações > Pendentes)
+- [x] Aceite exige foto do recebimento (câmera ou galeria, enviada antes da autorização)
+- [x] Aceita, o bem passa ao destino
+- [x] Recusa exige motivo, que fica visível para quem solicitou
+- [ ] Aceite ou recusa sem rede entra na fila (depende de A12)
+- [x] Respondida, sai da lista de pendentes e aparece em "Minhas solicitações" e no histórico do bem
 
 ### A10 · Empréstimo e manutenção pelo aplicativo — `[ ]` 0/7
 - [ ] Empréstimo exige quem levou, motivo, data de saída e devolução prevista
