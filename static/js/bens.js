@@ -384,10 +384,12 @@ async function reativar(id) {
     } catch (error) { ui.showNotification(error.message, "error"); }
 }
 
-window.limparFiltros = () => {
+const limparFiltros = () => {
     $("#inputBusca").value = "";
     $("#filtroStatus").value = "";
     filtrarBens();
 };
 
 init();
+
+$('#btnLimparFiltros')?.addEventListener('click', limparFiltros);

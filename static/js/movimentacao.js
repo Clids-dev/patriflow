@@ -204,9 +204,11 @@ $("#formNovaMovimentacao").onsubmit = async (e) => {
 };
 
 // Reset da busca
-window.resetarVista = () => {
+const resetarVista = () => {
     $("#inputCodigoBusca").value = "";
     toggleState('inicial');
 };
 
 init();
+
+$('#btnResetarVista')?.addEventListener('click', resetarVista);
