@@ -123,16 +123,3 @@ class MovimentacaoRepository:
             raise
         finally:
             DataBase().put_conn(conn)
-
-    def delete(self, id: int):
-        movimentacao = DataBase().commit(queries.QUERY_DELETE_MOVIMENTACAO, (id,))
-        if movimentacao:
-            return Movimentacao(
-                id=movimentacao[0],
-                bem_id=movimentacao[1],
-                setor_origem_id=movimentacao[2],
-                setor_destino_id=movimentacao[3],
-                data=movimentacao[4],
-                ativo=False,
-            )
-        return None

@@ -135,9 +135,3 @@ class MovimentacaoService:
                 detail="O bem mudou de local desde a solicitação. Recuse e solicite novamente.",
             )
         return decidida
-
-    def delete_movimentacao(self, id: int):
-        try:
-            return MovimentacaoRepository().delete(id)
-        except errors.NoDataFound:
-            raise HTTPException(status_code=404, detail=f"Movimentação com id {id} não encontrada")

@@ -48,8 +48,3 @@ def aprovar_movimentacao(id: int, usuario=Depends(current_user)):
 @router.post("/{id}/recusar", response_model=schemas.Movimentacao)
 def recusar_movimentacao(id: int, usuario=Depends(current_user)):
     return MovimentacaoService().decidir_movimentacao(id, usuario, aprovar=False)
-
-
-@router.delete("/")
-def delete_movimentacao(id: int):
-    return MovimentacaoService().delete_movimentacao(id)

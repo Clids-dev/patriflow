@@ -83,4 +83,3 @@ QUERY_DECIDIR_MOVIMENTACAO = """
     RETURNING id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo, status;
 """
 
-QUERY_DELETE_MOVIMENTACAO = """UPDATE movimentacoes SET ativo = FALSE WHERE id = %s RETURNING id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo;"""
