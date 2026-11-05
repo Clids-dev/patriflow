@@ -35,9 +35,9 @@ QUERY_CREATE_BEM = """INSERT INTO bens
     VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s, %s)
     RETURNING id"""
 
-QUERY_PUT_BEM = ("UPDATE bens SET nome = COALESCE(%s, nome), valor = COALESCE(%s, %s, valor), status = COALESCE(%s, status), "
+QUERY_PUT_BEM = ("UPDATE bens SET nome = COALESCE(%s, nome), valor = COALESCE(%s, valor), status = COALESCE(%s, status), "
                  "marca = COALESCE(%s, marca), modelo = COALESCE(%s, modelo), numero_serie = COALESCE(%s, numero_serie), "
-                 "valor_aquisicao = COALESCE(%s, %s, valor_aquisicao), nota_fiscal = COALESCE(%s, nota_fiscal), "
+                 "valor_aquisicao = COALESCE(%s, valor_aquisicao), nota_fiscal = COALESCE(%s, nota_fiscal), "
                  "data_entrada = COALESCE(%s, data_entrada), estado_conservacao = COALESCE(%s, estado_conservacao) "
                  "WHERE bens.id = %s AND ativo = TRUE "
                  f"RETURNING {_BEM_FIELDS}")

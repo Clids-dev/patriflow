@@ -25,8 +25,8 @@ def add_bem(bem: BemCreate, service: BemService = Depends(get_service), usuario=
     return service.create_bem(bem, usuario)
 
 @router.put("/{id}")
-def update_bem(id: int, bem: BemUpdate, service: BemService = Depends(get_service)):
-    return service.put_bem(id, bem)
+def update_bem(id: int, bem: BemUpdate, service: BemService = Depends(get_service), usuario=Depends(current_user)):
+    return service.put_bem(id, bem, usuario)
 
 @router.get("/buscar")
 def buscar_por_codigo(codigo_tombamento: str, service: BemService = Depends(get_service)):
