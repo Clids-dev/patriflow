@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_helpers.dart';
 import '../../../core/widgets/app_components.dart';
 import '../../../core/widgets/app_states.dart';
+import '../termo_responsavel.dart';
 
 class ResponsibleScreen extends StatefulWidget {
   const ResponsibleScreen({super.key});
@@ -106,6 +107,10 @@ class _ResponsibleScreenState extends State<ResponsibleScreen> {
               trailing: PopupMenuButton<String>(
                 onSelected: (v) async {
                   final row = Map<String, dynamic>.from(raw);
+                  if (v == 'termo') {
+                    await compartilharTermo(context, row);
+                    return;
+                  }
                   if (v == 'edit') await _edit(row);
                   if (v == 'disable' &&
                       await confirmAction(
@@ -125,6 +130,7 @@ class _ResponsibleScreenState extends State<ResponsibleScreen> {
                 },
                 itemBuilder: (_) => const [
                   PopupMenuItem(value: 'edit', child: Text('Editar')),
+                  PopupMenuItem(value: 'termo', child: Text('Termo de responsabilidade')),
                   PopupMenuItem(value: 'disable', child: Text('Desativar')),
                 ],
               ),

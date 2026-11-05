@@ -39,6 +39,8 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   share_plus: ^10.1.4
   image_picker: ^1.2.4
+  flutter_svg: ^2.3.2
+  file_selector: ^1.1.0
 
 dev_dependencies:
   flutter_test:

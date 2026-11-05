@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -173,13 +174,18 @@ class ApiClient {
     String endpoint, {
     required Map<String, String> fields,
     required String fileField,
-    required String filePath,
+    String? filePath,
+    Uint8List? fileBytes,
+    String? fileName,
   }) async {
     final apiUrl = await _getApiBaseUrl();
     if (apiUrl == null) throw Exception('URL do servidor não configurada.');
+    final arquivo = fileBytes != null
+        ? http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName ?? 'arquivo')
+        : await http.MultipartFile.fromPath(fileField, filePath!);
     final request = http.MultipartRequest('POST', Uri.parse('$apiUrl$endpoint'))
       ..fields.addAll(fields)
-      ..files.add(await http.MultipartFile.fromPath(fileField, filePath));
+      ..files.add(arquivo);
     final token = await SecureTokenStorage().readToken();
     if (token != null && token.isNotEmpty) {
       request.headers['Authorization'] = 'Bearer $token';

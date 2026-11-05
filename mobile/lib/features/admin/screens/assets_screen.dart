@@ -6,6 +6,8 @@ import '../../../core/utils/app_helpers.dart';
 import '../../../core/widgets/app_components.dart';
 import '../../../core/widgets/app_states.dart';
 import '../dialogs/asset_form_dialog.dart';
+import '../../bens/etiquetas.dart';
+import '../../bens/importacao_planilha.dart';
 import '../dialogs/baixa_dialog.dart';
 
 class AssetsScreen extends StatefulWidget {
@@ -273,6 +275,24 @@ class _AssetsScreenState extends State<AssetsScreen> {
                   icon: const Icon(Icons.fact_check_outlined),
                 ),
                 const SizedBox(width: AppSpacing.sm),
+                IconButton.outlined(
+                  tooltip: 'Etiquetas em lote',
+                  onPressed: () => gerarEtiquetasLote(
+                    context,
+                    [for (final a in assets) Map<String, dynamic>.from(a as Map)],
+                  ),
+                  icon: const Icon(Icons.qr_code_2),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                IconButton.outlined(
+                  tooltip: 'Importar planilha (CSV)',
+                  onPressed: () => abrirImportacaoPlanilha(
+                    context,
+                    onImported: _reloadData,
+                  ),
+                  icon: const Icon(Icons.upload_file),
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 IconButton.filled(
                   tooltip: 'Novo bem',
                   onPressed: () => _editAsset(categories),
@@ -341,11 +361,16 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                   _editAsset(categories, asset);
                                 }
                                 if (action == 'toggle') _toggleActive(asset);
+                                if (action == 'etiqueta') mostrarEtiqueta(context, asset);
                               },
                               itemBuilder: (_) => [
                                 const PopupMenuItem(
                                   value: 'edit',
                                   child: Text('Editar'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'etiqueta',
+                                  child: Text('Etiqueta'),
                                 ),
                                 PopupMenuItem(
                                   value: 'toggle',
