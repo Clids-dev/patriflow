@@ -7,6 +7,7 @@ from modules.responsavel.router import router as responsavel_router
 from modules.setor.router import router as setor_router
 from modules.localizacao.router import router as localizacao_router
 from modules.relatorio.router import router as relatorio_router
+from modules.usuario.router import router as usuario_router
 
 api_router = APIRouter(dependencies=[Depends(require_api_access)])
 api_router.include_router(auth_router)
@@ -18,3 +19,4 @@ api_router.include_router(responsavel_router)
 api_router.include_router(setor_router)
 api_router.include_router(localizacao_router)
 api_router.include_router(relatorio_router)
+api_router.include_router(usuario_router)
