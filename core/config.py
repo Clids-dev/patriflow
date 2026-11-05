@@ -14,3 +14,7 @@ DB_PASSWORD = "postgres"
 DB_NAME = "sistema_tombamento"
 JWT_SECRET = os.getenv("PATRIFLOW_JWT_SECRET", "")
 JWT_EXPIRES_SECONDS = int(os.getenv("PATRIFLOW_JWT_EXPIRES_SECONDS", "3600"))
+
+# Fotos (W05): pasta de guarda no servidor e tamanho máximo por arquivo.
+FOTOS_DIR = os.getenv("PATRIFLOW_FOTOS_DIR", str(Path(__file__).resolve().parent.parent / "uploads" / "fotos"))
+FOTO_MAX_BYTES = int(os.getenv("PATRIFLOW_FOTO_MAX_BYTES", str(5 * 1024 * 1024)))

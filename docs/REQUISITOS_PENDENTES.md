@@ -71,13 +71,16 @@ QR e W05 = fotos. Confirmar com o professor qual lista vale antes de planejar.
 - [~] API busca o bem pelo tombo e devolve ficha completa (setor atual, localização, responsável). `/bem/buscar` devolve só os campos do bem; setor e responsável estão em `/bem/{id}/detalhes`
 - [x] API valida o DV antes de consultar o banco
 
-### W05 · Fotos: envio, guarda e entrega — `[ ]` 0/6
-- [ ] API recebe foto do app e guarda o arquivo (não há nenhuma rota de upload; `python-multipart` está no requirements sem uso)
-- [ ] Autor e data/hora são marcados pelo servidor
-- [ ] Foto fica vinculada à conferência, ao aceite de transferência ou ao bem não cadastrado
-- [ ] Limite de tamanho e lista de formatos, com erro claro
-- [ ] Foto é entregue pela API e aparece na tela web do registro
-- [ ] Foto nunca é apagada nem substituída (correção é foto nova)
+### W05 · Fotos: envio, guarda e entrega — `[~]` 4/6 (API pronta)
+- [x] API recebe foto (`POST /api/v1/fotos/`) e guarda o arquivo no servidor (`FOTOS_DIR`)
+- [x] Autor e data/hora são marcados pelo servidor (`enviado_por`, `enviado_em` com `NOW()`)
+- [~] Foto fica vinculada a `conferencia`, `aceite_transferencia` ou `bem_nao_cadastrado` pelo tipo e id do registro. Os registros ainda não existem na API; a validação de existência entra junto com eles
+- [x] Limite de tamanho (5 MB, `PATRIFLOW_FOTO_MAX_BYTES`) e formatos JPEG/PNG/WebP (checados pelo conteúdo), com mensagem clara (413/415)
+- [ ] Foto é entregue pela API (`GET /api/v1/fotos/{id}` pronto) e aparece na tela web do registro. A tela depende das telas de conferência, aceite e bem não cadastrado
+- [x] Foto nunca é apagada nem substituída: trigger no banco bloqueia UPDATE e DELETE
+
+Migração: `database/migrations/20261105_w05_fotos.sql` (executar uma vez no banco de desenvolvimento).
+Testes: `test_fotos.py`.
 
 ### W06 · Transferência com dupla confirmação — `[~]` parcial
 - [~] Estados: existem `pendente`, `aprovada` e `recusada` (quadro pede SOLICITADA, EFETIVADA, RECUSADA). Solicitação exige destino; motivo a verificar

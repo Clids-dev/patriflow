@@ -165,3 +165,6 @@ DOCUMENTACAO.md
 
 # Build do CSS do Mazer (tools/mazer)
 tools/mazer/node_modules/
+
+# Fotos enviadas pelo app (guardadas no servidor)
+uploads/
