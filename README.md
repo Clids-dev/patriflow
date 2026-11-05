@@ -1,187 +1,182 @@
-# Sistema de Tombamento (PatriFlow)
+# PatriFlow — Sistema de Tombamento
 
-O **Sistema de Tombamento (PatriFlow)** é uma solução web e API REST moderna, desenvolvida para o gerenciamento, controle e auditoria de bens patrimoniais corporativos, seus setores, categorias e responsáveis. Ele permite rastrear a movimentação de cada ativo, gerenciar os níveis de acesso de usuários, visualizar indicadores estatísticos e exportar relatórios customizados em formato PDF e Excel.
-
----
-
-## Recursos Principais
-
-### 1. Gestão de Ativos (Bens)
-- **Cadastro Detalhado:** Registro de bens com nome, valor, categoria, status e setor de localização.
-- **Códigos de Tombamento Automáticos:** Geração no formato `BASE-DV` (ex.: `INF-001-0`), com dígito verificador módulo 11 (ver W03).
-- **Entrada pelo almoxarifado:** todo bem cadastrado entra no almoxarifado central, com histórico iniciado na compra (ver W04).
-- **Ciclo de Vida (Soft Delete):** Inativação lógica (`ativo = FALSE`) que preserva o histórico de movimentações e auditoria.
-- **Histórico Completo (Timeline):** Visualização gráfica e cronológica das transferências de um bem no modal de detalhes.
-
-### 2. Gestão de Entidades de Apoio
-- **Categorias:** Organização dos bens (ex.: Informática, Mobiliário) com parametrização de siglas de tombamento.
-- **Setores:** Controle físico ou lógico das localizações onde os bens estão alocados.
-- **Responsáveis:** Associação de pessoal qualificado (gestores de setores) encarregados pelo patrimônio.
-
-### 3. Movimentações e Auditoria
-- **Histórico de Transferências:** Registro de todas as movimentações de bens entre setores.
-- **Transferência Rápida:** Funcionalidade para mover um bem de setor em poucos cliques com validação automática.
-
-### 4. Inteligência e Relatórios (Avançado)
-- **Dashboard Estatístico:** Painel interativo com gráficos desenvolvidos em **Chart.js** exibindo:
-  - Distribuição de bens ativos e inativos.
-  - Distribuição quantitativa e financeira de bens por categoria.
-  - Status dos ativos no sistema (Ex.: Em Uso, Manutenção, Baixado).
-- **Exportação Customizada de Relatórios:**
-  - Em formato **Excel (XLSX)** e **PDF**.
-  - Filtros avançados por categoria, setor e status do bem.
-
-### 5. Segurança e Controle de Acesso
-- **Autenticação de Usuários:** Sistema de login com persistência de sessão baseada em cookies seguros.
-- **Perfis de acesso:**
-  - `setor_patrimonio`: gestão total, aprovação de cadastros e autorização de movimentações.
-  - `agente_campo`: consulta, conferência e solicitação de movimentações entre o almoxarifado e o próprio setor.
-  - `responsavel_setor`: consulta do acervo do próprio setor, solicitação de bens do almoxarifado e autorização das solicitações (quando for o responsável do almoxarifado).
-  - `auditor`: somente leitura.
-- **Aprovação de cadastros:** contas criadas pelo cadastro público ficam pendentes até o setor de patrimônio ativar a conta e definir perfil e setor.
+O **PatriFlow** é um sistema web e API REST para o controle do patrimônio: cadastro de bens com código de tombamento, localização hierárquica, transferências com aprovação, fotos, etiquetas QR, termo de responsabilidade, depreciação, garantias, baixas e auditoria completa das alterações.
 
 ---
 
-## Tecnologias e Dependências
+## Funcionalidades
 
-- **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python 3.x) — Framework de alta performance, fácil de estender e com validação robusta baseada em **Pydantic**.
-- **Banco de Dados:** PostgreSQL — Execução de **Raw SQL** de alta performance via `psycopg2-binary`, sem a sobrecarga de ORMs.
-- **Frontend:** HTML5, CSS3 Customizado, **Bootstrap 5**, e Jinja2 Templates para renderização dinâmica no servidor.
-- **JavaScript:** ES6+ Modular com desacoplamento de arquivos JS (ex.: `dashboard.js`, `bens.js`, `utils.js`).
-- **Geração de Documentos:** `fpdf2` (para PDFs) e `pandas`/`openpyxl` (para planilhas Excel).
+### Bens (patrimônio)
+- Cadastro com nome, tipo, categoria, marca, modelo, número de série, valor de aquisição, nota fiscal, data de entrada, estado de conservação e garantia.
+- **Código de tombamento automático** no formato `SIGLA-NNN-DV`, por exemplo `INF-001-0`, com dígito verificador módulo 11. O código é imutável e nunca é reaproveitado, nem depois da baixa.
+- **Importação em lote** por CSV (com simulação antes de gravar).
+- **Fotos** do bem em JPEG, PNG ou WebP, de até 5 MB, com registro imutável.
+- **Etiquetas QR** para impressão, individuais ou em lote.
+- **Termo de responsabilidade** para impressão, por responsável.
+- **Depreciação linear** calculada a partir da aquisição, do valor residual e da vida útil.
+- **Alertas de garantia** vencida ou a vencer nos próximos 60 dias.
+- **Baixa** com motivo (doação, inservível, extravio, venda, sinistro ou descarte) e documento de referência. Baixas acima do limite de alçada exigem aprovação de outro servidor do patrimônio.
+- **Histórico de auditoria** de cada bem, com os campos antes e depois de cada alteração.
 
----
+### Estrutura
+- **Categorias**, com a sigla usada na geração do tombamento.
+- **Setores**, ligados a uma sala e a um responsável.
+- **Responsáveis**, com cargo e setor.
+- **Localizações** em hierarquia: prédio → andar → sala.
+- Cada cadastro tem uma página própria com indicadores e a lista de bens vinculados.
 
-## Arquitetura do Projeto
-
-O projeto segue uma arquitetura modular por domínio:
-
-```
-├── main.py                     # Ponto de entrada do FastAPI
-├── requirements.txt            # Dependências do Python
-├── tabelasDados.sql            # Script de inicialização do banco PostgreSQL
-├── core/                       # Configurações globais e classe de banco
-│   ├── config.py               # Credenciais e conexões do BD
-│   └── database.py             # Pooling de conexão e execução SQL
-├── modules/                    # Módulos de domínio da aplicação
-│   ├── bem/                    # CRUD de bens, queries e estatísticas
-│   ├── categoria/              # CRUD de categorias e siglas de tombamento
-│   ├── setor/                  # CRUD de setores e relacionamento
-│   ├── responsavel/            # CRUD de responsáveis e cargos
-│   ├── movimentacao/           # Histórico de transferências de bens
-│   ├── relatorio/              # Lógica de exportação (Excel e PDF)
-│   └── usuario/                # Autenticação e credenciais do sistema
-├── api/v1/                     # Roteamento da API JSON REST
-├── web/                        # Rotas web que servem os templates Jinja2
-├── templates/                  # Arquivos HTML Jinja2 (base.html, index.html, etc.)
-└── static/                     # Arquivos estáticos (CSS, JS, Imagens)
-```
-
----
-
-## Configuração e Instalação
-
-### W03 — conferência física e identificação segura
-
-O cadastro de bens armazena marca, modelo, número de série, valor de aquisição, nota fiscal, data de entrada e estado de conservação. O estado é obrigatório e aceita `novo`, `bom`, `regular`, `ruim` ou `inservivel`; em novos registros, a interface inicia em `novo`.
-
-A localização segue a hierarquia **prédio → andar → sala → setor**. Cadastre cada nível pela API em `/api/v1/localizacao/predios`, `/api/v1/localizacao/andares` e `/api/v1/localizacao/salas`, nessa ordem. O cadastro de setor exige `sala_id`.
-
-#### Dígito verificador módulo 11
-
-O tombo tem o formato `BASE-DV`; por exemplo, `INF-001-0`. Para conferir o DV manualmente:
-
-1. Separe o último algarismo, que é o DV. O restante é a base. No exemplo, a base é `INF-001` e o DV informado é `0`.
-2. Remova os hífens e converta as letras para números: `A=10`, `B=11`, …, `Z=35`. Os algarismos mantêm o próprio valor. Assim, `INF-001` vira `18, 23, 15, 0, 0, 1`.
-3. Percorra esses valores da direita para a esquerda, multiplicando por pesos que começam em 2 e seguem `2, 3, 4, 5, 6, 7, 8, 9`; depois do 9, volte para 2.
-4. Some os produtos. Para `INF-001`: `1×2 + 0×3 + 0×4 + 15×5 + 23×6 + 18×7 = 341`.
-5. Calcule `DV = (11 − (soma mod 11)) mod 11`. Se o resultado for 10, use 0, pois o DV é sempre um único algarismo. No exemplo, `341 mod 11 = 0`, então o DV é `0`.
-6. Compare o resultado com o último algarismo do tombo. Se não coincidir, a API responde HTTP 400 com `Número de tombo inválido — verifique a digitação` antes de consultar o banco.
-
-O DV também é conferido pelo banco. O número não pode ser atualizado nem reutilizado após a baixa: o tombo é único, permanece registrado no bem inativo, e exclusões físicas ou limpeza da tabela são bloqueadas.
-
-Para atualizar uma base existente, aplique `database/migrations/20261018_w03_assets_locations_tombo.sql` após a migração W02. A migração acrescenta DV aos tombos históricos; reimprima as etiquetas com os novos códigos. Ela também associa os setores atuais a um local temporário “não informado”; atualize esses locais com os endereços reais depois.
-
-### W04 — almoxarifado e autorização de movimentações
-
-- Existe **um único almoxarifado** ativo (setor com `flag_almoxarifado = TRUE`; índice único no banco).
-- Bens entram sempre pelo almoxarifado. O cadastro grava o bem e a movimentação de entrada na mesma transação.
+### Movimentações (transferências)
+- Solicitações entre o almoxarifado e o setor do solicitante. A solicitação exige justificativa.
+- O **responsável do almoxarifado** autoriza ou recusa. A autorização exige foto do bem; a recusa exige o motivo, que fica visível para quem pediu.
+- Solicitações sem resposta após o prazo (3 dias por padrão) são **escaladas** para a fila do setor de patrimônio.
 - Movimentações feitas pelo setor de patrimônio são aprovadas na hora.
-- Demais perfis só solicitam movimentações entre o almoxarifado e o próprio setor. A solicitação fica `pendente` e só muda a localização do bem quando é autorizada pelo responsável do almoxarifado ou pelo setor de patrimônio.
-- A decisão é atômica: um bem baixado ou que mudou de local não pode ser autorizado, e uma solicitação só pode ser decidida uma vez.
 
-Migração: `database/migrations/20261104_w04_almoxarifado_autorizacao.sql`.
+### Painel e relatórios
+- Painel com indicadores de patrimônio ativo, total, baixados e garantias a vencer, além de uma lista do que pede atenção e gráficos por categoria e por status.
+- Relatórios em PDF e Excel, com filtros por categoria, setor e status.
 
-### W05 — aprovação de cadastros e perfil auditor
+### Segurança
+- Login com token JWT em cookie seguro e também em `Authorization: Bearer`.
+- **Bloqueio temporário** após 5 tentativas erradas (15 minutos). As tentativas ficam registradas, sem a senha.
+- Cadastro público: a conta fica pendente até o setor de patrimônio ativá-la e definir perfil e setor.
+- Perfis de acesso:
 
-- Cadastros públicos nascem inativos e precisam de setor. O login informa que a conta aguarda aprovação.
-- O setor de patrimônio ativa a conta em `PATCH /api/v1/usuarios/{id}` (perfil, setor e situação).
-- Perfil `auditor` (somente leitura).
+| Perfil | Acesso |
+|---|---|
+| `setor_patrimonio` | Gestão completa: bens, estrutura, usuários, autorizações, escaladas, baixas e etiquetas. |
+| `agente_campo` | Consulta e conferência dos bens; solicita movimentações. |
+| `responsavel_setor` | Consulta o acervo do próprio setor; solicita bens; autoriza transferências quando é o responsável do almoxarifado. |
+| `auditor` | Somente leitura. |
 
-Migração: `database/migrations/20261104_w05_usuarios_aprovacao_auditor.sql`. Aplicar após a W04.
+### Backup
+- `tools/backup.sh` gera o dump do banco e um arquivo com as fotos, e remove backups com mais de 14 dias.
+- `tools/restore.sh` restaura um backup em um banco **novo**, para teste, sem tocar no original.
+
+---
+
+## Tecnologias
+
+- **Backend:** [FastAPI](https://fastapi.tiangolo.com/) com Pydantic v2 e Uvicorn.
+- **Banco de dados:** PostgreSQL, com SQL direto via `psycopg2-binary`, sem ORM.
+- **Interface web:** Jinja2, Bootstrap, Bootstrap Icons, Chart.js e um tema baseado no Mazer.
+- **Documentos:** `fpdf2` (PDF), `openpyxl` e `pandas` (Excel), `segno` (QR Code).
+- **Aplicativo móvel:** Flutter, em [`mobile/`](mobile/README.md).
+
+---
+
+## Estrutura do projeto
+
+```
+├── main.py                 # Ponto de entrada da aplicação
+├── requirements.txt        # Dependências Python
+├── tabelasDados.sql        # Script inicial do banco
+├── database/migrations/    # Alterações do banco, em ordem cronológica
+├── core/                   # Configuração, conexão com o banco e regras de tombamento
+├── modules/                # Domínios: bem, categoria, setor, responsavel, localizacao,
+│                           # movimentacao, foto, etiqueta, termo, auditoria, usuario, relatorio
+│   └── <dominio>/          # router, service, repository, queries e schemas
+├── api/v1/                 # Rotas da API REST e controle de permissões (ROLE_PERMISSIONS)
+├── web/                    # Rotas que entregam as páginas HTML
+├── templates/              # Páginas Jinja2
+├── static/                 # CSS, JavaScript e imagens
+├── tools/                  # Dados de desenvolvimento, backup e restauração
+├── docs/                   # Documentação de requisitos
+├── test_*.py               # Testes automatizados
+└── mobile/                 # Aplicativo Flutter
+```
+
+---
+
+## Instalação
 
 ### Pré-requisitos
-- Python 3.10+ instalado.
-- Banco de Dados PostgreSQL ativo.
+- Python 3.10 ou superior.
+- PostgreSQL em execução.
 
-### 1. Clonar o projeto e criar o Ambiente Virtual
+### 1. Ambiente virtual e dependências
 
 ```bash
-# Crie o ambiente virtual
 python -m venv venv
+source venv/bin/activate        # Linux/macOS
+venv\Scripts\activate           # Windows
 
-# Ative o ambiente virtual
-# No Linux/macOS:
-source venv/bin/activate
-# No Windows:
-venv\Scripts\activate
-```
-
-### 2. Instalar as Dependências
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configurar o Banco de Dados
+### 2. Banco de dados
 
-1. Certifique-se de que o PostgreSQL está rodando.
-2. Crie um banco de dados no PostgreSQL (por padrão, chamado `sistema_tombamento`).
-3. Execute o script `tabelasDados.sql` no seu gerenciador de banco de dados (ex.: DBeaver, pgAdmin) para criar as tabelas e dados iniciais.
-4. Ajuste as credenciais no arquivo `core/config.py`:
+1. Crie o banco `sistema_tombamento` (ou outro nome).
+2. Execute `tabelasDados.sql` no seu cliente de banco (DBeaver, pgAdmin etc.).
+3. Em uma base já existente, aplique os arquivos de `database/migrations/` em ordem de nome.
+4. Ajuste as conexões em `core/config.py` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`).
 
-```python
-DB_HOST = "127.0.0.1"
-DB_PORT = 5433 # Altere para a sua porta do PostgreSQL se for diferente (padrão 5432)
-DB_USER = "postgres"
-DB_PASSWORD = "sua_senha"
-DB_NAME = "sistema_tombamento"
-```
+### 3. Variáveis de ambiente
 
-### 4. Executar o Servidor de Desenvolvimento
-
-Antes de iniciar a aplicação, configure a chave de assinatura JWT com um valor aleatório e privado (pelo menos 32 bytes). Para desenvolvimento local, crie um `.env` na raiz do projeto (ele é ignorado pelo Git):
+Crie um arquivo `.env` na raiz (ele é ignorado pelo Git) com a chave de assinatura dos tokens:
 
 ```bash
 python -c 'from pathlib import Path; import secrets; p=Path(".env"); p.exists() or p.write_text("PATRIFLOW_JWT_SECRET=" + secrets.token_urlsafe(48) + "\n")'
 ```
 
-O `core/config.py` carrega essa chave automaticamente. Em produção, configure `PATRIFLOW_JWT_SECRET` no ambiente do serviço; essa variável tem prioridade sobre o `.env`. Não altere a chave a cada reinício, pois isso invalida os tokens emitidos anteriormente.
+Variáveis opcionais:
 
-Execute o comando Uvicorn para iniciar a aplicação:
+| Variável | Padrão | Função |
+|---|---|---|
+| `PATRIFLOW_JWT_SECRET` | — | Chave dos tokens. Obrigatória. Não a troque a cada reinício. |
+| `PATRIFLOW_JWT_EXPIRES_SECONDS` | `3600` | Validade do token de acesso. |
+| `PATRIFLOW_PRAZO_TRANSFERENCIA_DIAS` | `3` | Dias até a escalada de uma solicitação. |
+| `PATRIFLOW_ALCADA_BAIXA_VALOR` | `5000` | Valor a partir do qual a baixa exige aprovação de outro servidor. |
+| `PATRIFLOW_FOTOS_DIR` | `uploads/fotos` | Pasta onde as fotos são guardadas. |
+| `PATRIFLOW_FOTO_MAX_BYTES` | `5242880` | Tamanho máximo de cada foto (5 MB). |
+
+Em produção, defina essas variáveis no ambiente do serviço. Elas têm prioridade sobre o `.env`.
+
+### 4. Executar
 
 ```bash
 uvicorn main:app --reload
 ```
 
-A aplicação estará disponível em:
-- **Interface Web:** [http://127.0.0.1:8000/index](http://127.0.0.1:8000/index) (necessita de login prévio ou use os dados de teste do SQL)
-- **Documentação Swagger (API REST):** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- **Documentação ReDoc:** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+- **Interface web:** http://127.0.0.1:8000/index (faça login antes)
+- **Swagger (API):** http://127.0.0.1:8000/docs
+- **ReDoc:** http://127.0.0.1:8000/redoc
 
-### Aplicativo móvel Flutter
+### 5. Dados de exemplo (somente desenvolvimento)
 
-O aplicativo fica em [`mobile/`](mobile/README.md). Ele é uma única instalação para todos os perfis e, antes do login, permite informar e salvar no aparelho o endereço-base do servidor PatriFlow.
+```bash
+venv/bin/python tools/seed_dev.py
+```
+
+O script é idempotente: o que já existe pelo nome é pulado. Ele usa as mesmas regras do sistema.
+
+---
+
+## Testes
+
+```bash
+pytest
+```
+
+Os testes de integração usam o banco configurado em `core/config.py`.
+
+---
+
+## Backup e restauração
+
+```bash
+PGPASSWORD=... tools/backup.sh
+PGPASSWORD=... tools/restore.sh backups/banco-AAAAMMDD-HHMMSS.dump banco_de_teste
+```
+
+Variáveis úteis: `PATRIFLOW_BACKUP_DIR`, `PATRIFLOW_BACKUP_RETENCAO_DIAS`, `PATRIFLOW_DB_HOST`, `PATRIFLOW_DB_PORT`, `PATRIFLOW_DB_USER`, `PATRIFLOW_DB_NAME`.
+
+Antes de restaurar no banco de produção, faça a restauração de teste e confira os dados.
+
+---
+
+## Aplicativo móvel
+
+O app fica em [`mobile/`](mobile/README.md). Ele serve a todos os perfis. Antes do login, informe o endereço do servidor sem `/api/v1`, por exemplo `http://192.168.0.10:8000`. Para o emulador Android acessar uma API local, use `http://10.0.2.2:8000`.
 
 ```bash
 cd mobile
@@ -189,11 +184,9 @@ flutter pub get
 flutter run
 ```
 
-Informe a origem do servidor sem `/api/v1`, como `http://192.168.0.10:8000`. Para acessar a API local pelo emulador Android, use `http://10.0.2.2:8000`.
-
 ---
 
-## 👥 Equipe
+## Equipe
 
 - **José Euclides H Barros**
 - **Pedro Henrique do Santos**
