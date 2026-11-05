@@ -63,6 +63,34 @@ function atualizarSelecaoTodos(itensPagina) {
     chkTodos.indeterminate = marcados > 0 && marcados < itensPagina.length;
 }
 
+// Envia a planilha; em simulação só mostra o resultado, sem gravar.
+async function enviarImportacao(simular) {
+    const arquivo = $("#arquivoImportar").files[0];
+    const saida = $("#resultadoImportar");
+    if (!arquivo) { saida.innerHTML = '<div class="alert alert-warning">Escolha um arquivo CSV.</div>'; return; }
+    const form = new FormData();
+    form.append('arquivo', arquivo);
+    form.append('simular', simular ? 'true' : 'false');
+    saida.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
+    try {
+        const resposta = await fetch('/api/v1/bem/importar', { method: 'POST', body: form, credentials: 'same-origin' });
+        const dados = await resposta.json();
+        if (!resposta.ok) throw new Error(dados.detail || 'Falha na importação.');
+        const erros = dados.erros.map(e => `<li>Linha ${esc(e.linha)}: ${esc(e.erro)}</li>`).join('');
+        saida.innerHTML = `
+            <div class="alert ${dados.erros.length ? 'alert-warning' : 'alert-success'}">
+                <strong>${simular ? 'Simulação' : 'Importação'}:</strong>
+                ${dados.total} linha(s) lida(s), ${simular ? dados.validas + ' válida(s)' : dados.importados + ' importada(s)'},
+                ${dados.erros.length} com erro.
+            </div>
+            ${erros ? `<ul class="small">${erros}</ul>` : ''}`;
+        if (simular && dados.validas > 0) $("#btnImportar").disabled = false;
+        if (!simular) { await carregarBens(); }
+    } catch (erro) {
+        saida.innerHTML = `<div class="alert alert-danger">${esc(erro.message)}</div>`;
+    }
+}
+
 // Abre a folha de etiquetas em nova aba (a API aceita o cookie de sessão).
 function abrirEtiquetas(ids) {
     if (!ids.length) return;
@@ -317,6 +345,11 @@ function setupListeners() {
         });
     });
     $("#btnEtiquetasLote").addEventListener('click', () => abrirEtiquetas([...selecionados]));
+
+    // Importação por planilha: simular primeiro, depois gravar.
+    $("#btnSimularImportacao").addEventListener('click', () => enviarImportacao(true));
+    $("#btnImportar").addEventListener('click', () => enviarImportacao(false));
+    $("#arquivoImportar").addEventListener('change', () => { $("#btnImportar").disabled = true; });
 
     // Paginacao (Delegation)
     $("#pagination").addEventListener('click', (e) => {
