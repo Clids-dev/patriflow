@@ -22,7 +22,8 @@ function cartaoDecisao(m) {
         <div class="solicitacao border rounded-3 p-3 mb-3">
             <div class="d-flex justify-content-between flex-wrap gap-2">
                 <div>
-                    <div class="fw-semibold">${esc(m.bem_nome)} <code class="ms-1">${esc(m.codigo_tombamento)}</code></div>
+                    <div class="fw-semibold">${esc(m.bem_nome)} <code class="ms-1">${esc(m.codigo_tombamento)}</code>
+                        ${m.escalada ? '<span class="badge rounded-pill bg-danger-subtle text-danger ms-2">Escalada</span>' : ''}</div>
                     <div class="small text-muted">${esc(m.setor_origem_nome || 'Almoxarifado')} → <strong>${esc(m.setor_destino_nome)}</strong></div>
                     <div class="small text-muted">Solicitado por ${esc(m.solicitante_nome || '—')} em ${esc(data(m.data_movimentacao))}</div>
                 </div>
@@ -32,7 +33,7 @@ function cartaoDecisao(m) {
                 <span>${esc(m.justificativa || '—')}</span>
             </div>
             <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-primary btn-sm pill-btn btn-autorizar" data-id="${esc(m.id)}"><i class="bi bi-check-lg me-1"></i>Autorizar</button>
+                <button class="btn btn-primary btn-sm pill-btn btn-autorizar" data-id="${esc(m.id)}" data-resumo="${esc(`${m.bem_nome} → ${m.setor_destino_nome}`)}"><i class="bi bi-camera me-1"></i>Autorizar com foto</button>
                 <button class="btn btn-outline-danger btn-sm pill-btn btn-recusar" data-id="${esc(m.id)}"
                     data-resumo="${esc(`${m.bem_nome} → ${m.setor_destino_nome}`)}"><i class="bi bi-x-lg me-1"></i>Recusar</button>
             </div>
@@ -83,13 +84,33 @@ async function atualizar() {
     await Promise.allSettled([carregarMinhas(), $('#itemAbaDecidir').classList.contains('d-none') ? null : carregarDecidir()]);
 }
 
-async function autorizar(id) {
+// Autorizar exige a foto do recebimento: envia a foto primeiro e só então autoriza.
+async function autorizar(evento) {
+    evento.preventDefault();
+    const id = $('#autorizarId').value;
+    const arquivo = $('#fotoRecebimento').files[0];
+    if (!arquivo) return;
+    const botao = $('#btnConfirmarAutorizacao');
+    botao.disabled = true;
     try {
+        const form = new FormData();
+        form.append('arquivo', arquivo);
+        form.append('registro_tipo', 'aceite_transferencia');
+        form.append('registro_id', id);
+        const envio = await fetch('/api/v1/fotos/', { method: 'POST', body: form, credentials: 'same-origin' });
+        if (!envio.ok) {
+            const erro = await envio.json().catch(() => ({}));
+            throw new Error(erro.detail || 'Não foi possível enviar a foto.');
+        }
         await api.post(`/api/v1/movimentacao/${id}/aprovar`, {});
-        ui.showNotification('Transferência autorizada.');
+        bootstrap.Modal.getInstance($('#modalAutorizar'))?.hide();
+        $('#formAutorizar').reset();
+        ui.showNotification('Transferência autorizada com a foto do recebimento.');
         await atualizar();
     } catch (erro) {
         ui.showNotification(erro.message, 'error');
+    } finally {
+        botao.disabled = false;
     }
 }
 
@@ -117,7 +138,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         $('#cardSolicitacoes').addEventListener('click', (e) => {
             const autorizarBotao = e.target.closest('.btn-autorizar');
-            if (autorizarBotao) autorizar(autorizarBotao.dataset.id);
+            if (autorizarBotao) {
+                $('#autorizarId').value = autorizarBotao.dataset.id;
+                $('#autorizarResumo').textContent = autorizarBotao.dataset.resumo;
+                bootstrap.Modal.getOrCreateInstance($('#modalAutorizar')).show();
+            }
             const recusarBotao = e.target.closest('.btn-recusar');
             if (recusarBotao) {
                 $('#recusaId').value = recusarBotao.dataset.id;
@@ -126,6 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
         $('#formRecusa').addEventListener('submit', confirmarRecusa);
+        $('#formAutorizar').addEventListener('submit', autorizar);
         await atualizar();
     } catch (erro) {
         console.warn('Solicitações indisponíveis:', erro);

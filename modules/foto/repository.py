@@ -26,6 +26,10 @@ def _para_saida(row) -> dict:
 
 
 class FotoRepository(DataBase):
+    def contar(self, registro_tipo, registro_id) -> int:
+        rows = self.execute('SELECT count(*) FROM fotos WHERE registro_tipo = %s AND registro_id = %s', (registro_tipo, registro_id)) or [(0,)]
+        return rows[0][0]
+
     def inserir(self, registro_tipo, registro_id, arquivo, content_type, tamanho, usuario_id) -> dict:
         row = self.commit(QUERY_INSERIR, (registro_tipo, registro_id, arquivo, content_type, tamanho, usuario_id))
         return _para_saida(row)

@@ -7,6 +7,8 @@ from modules.bem.repository import BemRepository
 from modules.movimentacao.repository import MovimentacaoRepository
 from modules.movimentacao.schemas import MovimentacaoCreate
 from core.tombamento import require_valid_tombo
+from core import config
+from modules.foto.repository import FotoRepository
 
 
 ROLE_ADMIN = "setor_patrimonio"
@@ -28,7 +30,7 @@ class MovimentacaoService:
         return MovimentacaoRepository().get_id(id)
 
     def listar_pendentes(self):
-        return MovimentacaoRepository().get_pendentes()
+        return MovimentacaoRepository().get_pendentes(config.PRAZO_TRANSFERENCIA_DIAS)
 
     def add_movimentacao(self, movimentacao: MovimentacaoCreate, usuario: dict):
         """Registra uma movimentação aplicando as regras de almoxarifado.
@@ -101,6 +103,8 @@ class MovimentacaoService:
         return repository.save(movimentacao, atual, "pendente", usuario["id"])
 
     def decidir_movimentacao(self, id: int, usuario: dict, aprovar: bool, motivo: str | None = None):
+        if aprovar and FotoRepository().contar("aceite_transferencia", id) == 0:
+            raise HTTPException(status_code=400, detail="Envie a foto do recebimento do bem antes de autorizar a transferência.")
         if not aprovar and not (motivo or "").strip():
             raise HTTPException(status_code=400, detail="Informe o motivo da recusa. Quem solicitou precisa saber por quê.")
         repository = MovimentacaoRepository()

@@ -7,7 +7,16 @@ from fastapi import HTTPException
 
 from modules.bem.schemas import Bem
 from modules.movimentacao.schemas import Movimentacao, MovimentacaoCreate
+from modules.movimentacao import service as mov_service
 from modules.movimentacao.service import MovimentacaoService
+
+
+@pytest.fixture(autouse=True)
+def foto_do_recebimento(monkeypatch):
+    # Autorização exige foto do recebimento (W06); estes testes cobrem outras regras, então a foto existe.
+    repo = MagicMock()
+    repo.contar.return_value = 1
+    monkeypatch.setattr(mov_service, "FotoRepository", lambda: repo)
 
 ALMOX = 3
 ADMIN = {"id": 1, "perfil": "setor_patrimonio", "setor_id": None}

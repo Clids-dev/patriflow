@@ -50,7 +50,8 @@ QUERY_MOVIMENTACOES_PENDENTES = """
         m.justificativa,
         m.ativo,
         m.status,
-        u.nome AS solicitante_nome
+        u.nome AS solicitante_nome,
+        (m.data_movimentacao < NOW() - make_interval(days => %s)) AS escalada
     FROM movimentacoes m
     JOIN bens b ON m.bem_id = b.id
     LEFT JOIN setores s1 ON m.setor_origem_id = s1.id

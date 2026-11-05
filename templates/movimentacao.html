@@ -80,7 +80,7 @@
                         </li>
                     </ul>
                     <div class="tab-content p-3">
-                        <div class="tab-pane fade" id="aba-decidir" role="tabpanel">
+                        <div class="tab-pane fade show active" id="aba-decidir" role="tabpanel">
                             <div id="listaDecidir"></div>
                         </div>
                         <div class="tab-pane fade" id="aba-minhas" role="tabpanel">
@@ -234,6 +234,29 @@
                     <div class="form-text">Quem solicitou recebe este motivo.</div>
                     <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-danger" id="btnConfirmarRecusa">Confirmar recusa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal: autorizar com foto do recebimento -->
+<div class="modal fade" id="modalAutorizar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Autorizar transferência</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAutorizar">
+                    <input type="hidden" id="autorizarId">
+                    <p class="small text-muted" id="autorizarResumo"></p>
+                    <label class="form-label" for="fotoRecebimento">Foto do bem recebido (obrigatória)</label>
+                    <input type="file" class="form-control" id="fotoRecebimento" accept="image/jpeg,image/png,image/webp" required>
+                    <div class="form-text">JPEG, PNG ou WebP, até 5 MB. A foto fica guardada junto da transferência.</div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary" id="btnConfirmarAutorizacao">Enviar foto e autorizar</button>
                     </div>
                 </form>
             </div>

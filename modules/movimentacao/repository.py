@@ -17,6 +17,7 @@ def _detailed(row) -> schemas.MovimentacaoDetailed:
         ativo=bool(row[7]),
         status=row[8],
         solicitante_nome=row[9] if len(row) > 9 else None,
+        escalada=bool(row[10]) if len(row) > 10 else False,
     )
 
 
@@ -41,8 +42,8 @@ class MovimentacaoRepository:
         rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_DETALHADAS)
         return [_detailed(row) for row in rows or []]
 
-    def get_pendentes(self):
-        rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_PENDENTES)
+    def get_pendentes(self, prazo_dias: int = 3):
+        rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_PENDENTES, (prazo_dias,))
         return [_detailed(row) for row in rows or []]
 
     def get_by_bem_codigo(self, codigo: str):

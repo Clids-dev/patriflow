@@ -40,6 +40,7 @@ class MovimentacaoDetailed(BaseModel):
     ativo: bool
     status: str = "aprovada"
     solicitante_nome: Optional[str] = None
+    escalada: bool = False
 
 
 class DecisaoRecusa(BaseModel):

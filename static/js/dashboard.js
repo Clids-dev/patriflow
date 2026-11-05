@@ -60,7 +60,7 @@ async function renderizarAtencao() {
         const pendentes = await api.get('/api/v1/movimentacao/pendentes');
         pendentes.forEach(m => itens.push({
             icone: 'bi-arrow-left-right',
-            titulo: `Transferência aguardando aceite: ${m.bem_nome}`,
+            titulo: `${m.escalada ? 'Escalada: ' : ''}Transferência aguardando autorização: ${m.bem_nome}`,
             detalhe: `${m.codigo_tombamento} → ${m.setor_destino_nome}`,
             link: '/movimentacao'
         }));
