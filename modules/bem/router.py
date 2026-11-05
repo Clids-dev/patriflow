@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from api.v1.auth import current_user
+from modules.auditoria.repository import AuditoriaRepository
 from modules.bem.service import BemService
 from modules.bem.schemas import BemCreate, BemUpdate
 
@@ -45,9 +46,13 @@ def get_proximo_codigo(id_categoria: int, service: BemService = Depends(get_serv
     return {"codigo": service.get_proximo_codigo(id_categoria)}
 
 @router.post("/{id}/desativar")
-def desativar_bem(id: int, service: BemService = Depends(get_service)):
-    return service.desativar_bem(id)
+def desativar_bem(id: int, service: BemService = Depends(get_service), usuario=Depends(current_user)):
+    return service.desativar_bem(id, usuario)
 
 @router.post("/{id}/reativar")
-def reativar_bem(id: int, service: BemService = Depends(get_service)):
-    return service.reativar_bem(id)
+def reativar_bem(id: int, service: BemService = Depends(get_service), usuario=Depends(current_user)):
+    return service.reativar_bem(id, usuario)
+
+@router.get("/{id}/auditoria")
+def historico_de_alteracoes(id: int):
+    return AuditoriaRepository().listar("bem", id)

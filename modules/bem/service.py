@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from modules.bem.repository import BemRepository
 from modules.bem.schemas import BemCreate, BemUpdate
+from modules.auditoria.service import registrar_acao, registrar_alteracao
 from modules.categoria.repository import CategoriaRepository
 from modules.setor.repository import SetorRepository
 from modules.bem.queries_stats import QUERY_STATS_CATEGORIA, QUERY_STATS_STATUS
@@ -49,7 +50,9 @@ class BemService:
             raise HTTPException(status_code=400, detail="Cadastre um almoxarifado antes de cadastrar bens.")
         repository = BemRepository()
         try:
-            return repository.save(bem, almoxarifado.id, usuario["id"])
+            criado = repository.save(bem, almoxarifado.id, usuario["id"])
+            registrar_acao("bem", criado.id, "criar", usuario, None, criado.model_dump())
+            return criado
         except errors.UniqueViolation as exc:
             # O índice único cobre também bens baixados: tombo nunca é reaproveitado.
             raise HTTPException(
@@ -62,10 +65,11 @@ class BemService:
 
     def put_bem(self, id: int, bem_atualizado: BemUpdate, usuario: dict):
         repository = BemRepository()
+        antes = repository.get_by_id(id)
+        if antes is None:
+            raise HTTPException(status_code=404, detail=f"Bem com id {id} não encontrado")
         if bem_atualizado.status is not None:
-            atual = repository.get_by_id(id)
-            if atual is None:
-                raise HTTPException(status_code=404, detail=f"Bem com id {id} não encontrado")
+            atual = antes
             # Tirar um bem da manutenção sem o reparo concluído é decisão do setor de patrimônio.
             if (atual.status == "Manutenção" and bem_atualizado.status != "Manutenção"
                     and usuario["perfil"] != "setor_patrimonio"):
@@ -76,6 +80,7 @@ class BemService:
         bem = repository.put(id, bem_atualizado)
         if not bem:
             raise HTTPException(status_code=404, detail=f"Bem com id {id} não encontrado")
+        registrar_alteracao("bem", id, usuario, antes.model_dump(), bem.model_dump())
         return bem
 
     def delete_bem(self, id: int):
@@ -142,18 +147,20 @@ class BemService:
         repository = BemRepository()
         return repository.get_bens_por_setor(setor_id)
 
-    def desativar_bem(self, bem_id: int):
+    def desativar_bem(self, bem_id: int, usuario: dict | None = None):
         repo = BemRepository()
         bem = repo.get_by_id(bem_id)
         if not bem:
             raise HTTPException(404, "Bem não encontrado")
         repo.desativar(bem_id)
+        registrar_acao("bem", bem_id, "baixar", usuario, {"ativo": True}, {"ativo": False})
         return {"id": bem_id, "ativo": False}
 
-    def reativar_bem(self, bem_id: int):
+    def reativar_bem(self, bem_id: int, usuario: dict | None = None):
         repo = BemRepository()
         bem = repo.get_by_id(bem_id)
         if not bem:
             raise HTTPException(404, "Bem não encontrado")
         repo.reativar(bem_id)
+        registrar_acao("bem", bem_id, "reativar", usuario, {"ativo": False}, {"ativo": True})
         return {"id": bem_id, "ativo": True}
