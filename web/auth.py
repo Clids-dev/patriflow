@@ -30,15 +30,17 @@ def register(
     username: str = Form(...),
     senha: str = Form(...),
     confirmar_senha: str = Form(...),
-    setor_id: int | None = Form(None),
+    setor_id: str = Form(""),
 ):
+    # Campo vazio = sem setor. Chega como texto para não virar erro de validação do FastAPI.
+    setor = int(setor_id) if setor_id.strip().isdigit() else None
     if senha != confirmar_senha:
         return templates.TemplateResponse("register.html", {
             "request": request, "erro": "As senhas não coincidem.",
             "nome": nome, "username": username,
         }, status_code=422)
     try:
-        UsuarioService(UsuarioRepository()).criar_conta(username, senha, nome, setor_id)
+        UsuarioService(UsuarioRepository()).criar_conta(username, senha, nome, setor)
     except ValueError as exc:
         status_code = 409 if "já está em uso" in str(exc) else 422
         return templates.TemplateResponse("register.html", {
