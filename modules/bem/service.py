@@ -60,7 +60,6 @@ class BemService:
                 ),
             ) from exc
 
-
     def put_bem(self, id: int, bem_atualizado: BemUpdate, usuario: dict):
         repository = BemRepository()
         if bem_atualizado.status is not None:
@@ -106,12 +105,13 @@ class BemService:
         if not categoria:
             raise HTTPException(status_code=404, detail="Categoria não encontrada")
         
-        quantidade = repo_bem.count_by_categoria(id_categoria)
-        proximo_numero = quantidade + 1
         
         sigla = re.sub(r"[^A-Za-z0-9]", "", categoria.sigla)
         if not sigla:
             raise HTTPException(status_code=400, detail="A sigla da categoria não pode gerar um número de tombo")
+        # Próximo número depois do maior já usado pela sigla (inclusive bens baixados).
+        # Contar bens não serve: tombo manual ou lacuna faz a contagem repetir número.
+        proximo_numero = repo_bem.max_sequencia_tombo(sigla) + 1
         base = f"{sigla}-{str(proximo_numero).zfill(3)}"
         return format_tombo(base)
 

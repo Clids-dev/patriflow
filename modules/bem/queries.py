@@ -68,7 +68,14 @@ QUERY_DESATIVAR = "UPDATE bens SET ativo = false WHERE id = %s RETURNING id"
 
 QUERY_REATIVAR = "UPDATE bens SET ativo = true  WHERE id = %s RETURNING id"
 
-QUERY_COUNT_BY_CATEGORIA = "SELECT COUNT(*) FROM bens WHERE id_categoria = %s"
+# Maior sequência já usada por uma sigla de tombo. Não filtra por `ativo`: bens
+# baixados também ocupam o número, porque tombo nunca é reaproveitado.
+# O parâmetro é a regex que casa somente códigos SIGLA-NNN-DV.
+QUERY_MAX_SEQUENCIA_TOMBO = """
+    SELECT MAX(CAST(split_part(codigo_tombamento, '-', 2) AS INTEGER))
+    FROM bens
+    WHERE upper(codigo_tombamento) ~ %s
+"""
 
 QUERY_RELATORIO_ATIVOS = """
         SELECT status, COUNT(*) AS quantidade
