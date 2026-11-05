@@ -42,6 +42,33 @@ async function carregarCategorias() {
     }
 }
 
+// Seleção de bens para gerar etiquetas (guardada entre páginas da tabela).
+const selecionados = new Set();
+
+function alternarSelecao(id, marcado) {
+    marcado ? selecionados.add(String(id)) : selecionados.delete(String(id));
+    atualizarBotaoEtiquetas();
+}
+
+function atualizarBotaoEtiquetas() {
+    const botao = $("#btnEtiquetasLote");
+    botao.disabled = selecionados.size === 0;
+    $("#qtdEtiquetas").textContent = `(${selecionados.size})`;
+}
+
+function atualizarSelecaoTodos(itensPagina) {
+    const chkTodos = $("#chkTodos");
+    const marcados = itensPagina.filter(bem => selecionados.has(String(bem.id))).length;
+    chkTodos.checked = itensPagina.length > 0 && marcados === itensPagina.length;
+    chkTodos.indeterminate = marcados > 0 && marcados < itensPagina.length;
+}
+
+// Abre a folha de etiquetas em nova aba (a API aceita o cookie de sessão).
+function abrirEtiquetas(ids) {
+    if (!ids.length) return;
+    window.open(`/api/v1/etiquetas/lote?ids=${ids.map(encodeURIComponent).join(',')}`, '_blank', 'noopener');
+}
+
 function renderizarTabela() {
     const tabela = $("#tabela-bens");
     const info = $("#infoPaginacao");
@@ -62,7 +89,8 @@ function renderizarTabela() {
 
     tabela.innerHTML = itensPagina.map(bem => `
         <tr>
-            <td class="ps-4"><span class="text-muted">#${esc(bem.id)}</span></td>
+            <td class="ps-4"><input class="form-check-input chk-etiqueta" type="checkbox" data-id="${esc(bem.id)}" ${selecionados.has(String(bem.id)) ? 'checked' : ''} aria-label="Selecionar bem ${esc(bem.id)}"></td>
+            <td><span class="text-muted">#${esc(bem.id)}</span></td>
             <td><span class="fw-bold text-dark">${esc(bem.nome)}</span></td>
             <td><code>${esc(bem.codigo_tombamento)}</code></td>
             <td>R$ ${parseFloat(bem.valor_aquisicao ?? bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
@@ -70,6 +98,7 @@ function renderizarTabela() {
             <td class="text-end pe-4">
                 <div class="btn-group">
                     <button class="btn btn-sm btn-light text-primary btn-detalhes" data-id="${esc(bem.id)}" title="Ver Detalhes"><i class="bi bi-eye"></i></button>
+                    <button class="btn btn-sm btn-light text-dark btn-etiqueta" data-id="${esc(bem.id)}" title="Gerar etiqueta"><i class="bi bi-qr-code"></i></button>
                     ${bem.ativo ? `<button class="btn btn-sm btn-light text-warning btn-editar" data-id="${esc(bem.id)}" title="Editar"><i class="bi bi-pencil-square"></i></button>` : ''}
                     ${bem.ativo ? 
                         `<button class="btn btn-sm btn-light text-danger btn-deletar" data-id="${esc(bem.id)}" title="Desativar"><i class="bi bi-trash"></i></button>` :
@@ -83,6 +112,8 @@ function renderizarTabela() {
     tabela.querySelectorAll('.btn-editar').forEach(btn => {
         btn.addEventListener('click', () => editarBem(btn.dataset.id));
     });
+
+    atualizarSelecaoTodos(itensPagina);
 
     const totalItens = filtrados.length;
     const mostradoFim = Math.min(fim, totalItens);
@@ -138,6 +169,8 @@ async function verDetalhes(id) {
                 <small class="text-muted text-uppercase fw-bold d-block mb-1">Informações Básicas</small>
                 <h4 class="fw-bold text-primary mb-0">${esc(bem.nome)}</h4>
                 <p class="text-muted mb-0">Código: <code>${esc(bem.codigo_tombamento)}</code> | Categoria: <span class="badge bg-secondary">${esc(bem.categoria_nome || 'N/A')}</span></p>
+                <p class="text-muted mb-0 small">Setor: <span class="text-dark">${esc(bem.setor_atual || 'Não alocado')}</span> | Responsável: <span class="text-dark">${esc(bem.responsavel_nome || '—')}</span></p>
+                <button class="btn btn-outline-primary btn-sm mt-3 btn-etiqueta-ficha" data-id="${esc(bem.id)}"><i class="bi bi-qr-code me-1"></i> Gerar etiqueta</button>
             </div>
             
             <div class="row g-3 mb-4">
@@ -263,7 +296,27 @@ function setupListeners() {
         if (btn.classList.contains('btn-detalhes')) verDetalhes(id);
         if (btn.classList.contains('btn-deletar')) await deletar(id);
         if (btn.classList.contains('btn-reativar')) await reativar(id);
+        if (btn.classList.contains('btn-etiqueta')) abrirEtiquetas([id]);
     });
+
+    $("#conteudoDetalhes").addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-etiqueta-ficha');
+        if (btn) abrirEtiquetas([btn.dataset.id]);
+    });
+
+    // Seleção para etiquetas em lote
+    $("#tabela-bens").addEventListener('change', (e) => {
+        const chk = e.target;
+        if (!chk.classList.contains('chk-etiqueta')) return;
+        alternarSelecao(chk.dataset.id, chk.checked);
+    });
+    $("#chkTodos").addEventListener('change', (e) => {
+        document.querySelectorAll('#tabela-bens .chk-etiqueta').forEach(chk => {
+            chk.checked = e.target.checked;
+            alternarSelecao(chk.dataset.id, e.target.checked);
+        });
+    });
+    $("#btnEtiquetasLote").addEventListener('click', () => abrirEtiquetas([...selecionados]));
 
     // Paginacao (Delegation)
     $("#pagination").addEventListener('click', (e) => {

@@ -3,7 +3,7 @@ QUERY_BENS = f"SELECT {_BEM_FIELDS} FROM bens"
 
 QUERY_BEM_ID = f"SELECT {_BEM_FIELDS} FROM bens WHERE id = %s"
 
-QUERY_BEM_DETALHES = """
+QUERY_BEM_DETALHES_BASE = """
     SELECT 
         b.id, b.nome, b.tipo, b.codigo_tombamento, b.valor, b.status, b.ativo,
         s.nome as setor_atual,
@@ -13,7 +13,8 @@ QUERY_BEM_DETALHES = """
         b.id_categoria,
         c.nome as categoria_nome,
         b.marca, b.modelo, b.numero_serie, b.valor_aquisicao, b.nota_fiscal, b.data_entrada, b.estado_conservacao,
-        p.nome AS predio_nome, a.identificacao AS andar_identificacao, sa.identificacao AS sala_nome
+        p.nome AS predio_nome, a.identificacao AS andar_identificacao, sa.identificacao AS sala_nome,
+        r.nome AS responsavel_nome, r.cargo AS responsavel_cargo
     FROM bens b
     LEFT JOIN (
         SELECT DISTINCT ON (bem_id) bem_id, setor_destino_id, data_movimentacao, justificativa
@@ -22,12 +23,19 @@ QUERY_BEM_DETALHES = """
         ORDER BY bem_id, COALESCE(data_decisao, data_movimentacao) DESC, id DESC
     ) m ON m.bem_id = b.id
     LEFT JOIN setores s ON s.id = m.setor_destino_id
+    LEFT JOIN responsaveis r ON r.id = s.responsavel_id
     LEFT JOIN salas sa ON sa.id = s.sala_id
     LEFT JOIN andares a ON a.id = sa.andar_id
     LEFT JOIN predios p ON p.id = a.predio_id
     LEFT JOIN categorias c ON c.id = b.id_categoria
-    WHERE b.id = %s
 """
+
+# Ficha completa do bem, buscada pelo id.
+QUERY_BEM_DETALHES = QUERY_BEM_DETALHES_BASE + "    WHERE b.id = %s\n"
+
+# Ficha completa do bem, buscada pelo número de tombamento (já validado pelo DV).
+QUERY_BEM_DETALHES_POR_TOMBO = QUERY_BEM_DETALHES_BASE + "    WHERE b.codigo_tombamento = %s\n"
+
 
 QUERY_CREATE_BEM = """INSERT INTO bens
     (nome, tipo, codigo_tombamento, valor, status, ativo, id_categoria, marca, modelo,

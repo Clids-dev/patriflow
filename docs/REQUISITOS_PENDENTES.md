@@ -63,13 +63,15 @@ QR e W05 = fotos. Confirmar com o professor qual lista vale antes de planejar.
 - [x] Tombo imutável (trigger); tombo de bem baixado não é reaproveitado (índice único + sem exclusão + próximo número pelo maior usado)
 - [x] Cadastro de prédio, andar e sala; setor aponta para a sala
 
-### W04 · Etiqueta com QR Code e consulta por tombo — `[ ]` 1/6
-- [ ] Botão de gerar etiqueta na ficha do bem e na listagem, com seleção em lote
-- [ ] QR Code codifica o tombo com dígito verificador (falta biblioteca de QR)
-- [ ] Etiqueta mostra o tombo legível abaixo do QR e pode ser reimpressa
-- [ ] Geração em lote produz documento com várias etiquetas para impressão
-- [~] API busca o bem pelo tombo e devolve ficha completa (setor atual, localização, responsável). `/bem/buscar` devolve só os campos do bem; setor e responsável estão em `/bem/{id}/detalhes`
-- [x] API valida o DV antes de consultar o banco
+### W04 · Etiqueta com QR Code e consulta por tombo — `[x]` 6/6
+- [x] Botão de gerar etiqueta na ficha do bem e na listagem, com seleção em lote (tela de equipamentos)
+- [x] QR Code codifica o tombo com dígito verificador (biblioteca `segno`, zona de silêncio de 4 módulos)
+- [x] Etiqueta mostra o tombo em texto legível abaixo do QR e pode ser reimpressa (gerada sob demanda, nada guardado)
+- [x] Geração em lote produz uma folha com várias etiquetas, pronta para impressão (`GET /api/v1/etiquetas/lote?ids=`)
+- [x] API busca o bem pelo tombo e devolve a ficha completa: setor atual, localização e responsável (`/api/v1/bem/buscar`)
+- [x] Busca por tombo valida o dígito verificador antes de consultar o banco
+
+Verificação: QR de etiquetas de exemplo lidos de volta com `zxing-cpp` (tombo correto); `test_etiquetas.py`.
 
 ### W05 · Fotos: envio, guarda e entrega — `[~]` 4/6 (API pronta)
 - [x] API recebe foto (`POST /api/v1/fotos/`) e guarda o arquivo no servidor (`FOTOS_DIR`)

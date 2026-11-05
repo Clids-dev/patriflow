@@ -22,19 +22,25 @@ class BemRepository(DataBase):
         rows = DataBase().execute(queries.QUERY_BEM_ID, (id,))
         return self._model(rows[0]) if rows else None
 
-    def get_detalhes(self, id: int):
-        rows = DataBase().execute(queries.QUERY_BEM_DETALHES, (id,))
-        if not rows:
-            return None
-        row = rows[0]
+    @staticmethod
+    def _detalhes_de(row):
         return BemDetalhes(
             id=row[0], nome=row[1], tipo=row[2], codigo_tombamento=row[3], valor=row[4],
             status=row[5], ativo=row[6], setor_atual=row[7], data_ultima_movimentacao=row[8],
             justificativa=row[9], id_setor_atual=row[10], id_categoria=row[11], categoria_nome=row[12],
             marca=row[13], modelo=row[14], numero_serie=row[15], valor_aquisicao=row[16],
             nota_fiscal=row[17], data_entrada=row[18], estado_conservacao=row[19],
-            predio_nome=row[20], andar_identificacao=row[21], sala_nome=row[22]
+            predio_nome=row[20], andar_identificacao=row[21], sala_nome=row[22],
+            responsavel_nome=row[23], responsavel_cargo=row[24],
         )
+
+    def get_detalhes(self, id: int):
+        rows = DataBase().execute(queries.QUERY_BEM_DETALHES, (id,))
+        return self._detalhes_de(rows[0]) if rows else None
+
+    def get_detalhes_por_tombo(self, codigo_tombamento: str):
+        rows = DataBase().execute(queries.QUERY_BEM_DETALHES_POR_TOMBO, (codigo_tombamento,))
+        return self._detalhes_de(rows[0]) if rows else None
 
     def save(self, bem: BemCreate, almoxarifado_id: int, usuario_id: int):
         valor = bem.valor if bem.valor is not None else bem.valor_aquisicao

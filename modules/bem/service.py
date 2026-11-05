@@ -89,7 +89,7 @@ class BemService:
         require_valid_tombo(codigo_tombamento)
         codigo_tombamento = codigo_tombamento.upper()
         repository = BemRepository()
-        bem = repository.get_by_codTombamento(codigo_tombamento)
+        bem = repository.get_detalhes_por_tombo(codigo_tombamento)
         if not bem:
             raise HTTPException(
                 status_code=404,

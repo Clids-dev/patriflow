@@ -70,3 +70,5 @@ class BemDetalhes(Bem):
     predio_nome: Optional[str] = None
     andar_identificacao: Optional[str] = None
     sala_nome: Optional[str] = None
+    responsavel_nome: Optional[str] = None
+    responsavel_cargo: Optional[str] = None
