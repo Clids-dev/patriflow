@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
@@ -80,9 +81,15 @@ def _contexto(request: Request, active_page: str, **extra) -> dict:
     }
 
 
+@router.get("/estrutura")
+def tela_estrutura(request: Request):
+    return templates.TemplateResponse("estrutura.html", _contexto(request, "estrutura"))
+
+
 @router.get("/cadastros")
-def tela_cadastros(request: Request):
-    return templates.TemplateResponse("cadastros.html", _contexto(request, "cadastros"))
+def redireciona_cadastros():
+    # Endereço antigo do painel: mantido para links salvos.
+    return RedirectResponse(url="/estrutura", status_code=301)
 
 
 # Registro de um cadastro, com abas (dados, bens ligados e ação específica).

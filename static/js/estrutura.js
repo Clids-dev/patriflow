@@ -1,6 +1,6 @@
 import { $, api } from '/static/js/utils.js';
 
-// Contagens do painel de cadastros. Cada uma é independente: uma falha não esconde as outras.
+// Contagens do painel de estrutura. Cada uma é independente: uma falha não esconde as outras.
 async function contar(url, alvo) {
     try {
         const itens = await api.get(url);
