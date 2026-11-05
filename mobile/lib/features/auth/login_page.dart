@@ -4,9 +4,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../core/services/api_client.dart';
-import '../../core/storage/server_config_storage.dart';
 import '../../core/storage/secure_token_storage.dart';
+import '../../core/storage/server_config_storage.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_components.dart';
 import '../home/home_placeholder_page.dart';
 import '../server_config/server_config_page.dart';
 import 'register_page.dart';
@@ -33,6 +34,13 @@ class _LoginPageState extends State<LoginPage> {
     ServerConfigStorage().getBaseUrl().then((value) {
       if (mounted) setState(() => _server = value);
     });
+  }
+
+  @override
+  void dispose() {
+    _username.dispose();
+    _password.dispose();
+    super.dispose();
   }
 
   String _errorMessage(Object error) {
@@ -71,17 +79,24 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _username.dispose();
-    _password.dispose();
-    super.dispose();
+  Future<void> _openRegister() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final created = await Navigator.of(context)
+        .push<bool>(MaterialPageRoute(builder: (_) => const RegisterPage()));
+    if (!mounted || created != true) return;
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Cadastro enviado. Você poderá entrar quando o setor de patrimônio aprovar seu acesso.',
+        ),
+        backgroundColor: AppColors.success,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('PatriFlow'),
       actions: [
         IconButton(
           tooltip: 'Configurar servidor',
@@ -96,7 +111,12 @@ class _LoginPageState extends State<LoginPage> {
     body: SafeArea(
       child: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xxl,
+            AppSpacing.xl,
+            AppSpacing.xxl,
+            AppSpacing.xxxl,
+          ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Form(
@@ -104,43 +124,20 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.secondary.withValues(alpha: .18),
-                            blurRadius: 16,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Image.asset(
-                        'assets/logo.png',
-                        height: 52,
-                        width: 190,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
+                  const Center(child: AppBrandMark()),
+                  const SizedBox(height: AppSpacing.xxl),
                   Text(
                     'Bem-vindo de volta',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
                     'Entre para acessar seu patrimônio.',
                     textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     _server == null
                         ? 'Servidor não configurado'
@@ -148,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: AppSpacing.xxl),
                   TextFormField(
                     controller: _username,
                     autocorrect: false,
@@ -161,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                         ? 'Informe o utilizador.'
                         : null,
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.md),
                   TextFormField(
                     controller: _password,
                     obscureText: _hidePassword,
@@ -187,7 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                         ? 'Informe a senha.'
                         : null,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xxl),
                   ElevatedButton(
                     onPressed: _loading ? null : _submit,
                     child: _loading
@@ -201,32 +198,16 @@ class _LoginPageState extends State<LoginPage> {
                           )
                         : const Text('Entrar'),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Ainda não tem conta?'),
+                      Text(
+                        'Ainda não tem conta?',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                       TextButton(
-                        onPressed: _loading
-                            ? null
-                            : () async {
-                                final messenger = ScaffoldMessenger.of(context);
-                                final created = await Navigator.of(context)
-                                    .push<bool>(
-                                      MaterialPageRoute(
-                                        builder: (_) => const RegisterPage(),
-                                      ),
-                                    );
-                                if (!mounted || created != true) return;
-                                messenger.showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Cadastro realizado. Entre com seus dados.',
-                                    ),
-                                    backgroundColor: AppColors.success,
-                                  ),
-                                );
-                              },
+                        onPressed: _loading ? null : _openRegister,
                         child: const Text('Cadastre-se'),
                       ),
                     ],

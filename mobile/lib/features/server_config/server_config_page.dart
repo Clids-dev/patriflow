@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/storage/server_config_storage.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_components.dart';
 import '../auth/login_page.dart';
 
 class ServerConfigPage extends StatefulWidget {
@@ -25,6 +26,12 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
   void initState() {
     super.initState();
     _loadSavedAddress();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSavedAddress() async {
@@ -82,7 +89,7 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
 
-    // Testa a conexão antes de salvar
+    // Testa a conexão antes de salvar.
     final reached = await _runConnectionTest();
     setState(() {
       _connectionReached = reached;
@@ -92,7 +99,7 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
     if (!mounted) return;
 
     if (!reached) {
-      // Exibe um diálogo perguntando se deseja salvar mesmo assim
+      // Pergunta se deve salvar mesmo sem resposta do servidor.
       final saveAnyway = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -100,8 +107,8 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
           title: const Row(
             children: [
               Icon(AppIcons.error, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('Servidor Inalcançável'),
+              SizedBox(width: AppSpacing.sm),
+              Text('Servidor inalcançável'),
             ],
           ),
           content: const Text(
@@ -142,10 +149,29 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
     return null;
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  Widget _statusBanner() {
+    final ok = _connectionReached == true;
+    final color = ok ? AppColors.success : AppColors.error;
+    final soft = ok ? AppColors.successSoft : AppColors.errorSoft;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: soft,
+        borderRadius: AppRadius.cardBorder,
+      ),
+      child: Row(
+        children: [
+          Icon(ok ? Icons.check_circle_outline : AppIcons.error, color: color),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              ok ? 'Servidor alcançado com sucesso!' : 'Inalcançável. Verifique se o servidor está rodando ou digite outro endereço.',
+              style: TextStyle(color: color, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -153,23 +179,20 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
     appBar: AppBar(title: const Text('Servidor PatriFlow')),
     body: SafeArea(
       child: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         children: [
-          Icon(
-            AppIcons.server,
-            size: 54,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 20),
+          const AppIconBadge(icon: AppIcons.server, size: 64),
+          const SizedBox(height: AppSpacing.xl),
           Text(
             'Conecte o aplicativo ao seu servidor',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          const SizedBox(height: 8),
-          const Text(
+          const SizedBox(height: AppSpacing.sm),
+          Text(
             'Este endereço fica guardado somente neste aparelho. Você poderá alterá-lo depois.',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxl),
           Form(
             key: _formKey,
             child: TextFormField(
@@ -184,81 +207,42 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
               validator: _validateAddress,
             ),
           ),
-          const SizedBox(height: 12),
-          const Text(
+          const SizedBox(height: AppSpacing.sm),
+          Text(
             'Em emulador Android, a API local do computador costuma ser http://10.0.2.2:8000.',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: 24),
-
-          // Seção de status do teste de conexão
+          const SizedBox(height: AppSpacing.xl),
           if (_testing)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Row(
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  SizedBox(width: 12),
-                  Text('Testando conexão com o servidor...'),
+                  const SizedBox(width: AppSpacing.md),
+                  Text(
+                    'Testando conexão com o servidor...',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             )
           else if (_connectionReached != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _connectionReached!
-                    ? AppColors.success.withOpacity(0.08)
-                    : AppColors.error.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _connectionReached!
-                      ? AppColors.success.withOpacity(0.3)
-                      : AppColors.error.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _connectionReached!
-                        ? Icons.check_circle_outline
-                        : AppIcons.error,
-                    color: _connectionReached!
-                        ? AppColors.success
-                        : AppColors.error,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _connectionReached! ? 'Servidor alcançado com sucesso!' : 'Inalcançável. Verifique se o servidor está rodando ou digite outro endereço.',
-                      style: TextStyle(
-                        color: _connectionReached!
-                            ? AppColors.success
-                            : AppColors.error,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 32),
+            _statusBanner(),
+          const SizedBox(height: AppSpacing.xl),
           OutlinedButton.icon(
             onPressed: _testing || _saving ? null : _testConnection,
             icon: const Icon(AppIcons.retry),
             label: const Text('Testar conexão'),
             style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+              minimumSize: const Size.fromHeight(50),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           ElevatedButton.icon(
             onPressed: _saving || _testing ? null : _save,
             icon: _saving
