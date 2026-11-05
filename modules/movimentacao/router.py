@@ -26,6 +26,11 @@ def listar_pendentes():
     return MovimentacaoService().listar_pendentes()
 
 
+@router.get("/escaladas", response_model=list[MovimentacaoDetailed])
+def listar_escaladas(usuario=Depends(current_user)):
+    return MovimentacaoService().listar_escaladas(usuario)
+
+
 @router.get("/bem/{codigo}", response_model=list[MovimentacaoDetailed])
 def get_movimentacoes_por_bem(codigo: str):
     return MovimentacaoService().get_movimentacoes_por_bem(codigo)

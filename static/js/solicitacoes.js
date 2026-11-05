@@ -72,6 +72,15 @@ async function carregarDecidir() {
         : '<p class="text-muted mb-0">Nenhuma solicitação aguardando sua decisão.</p>';
 }
 
+async function carregarEscaladas() {
+    const lista = $('#listaEscaladas');
+    const escaladas = await api.get('/api/v1/movimentacao/escaladas');
+    $('#qtdEscaladas').textContent = escaladas.length;
+    lista.innerHTML = escaladas.length
+        ? escaladas.map(cartaoDecisao).join('')
+        : '<p class="text-muted mb-0">Nenhuma transferência escalada no momento.</p>';
+}
+
 async function carregarMinhas() {
     const lista = $('#listaMinhas');
     const minhas = await api.get('/api/v1/movimentacao/minhas');
@@ -81,7 +90,10 @@ async function carregarMinhas() {
 }
 
 async function atualizar() {
-    await Promise.allSettled([carregarMinhas(), $('#itemAbaDecidir').classList.contains('d-none') ? null : carregarDecidir()]);
+    const tarefas = [carregarMinhas()];
+    if (!$('#itemAbaDecidir').classList.contains('d-none')) tarefas.push(carregarDecidir());
+    if (!$('#itemAbaEscaladas').classList.contains('d-none')) tarefas.push(carregarEscaladas());
+    await Promise.allSettled(tarefas);
 }
 
 // Autorizar exige a foto do recebimento: envia a foto primeiro e só então autoriza.
@@ -131,6 +143,8 @@ async function confirmarRecusa(evento) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        const eu = await api.get('/api/v1/auth/me');
+        $('#itemAbaEscaladas').classList.toggle('d-none', eu.perfil !== 'setor_patrimonio');
         const decide = await podeDecidir();
         $('#itemAbaDecidir').classList.toggle('d-none', !decide);
         if (!decide) {

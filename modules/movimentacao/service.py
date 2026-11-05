@@ -32,6 +32,12 @@ class MovimentacaoService:
     def listar_pendentes(self):
         return MovimentacaoRepository().get_pendentes(config.PRAZO_TRANSFERENCIA_DIAS)
 
+    def listar_escaladas(self, usuario: dict):
+        """Fila do setor de patrimônio: transferências sem resposta além do prazo."""
+        if usuario["perfil"] != ROLE_ADMIN:
+            raise HTTPException(status_code=403, detail="Somente o setor de patrimônio acompanha as escaladas.")
+        return [m for m in self.listar_pendentes() if m.escalada]
+
     def add_movimentacao(self, movimentacao: MovimentacaoCreate, usuario: dict):
         """Registra uma movimentação aplicando as regras de almoxarifado.
 
