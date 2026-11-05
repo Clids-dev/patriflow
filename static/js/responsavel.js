@@ -36,6 +36,7 @@ function renderizarResponsaveis(responsaveis) {
                 </span>
             </td>
             <td class="px-4 text-end">
+                <button class="btn btn-sm btn-light btn-termo me-1" data-id="${esc(resp.id)}" title="Termo de responsabilidade"><i class="bi bi-file-earmark-text text-dark"></i></button>
                 <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(resp.id)}"><i class="bi bi-pencil-square text-primary"></i></button>
                 <button class="btn btn-sm btn-light btn-delete" data-id="${esc(resp.id)}"><i class="bi bi-trash text-danger"></i></button>
             </td>
@@ -86,6 +87,10 @@ async function salvarResponsavel() {
 }
 
 function vincularAcoesTabela() {
+    $$('.btn-termo').forEach(btn => {
+        btn.addEventListener('click', () => window.open(`/api/v1/termos/responsavel/${btn.dataset.id}`, '_blank', 'noopener'));
+    });
+
     $$('.btn-edit').forEach(btn => {
         btn.addEventListener('click', () => {
             const resp = todosResponsaveis.find(r => r.id == btn.dataset.id);

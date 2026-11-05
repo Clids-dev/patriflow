@@ -10,6 +10,7 @@ from modules.relatorio.router import router as relatorio_router
 from modules.usuario.router import router as usuario_router
 from modules.foto.router import router as foto_router
 from modules.etiqueta.router import router as etiqueta_router
+from modules.termo.router import router as termo_router
 
 api_router = APIRouter(dependencies=[Depends(require_api_access)])
 api_router.include_router(auth_router)
@@ -24,3 +25,4 @@ api_router.include_router(relatorio_router)
 api_router.include_router(usuario_router)
 api_router.include_router(foto_router)
 api_router.include_router(etiqueta_router)
+api_router.include_router(termo_router)
