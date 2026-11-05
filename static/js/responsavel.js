@@ -10,9 +10,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarEventos();
 });
 
+// Indicadores do topo da página: total e ativos/inativos da base completa (não da busca).
+function atualizarIndicadores(lista) {
+    const ativos = lista.filter(item => item.ativo).length;
+    $('#kpiTotal').textContent = lista.length;
+    $('#kpiAtivas').textContent = ativos;
+    $('#kpiInativas').textContent = lista.length - ativos;
+}
+
 async function carregarResponsaveis() {
     try {
         todosResponsaveis = await api.get('/api/v1/responsavel/');
+        atualizarIndicadores(todosResponsaveis);
         renderizarResponsaveis(todosResponsaveis);
     } catch (error) {
         ui.showNotification('Erro ao carregar responsáveis', 'error');

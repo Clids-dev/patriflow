@@ -10,6 +10,7 @@ const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency',
 const ENTIDADES = {
     responsavel: {
         rotulo: 'Responsável',
+        lista: '/responsaveis',
         subtitulo: (r) => r.cargo,
         titulo: (r) => r.nome,
         status: (r) => (r.ativo ? ['Ativo', 'bg-success-subtle text-success'] : ['Inativo', 'bg-danger-subtle text-danger']),
@@ -31,6 +32,7 @@ const ENTIDADES = {
 
     setor: {
         rotulo: 'Setor',
+        lista: '/setores',
         subtitulo: (r) => [r.predio_nome, r.andar_identificacao, r.sala_nome].filter(Boolean).join(' — ') || 'Sem sala',
         titulo: (r) => r.nome,
         status: (r) => (r.ativo ? ['Ativo', 'bg-success-subtle text-success'] : ['Inativo', 'bg-danger-subtle text-danger']),
@@ -65,6 +67,7 @@ const ENTIDADES = {
 
     categoria: {
         rotulo: 'Categoria',
+        lista: '/categoria',
         subtitulo: (r) => `Sigla ${r.sigla}`,
         titulo: (r) => r.nome,
         status: (r) => (r.ativo ? ['Ativa', 'bg-success-subtle text-success'] : ['Inativa', 'bg-danger-subtle text-danger']),
@@ -96,12 +99,16 @@ function mostrarMensagem(texto, tipo = 'success') {
 }
 
 function preencherCabecalho() {
+    $('#registroRotulo').textContent = cfg.rotulo;
+    $('#btnVerLista').href = cfg.lista;
+    $('#btnCadastrarNovo').href = `${cfg.lista}?novo=1`;
     $('#registroTitulo').textContent = cfg.titulo(registro);
     $('#registroSubtitulo').textContent = cfg.subtitulo(registro);
     const [texto, classes] = cfg.status(registro);
     const badge = $('#registroStatus');
     badge.textContent = texto;
     badge.className = `badge rounded-pill ${classes}`;
+    $('#kpiSituacao').textContent = texto;
     document.title = `PatriFlow - ${cfg.titulo(registro)}`;
 }
 
@@ -126,6 +133,9 @@ function desenharCampos(campos) {
 
 function desenharBens() {
     $('#qtdBensAba').textContent = bens.length;
+    $('#kpiBens').textContent = bens.length;
+    const valor = bens.reduce((soma, b) => soma + Number(b.valor_aquisicao || 0), 0);
+    $('#kpiValor').textContent = moeda(valor);
     const corpo = $('#tbodyBens');
     if (!bens.length) {
         corpo.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Nenhum bem ligado a este cadastro.</td></tr>';
@@ -164,7 +174,6 @@ async function iniciar() {
         return;
     }
     preencherCabecalho();
-    document.querySelector('.page-title h3') && (document.querySelector('.page-title h3').textContent = `${cfg.rotulo}: ${cfg.titulo(registro)}`);
 
     const campos = await cfg.campos(registro);
     desenharCampos(campos);

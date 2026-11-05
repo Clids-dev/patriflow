@@ -1,58 +1,59 @@
 {% extends "base.html" %}
-{% from "_componentes.html" import cabecalho_pagina %}
+{% from "_componentes.html" import painel_topo, kpi %}
 
 {% block title %}Categorias{% endblock %}
 
 {% set active_page = 'categoria' %}
 
 {% block content %}
-<div class="page-heading">
-    {{ cabecalho_pagina("Categorias", "Gerencie os tipos de bens e suas siglas de tombamento.", "Categorias") }}
+{% call painel_topo("Cadastros", "Categorias") %}
+    <a href="/cadastros" class="btn btn-outline-primary pill-btn">Painel de cadastros</a>
+    <button class="btn btn-primary pill-btn" data-bs-toggle="modal" data-bs-target="#modalCategoria">
+        <i class="bi bi-plus-lg me-1"></i> Cadastrar categoria
+    </button>
+{% endcall %}
+
+<section class="kpi-linha kpi-linha-3">
+    {{ kpi("Total de categorias", "kpiTotal", "tags", "cadastradas", destaque=true) }}
+    {{ kpi("Ativas", "kpiAtivas", "check-circle", "em uso no tombamento", suave=true) }}
+    {{ kpi("Inativas", "kpiInativas", "archive", "fora do tombamento", suave=true) }}
+</section>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscaCategoria" class="form-control" placeholder="Buscar por nome ou sigla...">
+                </div>
+            </div>
+            <div class="col-12 col-md-4 text-md-end">
+                <span class="text-muted small" id="totalCategorias">Carregando categorias...</span>
+            </div>
+        </div>
     </div>
+</div>
 
-    <section class="section">
-        <!-- Filtros -->
-        <div class="card">
-            <div class="card-body">
-                <div class="row g-3 align-items-center">
-                    <div class="col-12 col-md-8">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" id="buscaCategoria" class="form-control" placeholder="Buscar por nome ou sigla...">
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-4 d-flex justify-content-md-end align-items-center gap-3">
-                        <span class="text-muted small" id="totalCategorias">Carregando categorias...</span>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCategoria">
-                            <i class="bi bi-plus-lg me-1"></i> Nova categoria
-                        </button>
-                    </div>
-                </div>
-            </div>
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-lg align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Nome da categoria</th>
+                        <th class="text-center">Sigla (prefixo)</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="listaCategorias">
+                    <!-- Preenchido via JS -->
+                </tbody>
+            </table>
         </div>
-
-        <!-- Tabela -->
-        <div class="card">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-lg align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th class="ps-4">ID</th>
-                                <th>Nome da categoria</th>
-                                <th class="text-center">Sigla (prefixo)</th>
-                                <th>Status</th>
-                                <th class="text-end pe-4">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="listaCategorias">
-                            <!-- Preenchido via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
+    </div>
 </div>
 
 <!-- Modal Categoria -->

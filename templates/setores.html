@@ -1,74 +1,74 @@
 {% extends "base.html" %}
-{% from "_componentes.html" import cabecalho_pagina %}
+{% from "_componentes.html" import painel_topo, kpi %}
 
 {% block title %}Setores{% endblock %}
 
 {% set active_page = 'setores' %}
 
 {% block content %}
-<div class="page-heading">
-    {{ cabecalho_pagina("Setores", "Gerencie os departamentos e locais físicos da organização.", "Setores") }}
+{% call painel_topo("Cadastros", "Setores") %}
+    <a href="/cadastros" class="btn btn-outline-primary pill-btn">Painel de cadastros</a>
+    <button class="btn btn-primary pill-btn" data-bs-toggle="modal" data-bs-target="#modalSetor">
+        <i class="bi bi-plus-lg me-1"></i> Cadastrar setor
+    </button>
+{% endcall %}
+
+<section class="kpi-linha kpi-linha-3">
+    {{ kpi("Total de setores", "kpiTotal", "building", "cadastrados", destaque=true) }}
+    {{ kpi("Ativos", "kpiAtivas", "check-circle", "recebendo bens", suave=true) }}
+    {{ kpi("Inativos", "kpiInativas", "archive", "fora do cadastro ativo", suave=true) }}
+</section>
+
+<!-- Locais físicos -->
+<div class="card">
+    <div class="card-header">
+        <h4>Locais físicos</h4>
     </div>
-
-    <section class="section">
-        <!-- Locais físicos -->
-        <div class="card">
-            <div class="card-header">
-                <h4>Locais físicos</h4>
-            </div>
-            <div class="card-body">
-                <div class="row g-4">
-                    <form id="formPredio" class="col-12 col-lg-4">
-                        <label class="form-label fw-semibold">Cadastrar prédio</label>
-                        <input id="predioNome" class="form-control mb-2" placeholder="Nome do prédio" required>
-                        <input id="predioEndereco" class="form-control mb-2" placeholder="Endereço (opcional)">
-                        <button class="btn btn-outline-primary w-100">Adicionar prédio</button>
-                    </form>
-                    <form id="formAndar" class="col-12 col-lg-4">
-                        <label class="form-label fw-semibold">Cadastrar andar</label>
-                        <select id="andarPredio" class="form-select mb-2" required><option value="">Selecione o prédio</option></select>
-                        <input id="andarNome" class="form-control mb-2" placeholder="Ex.: Térreo, 1º andar" required>
-                        <button class="btn btn-outline-primary w-100">Adicionar andar</button>
-                    </form>
-                    <form id="formSala" class="col-12 col-lg-4">
-                        <label class="form-label fw-semibold">Cadastrar sala</label>
-                        <select id="salaAndar" class="form-select mb-2" required><option value="">Selecione o andar</option></select>
-                        <input id="salaNome" class="form-control mb-2" placeholder="Ex.: Sala 12, Laboratório" required>
-                        <button class="btn btn-outline-primary w-100">Adicionar sala</button>
-                    </form>
-                </div>
-            </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <form id="formPredio" class="col-12 col-lg-4">
+                <label class="form-label fw-semibold">Cadastrar prédio</label>
+                <input id="predioNome" class="form-control mb-2" placeholder="Nome do prédio" required>
+                <input id="predioEndereco" class="form-control mb-2" placeholder="Endereço (opcional)">
+                <button class="btn btn-outline-primary w-100 pill-btn">Adicionar prédio</button>
+            </form>
+            <form id="formAndar" class="col-12 col-lg-4">
+                <label class="form-label fw-semibold">Cadastrar andar</label>
+                <select id="andarPredio" class="form-select mb-2" required><option value="">Selecione o prédio</option></select>
+                <input id="andarNome" class="form-control mb-2" placeholder="Ex.: Térreo, 1º andar" required>
+                <button class="btn btn-outline-primary w-100 pill-btn">Adicionar andar</button>
+            </form>
+            <form id="formSala" class="col-12 col-lg-4">
+                <label class="form-label fw-semibold">Cadastrar sala</label>
+                <select id="salaAndar" class="form-select mb-2" required><option value="">Selecione o andar</option></select>
+                <input id="salaNome" class="form-control mb-2" placeholder="Ex.: Sala 12, Laboratório" required>
+                <button class="btn btn-outline-primary w-100 pill-btn">Adicionar sala</button>
+            </form>
         </div>
+    </div>
+</div>
 
-        <!-- Tabela de setores -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Setores cadastrados</h4>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalSetor">
-                    <i class="bi bi-plus-lg me-1"></i> Novo setor
-                </button>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-lg align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th class="ps-4">ID</th>
-                                <th>Nome do setor</th>
-                                <th>Localização</th>
-                                <th>Responsável atual</th>
-                                <th>Status</th>
-                                <th class="text-end pe-4">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="listaSetores">
-                            <!-- Preenchido via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<!-- Tabela de setores -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-lg align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Nome do setor</th>
+                        <th>Localização</th>
+                        <th>Responsável atual</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="listaSetores">
+                    <!-- Preenchido via JS -->
+                </tbody>
+            </table>
         </div>
-    </section>
+    </div>
 </div>
 
 <!-- Modal Setor -->
@@ -94,7 +94,6 @@
                         <label for="responsavel_id" class="form-label fw-semibold">Responsável</label>
                         <select class="form-select" id="responsavel_id" required>
                             <option value="">Selecione um responsável...</option>
-                            <!-- Preenchido via JS -->
                         </select>
                     </div>
                     <div class="d-grid mt-4">

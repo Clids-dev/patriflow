@@ -876,3 +876,32 @@ html.auth-register, html.auth-register body { min-height: 100%; }
     .kpi-linha { grid-template-columns: 1fr; }
     .painel-titulo { font-size: 1.5rem; }
 }
+
+/* Páginas de cadastro: mesmo padrão do painel, com tom mais discreto */
+.kpi-linha-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.kpi-suave {
+    background: var(--primary-light);
+    border-color: transparent;
+    box-shadow: none;
+}
+.kpi-suave .kpi-chip { background: #fff; }
+.kpi-suave .kpi-rotulo { color: var(--primary-dark); }
+.kpi-suave .kpi-seta { background: #fff; border-color: transparent; }
+.kpi-suave:hover { box-shadow: 0 4px 14px rgba(25, 0, 43, 0.06); }
+.cadastro-card { border-radius: 22px; }
+.cadastro-chip {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-light);
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+.cadastro-total { margin: 10px 0 0; font-size: 1.6rem; font-weight: 800; color: var(--text-primary); }
+.cadastro-total span { font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); margin-left: 4px; }
+.registro-resumo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 4px; }
+@media (max-width: 991.98px) { .kpi-linha-3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 575.98px) { .kpi-linha-3 { grid-template-columns: 1fr; } }

@@ -16,9 +16,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 /**
  * Carrega a lista de categorias da API
  */
+// Indicadores do topo da página: total e ativos/inativos da base completa (não da busca).
+function atualizarIndicadores(lista) {
+    const ativos = lista.filter(item => item.ativo).length;
+    $('#kpiTotal').textContent = lista.length;
+    $('#kpiAtivas').textContent = ativos;
+    $('#kpiInativas').textContent = lista.length - ativos;
+}
+
 async function carregarCategorias() {
     try {
         todasCategorias = await api.get('/api/v1/categoria/');
+        atualizarIndicadores(todasCategorias);
         renderizarCategorias(todasCategorias);
         atualizarContadores(todasCategorias.length);
     } catch (error) {

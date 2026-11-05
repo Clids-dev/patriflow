@@ -14,9 +14,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarEventos();
 });
 
+// Indicadores do topo da página: total e ativos/inativos da base completa (não da busca).
+function atualizarIndicadores(lista) {
+    const ativos = lista.filter(item => item.ativo).length;
+    $('#kpiTotal').textContent = lista.length;
+    $('#kpiAtivas').textContent = ativos;
+    $('#kpiInativas').textContent = lista.length - ativos;
+}
+
 async function carregarSetores() {
     try {
         todosSetores = await api.get('/api/v1/setores/');
+        atualizarIndicadores(todosSetores);
         renderizarSetores(todosSetores);
     } catch (error) {
         ui.showNotification('Erro ao carregar setores', 'error');

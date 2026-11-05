@@ -1,43 +1,43 @@
 {% extends "base.html" %}
-{% from "_componentes.html" import cabecalho_pagina %}
+{% from "_componentes.html" import painel_topo, kpi %}
 
 {% block title %}Responsáveis{% endblock %}
 
 {% set active_page = 'responsaveis' %}
 
 {% block content %}
-<div class="page-heading">
-    {{ cabecalho_pagina("Responsáveis", "Gerencie as pessoas que respondem pelos setores e bens.", "Responsáveis") }}
-    </div>
+{% call painel_topo("Cadastros", "Responsáveis") %}
+    <a href="/cadastros" class="btn btn-outline-primary pill-btn">Painel de cadastros</a>
+    <button class="btn btn-primary pill-btn" data-bs-toggle="modal" data-bs-target="#modalResponsavel">
+        <i class="bi bi-plus-lg me-1"></i> Cadastrar responsável
+    </button>
+{% endcall %}
 
-    <section class="section">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Lista de responsáveis</h4>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalResponsavel">
-                    <i class="bi bi-plus-lg me-1"></i> Novo responsável
-                </button>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-lg align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th class="ps-4">ID</th>
-                                <th>Nome completo</th>
-                                <th>Cargo / função</th>
-                                <th>Status</th>
-                                <th class="text-end pe-4">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="listaResponsaveis">
-                            <!-- Preenchido via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<section class="kpi-linha kpi-linha-3">
+    {{ kpi("Total de responsáveis", "kpiTotal", "people", "cadastrados", destaque=true) }}
+    {{ kpi("Ativos", "kpiAtivas", "person-check", "podem responder por bens", suave=true) }}
+    {{ kpi("Inativos", "kpiInativas", "person-dash", "fora da guarda", suave=true) }}
+</section>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-lg align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Nome completo</th>
+                        <th>Cargo / função</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="listaResponsaveis">
+                    <!-- Preenchido via JS -->
+                </tbody>
+            </table>
         </div>
-    </section>
+    </div>
 </div>
 
 <!-- Modal Responsável -->
