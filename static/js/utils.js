@@ -67,15 +67,15 @@ export const ui = {
         const toastMessage = document.getElementById('toastMessage');
         
         const config = {
-            success: { bg: 'bg-success', icon: 'fa-check-circle' },
-            error: { bg: 'bg-danger', icon: 'fa-exclamation-circle' },
-            warning: { bg: 'bg-warning text-dark', icon: 'fa-exclamation-triangle' }
+            success: { bg: 'bg-success', icon: 'bi-check-circle-fill' },
+            error: { bg: 'bg-danger', icon: 'bi-exclamation-circle' },
+            warning: { bg: 'bg-warning text-dark', icon: 'bi-exclamation-triangle' }
         };
 
         const { bg, icon } = config[type] || config.success;
 
         toastEl.className = `toast align-items-center text-white border-0 ${bg}`;
-        toastIcon.className = `fas ${icon} me-2`;
+        toastIcon.className = `bi ${icon} me-2`;
         toastMessage.innerText = message;
 
         const toast = bootstrap.Toast.getOrCreateInstance(toastEl);

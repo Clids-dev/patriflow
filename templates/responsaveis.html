@@ -1,59 +1,79 @@
 {% extends "base.html" %}
 
-{% block title %}Gestão de Responsáveis{% endblock %}
+{% block title %}Responsáveis{% endblock %}
+
+{% set active_page = 'responsaveis' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-bold mb-0">Responsáveis</h2>
-        <p class="text-muted">Gerencie as pessoas que respondem pelos setores e bens.</p>
+<div class="page-heading">
+    <div class="page-title">
+        <div class="row">
+            <div class="col-12 col-md-6 order-md-1 order-last">
+                <h3>Responsáveis</h3>
+                <p class="text-muted">Gerencie as pessoas que respondem pelos setores e bens.</p>
+            </div>
+            <div class="col-12 col-md-6 order-md-2 order-first">
+                <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">Dashboard</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Responsáveis</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
     </div>
-    <button class="btn btn-primary px-4 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#modalResponsavel">
-        <i class="fas fa-plus me-2"></i> Novo Responsável
-    </button>
-</div>
 
-<!-- Tabela de Responsáveis -->
-<div class="card border-0 shadow-sm rounded-3">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="bg-light">
-                <tr>
-                    <th class="px-4 py-3 border-0">ID</th>
-                    <th class="py-3 border-0">Nome Completo</th>
-                    <th class="py-3 border-0">Cargo / Função</th>
-                    <th class="py-3 border-0">Status</th>
-                    <th class="px-4 py-3 border-0 text-end">Ações</th>
-                </tr>
-            </thead>
-            <tbody id="listaResponsaveis">
-                <!-- Preenchido via JS -->
-            </tbody>
-        </table>
-    </div>
+    <section class="section">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Lista de responsáveis</h4>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalResponsavel">
+                    <i class="bi bi-plus-lg me-1"></i> Novo responsável
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-lg align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">ID</th>
+                                <th>Nome completo</th>
+                                <th>Cargo / função</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaResponsaveis">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 
 <!-- Modal Responsável -->
 <div class="modal fade" id="modalResponsavel" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-bottom-0 p-4">
-                <h5 class="modal-title fw-bold" id="tituloModal">Novo Responsável</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="tituloModal">Novo responsável</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <div class="modal-body px-4 pb-4">
+            <div class="modal-body">
                 <form id="formResponsavel">
                     <input type="hidden" id="responsavelId">
                     <div class="mb-3">
-                        <label for="nome" class="form-label fw-medium small text-muted">Nome Completo</label>
+                        <label for="nome" class="form-label fw-semibold">Nome completo</label>
                         <input type="text" class="form-control" id="nome" required placeholder="Ex: João da Silva">
                     </div>
                     <div class="mb-3">
-                        <label for="cargo" class="form-label fw-medium small text-muted">Cargo</label>
+                        <label for="cargo" class="form-label fw-semibold">Cargo</label>
                         <input type="text" class="form-control" id="cargo" required placeholder="Ex: Gerente de TI">
                     </div>
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary py-2 fw-bold" id="btnSalvar">Salvar Responsável</button>
+                        <button type="submit" class="btn btn-primary" id="btnSalvar">Salvar responsável</button>
                     </div>
                 </form>
             </div>

@@ -69,11 +69,11 @@ function renderizarTabela() {
             <td>${getStatusBadge(bem.status, bem.ativo)}</td>
             <td class="text-end pe-4">
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-light text-primary btn-detalhes" data-id="${esc(bem.id)}" title="Ver Detalhes"><i class="fas fa-eye"></i></button>
-                    ${bem.ativo ? `<button class="btn btn-sm btn-light text-warning btn-editar" data-id="${esc(bem.id)}" title="Editar"><i class="fas fa-edit"></i></button>` : ''}
+                    <button class="btn btn-sm btn-light text-primary btn-detalhes" data-id="${esc(bem.id)}" title="Ver Detalhes"><i class="bi bi-eye"></i></button>
+                    ${bem.ativo ? `<button class="btn btn-sm btn-light text-warning btn-editar" data-id="${esc(bem.id)}" title="Editar"><i class="bi bi-pencil-square"></i></button>` : ''}
                     ${bem.ativo ? 
-                        `<button class="btn btn-sm btn-light text-danger btn-deletar" data-id="${esc(bem.id)}" title="Desativar"><i class="fas fa-trash"></i></button>` :
-                        `<button class="btn btn-sm btn-light text-success btn-reativar" data-id="${esc(bem.id)}" title="Reativar"><i class="fas fa-redo"></i></button>`
+                        `<button class="btn btn-sm btn-light text-danger btn-deletar" data-id="${esc(bem.id)}" title="Desativar"><i class="bi bi-trash"></i></button>` :
+                        `<button class="btn btn-sm btn-light text-success btn-reativar" data-id="${esc(bem.id)}" title="Reativar"><i class="bi bi-arrow-counterclockwise"></i></button>`
                     }
                 </div>
             </td>
@@ -99,7 +99,7 @@ function renderizarPaginacao(totalItens) {
 
     let html = `
         <li class="page-item ${esc(paginaAtual === 1 ? 'disabled' : '')}">
-            <a class="page-link" href="#" data-page="${paginaAtual - 1}"><i class="fas fa-chevron-left"></i></a>
+            <a class="page-link" href="#" data-page="${paginaAtual - 1}"><i class="bi bi-chevron-left"></i></a>
         </li>
     `;
 
@@ -113,7 +113,7 @@ function renderizarPaginacao(totalItens) {
 
     html += `
         <li class="page-item ${esc(paginaAtual === totalPaginas ? 'disabled' : '')}">
-            <a class="page-link" href="#" data-page="${paginaAtual + 1}"><i class="fas fa-chevron-right"></i></a>
+            <a class="page-link" href="#" data-page="${paginaAtual + 1}"><i class="bi bi-chevron-right"></i></a>
         </li>
     `;
     
@@ -144,7 +144,7 @@ async function verDetalhes(id) {
                 <div class="col-6">
                     <div class="p-3 bg-light rounded-3">
                         <small class="text-muted d-block mb-1">Setor Atual</small>
-                        <span class="fw-bold text-dark"><i class="fas fa-map-marker-alt text-primary me-2"></i>${esc(bem.setor_atual || "Não alocado")}</span>
+                        <span class="fw-bold text-dark"><i class="bi bi-geo-alt-fill text-primary me-2"></i>${esc(bem.setor_atual || "Não alocado")}</span>
                     </div>
                 </div>
                 <div class="col-6">
@@ -170,7 +170,7 @@ async function verDetalhes(id) {
             </div>
 
             <div class="border-top pt-4">
-                <h6 class="fw-bold mb-3"><i class="fas fa-history me-2 text-primary"></i>Linha do Tempo de Movimentações</h6>
+                <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2 text-primary"></i>Linha do Tempo de Movimentações</h6>
                 ${renderizarTimeline(historico)}
             </div>
         `;
@@ -193,7 +193,7 @@ function renderizarTimeline(historico) {
                         <span class="timeline-date">${new Date(m.data_movimentacao).toLocaleString('pt-BR')}</span>
                         <div class="fw-bold text-dark small">${esc(m.setor_destino_nome)}</div>
                         <div class="text-muted smaller mt-1" style="font-size: 0.8rem;">
-                            <i class="fas fa-long-arrow-alt-right me-1 text-primary"></i> Origem: ${esc(m.setor_origem_nome || 'Cadastro Inicial')}
+                            <i class="bi bi-arrow-right me-1 text-primary"></i> Origem: ${esc(m.setor_origem_nome || 'Cadastro Inicial')}
                         </div>
                         <p class="mb-0 mt-2 text-muted fst-italic" style="font-size: 0.85rem;">"${esc(m.justificativa || 'Sem justificativa')}"</p>
                     </div>
@@ -204,17 +204,17 @@ function renderizarTimeline(historico) {
 }
 
 function getStatusBadge(status, ativo = true) {
-    if (!ativo) return '<span class="badge bg-danger-subtle text-danger rounded-pill px-3"><i class="fas fa-ban me-1"></i>Inativo / Baixado</span>';
+    if (!ativo) return '<span class="badge bg-danger-subtle text-danger rounded-pill px-3"><i class="bi bi-slash-circle me-1"></i>Inativo / Baixado</span>';
     
     const s = status.toLowerCase();
     if (s.includes('disponivel')) 
-        return '<span class="badge bg-success text-white rounded-pill px-3 shadow-sm"><i class="fas fa-check-circle me-1"></i>Disponível</span>';
+        return '<span class="badge bg-success text-white rounded-pill px-3 shadow-sm"><i class="bi bi-check-circle-fill me-1"></i>Disponível</span>';
     
     if (s === 'em uso' || s === 'em_uso') 
-        return '<span class="badge bg-primary-subtle text-primary rounded-pill px-3"><i class="fas fa-user-check me-1"></i>Em Uso</span>';
+        return '<span class="badge bg-primary-subtle text-primary rounded-pill px-3"><i class="bi bi-person-check me-1"></i>Em Uso</span>';
     
     if (s.includes('manutencao')) 
-        return '<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3"><i class="fas fa-tools me-1"></i>Manutenção</span>';
+        return '<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3"><i class="bi bi-tools me-1"></i>Manutenção</span>';
 
     return `<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">${esc(status)}</span>`;
 }

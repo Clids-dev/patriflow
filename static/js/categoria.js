@@ -34,7 +34,7 @@ function renderizarCategorias(categorias) {
         lista.innerHTML = `
             <tr>
                 <td colspan="5" class="text-center py-5 text-muted">
-                    <i class="fas fa-folder-open fa-3x mb-3 d-block opacity-25"></i>
+                    <i class="bi bi-folder2-open fs-1 mb-3 d-block opacity-25"></i>
                     Nenhuma categoria encontrada.
                 </td>
             </tr>
@@ -60,10 +60,10 @@ function renderizarCategorias(categorias) {
             </td>
             <td class="px-4 text-end">
                 <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(cat.id)}" title="Editar">
-                    <i class="fas fa-edit text-primary"></i>
+                    <i class="bi bi-pencil-square text-primary"></i>
                 </button>
                 <button class="btn btn-sm btn-light btn-delete" data-id="${esc(cat.id)}" title="Inativar">
-                    <i class="fas fa-trash-alt text-danger"></i>
+                    <i class="bi bi-trash text-danger"></i>
                 </button>
             </td>
         </tr>

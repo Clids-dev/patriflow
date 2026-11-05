@@ -31,7 +31,7 @@ function renderRecentList(dados) {
              data-codigo="${esc(m.codigo_tombamento)}">
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <span class="fw-bold text-dark small">${esc(m.codigo_tombamento)}</span>
-                <i class="fas fa-chevron-right text-muted x-small"></i>
+                <i class="bi bi-chevron-right text-muted x-small"></i>
             </div>
             <div class="text-muted text-truncate x-small">${esc(m.bem_nome)}</div>
         </div>
@@ -49,7 +49,7 @@ function renderTimeline(historico) {
     timeline.innerHTML = historico.map(m => `
         <div class="timeline-item">
             <div class="timeline-icon shadow-sm">
-                <i class="fas fa-exchange-alt text-primary small"></i>
+                <i class="bi bi-arrow-left-right text-primary small"></i>
             </div>
             <div class="card border-0 bg-light rounded-4">
                 <div class="card-body p-3">
@@ -59,7 +59,7 @@ function renderTimeline(historico) {
                     </div>
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <span class="text-muted small">${esc(m.setor_origem_nome || 'Aquisição')}</span>
-                        <i class="fas fa-arrow-right text-muted x-small"></i>
+                        <i class="bi bi-arrow-right text-muted x-small"></i>
                         <span class="fw-bold text-primary small">${esc(m.setor_destino_nome)}</span>
                     </div>
                     <div class="p-2 bg-white rounded-3 x-small text-muted italic">
@@ -118,15 +118,15 @@ function toggleState(state) {
 }
 
 function getStatusBadge(status, ativo = true) {
-    if (!ativo) return '<span class="badge bg-danger text-white rounded-pill px-3 shadow-sm"><i class="fas fa-ban me-1"></i>Baixado</span>';
+    if (!ativo) return '<span class="badge bg-danger text-white rounded-pill px-3 shadow-sm"><i class="bi bi-slash-circle me-1"></i>Baixado</span>';
     const s = status.toLowerCase();
     let bg = 'bg-warning text-dark';
-    let icon = 'fa-info-circle';
+    let icon = 'bi-info-circle';
 
-    if (s.includes('disponivel')) { bg = 'bg-success text-white'; icon = 'fa-check-circle'; }
-    else if (s.includes('uso')) { bg = 'bg-primary text-white'; icon = 'fa-user-check'; }
+    if (s.includes('disponivel')) { bg = 'bg-success text-white'; icon = 'bi-check-circle-fill'; }
+    else if (s.includes('uso')) { bg = 'bg-primary text-white'; icon = 'bi-person-check'; }
 
-    return `<span class="badge ${esc(bg)} rounded-pill px-3 shadow-sm"><i class="fas ${esc(icon)} me-1"></i>${esc(status)}</span>`;
+    return `<span class="badge ${esc(bg)} rounded-pill px-3 shadow-sm"><i class="bi ${esc(icon)} me-1"></i>${esc(status)}</span>`;
 }
 
 /**
@@ -150,7 +150,7 @@ $("#mov_codigo_bem").onchange = async (e) => {
         const detalhes = await api.get(`/api/v1/bem/${bem.id}/detalhes`);
         bemSelecionadoParaMov = { ...bem, ...detalhes };
 
-        statusIcon.innerHTML = `<i class="fas fa-check-circle text-success"></i>`;
+        statusIcon.innerHTML = `<i class="bi bi-check-circle-fill text-success"></i>`;
         $("#infoBemMov").classList.remove("d-none");
         $("#infoBemMovNome").innerText = bem.nome;
         $("#infoBemMovSetor").innerText = detalhes.setor_atual || "Almoxarifado";
@@ -166,7 +166,7 @@ $("#mov_codigo_bem").onchange = async (e) => {
                 .join('');
 
     } catch (error) {
-        statusIcon.innerHTML = `<i class="fas fa-times-circle text-danger"></i>`;
+        statusIcon.innerHTML = `<i class="bi bi-x-circle text-danger"></i>`;
         $("#infoBemMov").classList.add("d-none");
         $("#mov_setor_destino").disabled = true;
         $("#btnSalvarMov").disabled = true;

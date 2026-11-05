@@ -153,7 +153,7 @@ async function renderizarUltimosRegistros() {
                 <td><span class="fw-bold text-dark">${esc(bem.nome || 'Sem nome')}</span></td>
                 <td><span class="badge ${esc(bem.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">${esc(bem.ativo ? 'Ativo' : 'Inativo')}</span></td>
                 <td class="text-end pe-4">
-                    <a href="/bens" class="btn btn-sm btn-light"><i class="fas fa-arrow-right"></i></a>
+                    <a href="/bens" class="btn btn-sm btn-light"><i class="bi bi-arrow-right"></i></a>
                 </td>
             </tr>
         `).join('');

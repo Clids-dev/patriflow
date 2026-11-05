@@ -71,8 +71,8 @@ function renderizarSetores(setores) {
                 </span>
             </td>
             <td class="px-4 text-end">
-                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(setor.id)}"><i class="fas fa-edit text-primary"></i></button>
-                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(setor.id)}"><i class="fas fa-trash-alt text-danger"></i></button>
+                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(setor.id)}"><i class="bi bi-pencil-square text-primary"></i></button>
+                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(setor.id)}"><i class="bi bi-trash text-danger"></i></button>
             </td>
         </tr>
     `).join('');

@@ -5,146 +5,155 @@
 {% set active_page = 'bens' %}
 
 {% block content %}
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-bold">Equipamentos</h2>
-        <p class="text-muted">Gerencie os bens e patrimônios da instituição.</p>
+<div class="page-heading">
+    <div class="page-title">
+        <div class="row">
+            <div class="col-12 col-md-6 order-md-1 order-last">
+                <h3>Equipamentos</h3>
+                <p class="text-muted">Gerencie os bens e patrimônios da instituição.</p>
+            </div>
+            <div class="col-12 col-md-6 order-md-2 order-first">
+                <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">Dashboard</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Equipamentos</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
     </div>
-    <div>
-        <button class="btn btn-primary shadow-sm px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalNovoBem">
-            <i class="fas fa-plus me-2"></i> Novo Equipamento
-        </button>
-    </div>
-</div>
 
-<!-- Filtros Avançados -->
-<div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-4">
-        <h6 class="fw-bold mb-3"><i class="fas fa-filter me-2 text-primary"></i>Filtros Avançados</h6>
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label small fw-bold text-muted">Buscar por Nome/Código</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" id="inputBusca" class="form-control bg-light border-0" placeholder="Ex: Notebook...">
+    <section class="section">
+        <!-- Filtros -->
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="bi bi-funnel me-2 text-primary"></i>Filtros</h4>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label fw-semibold">Buscar por nome ou código</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="inputBusca" class="form-control" placeholder="Ex: Notebook...">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label fw-semibold">Status</label>
+                        <select id="filtroStatus" class="form-select">
+                            <option value="">Todos os status</option>
+                            <option value="disponivel">Disponível</option>
+                            <option value="em_uso">Em uso</option>
+                            <option value="manutencao">Manutenção</option>
+                            <option value="baixado">Baixado / inativo</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4 d-flex gap-2">
+                        <button class="btn btn-outline-primary flex-fill" id="btnLimparFiltros">
+                            <i class="bi bi-eraser me-2"></i> Limpar filtros
+                        </button>
+                        <button class="btn btn-primary flex-fill" data-bs-toggle="modal" data-bs-target="#modalNovoBem">
+                            <i class="bi bi-plus-lg me-1"></i> Novo
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-bold text-muted">Status</label>
-                <select id="filtroStatus" class="form-select bg-light border-0">
-                    <option value="">Todos os Status</option>
-                    <option value="disponivel">Disponível</option>
-                    <option value="em_uso">Em Uso</option>
-                    <option value="manutencao">Manutenção</option>
-                    <option value="baixado">Baixado / Inativo</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-bold text-muted">Ações</label>
-                <button class="btn btn-outline-primary w-100 border-2 fw-bold" id="btnLimparFiltros">
-                    <i class="fas fa-eraser me-2"></i> Limpar Filtros
-                </button>
-            </div>
         </div>
-    </div>
-</div>
 
-<!-- Tabela Section -->
-<div class="card border-0 shadow-sm rounded-4">
-    <div class="card-header bg-white border-0 p-4">
-        <h5 class="fw-bold mb-0">Lista de Patrimônios</h5>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4">ID</th>
-                        <th>Nome</th>
-                        <th>Código</th>
-                        <th>Valor</th>
-                        <th>Status</th>
-                        <th class="text-end pe-4">Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-bens">
-                    <!-- Preenchido via JS (bens.js) -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <!-- Pagination Footer -->
-    <div class="card-footer bg-white border-0 p-4 border-top">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="small text-muted" id="infoPaginacao">
-                Mostrando 0 de 0 itens
+        <!-- Tabela -->
+        <div class="card">
+            <div class="card-header">
+                <h4>Lista de patrimônios</h4>
             </div>
-            <nav aria-label="Navegação da tabela">
-                <ul class="pagination pagination-sm mb-0" id="pagination">
-                    <!-- Preenchido via JS (bens.js) -->
-                </ul>
-            </nav>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-lg align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">ID</th>
+                                <th>Nome</th>
+                                <th>Código</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-bens">
+                            <!-- Preenchido via JS (bens.js) -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div class="small text-muted" id="infoPaginacao">
+                        Mostrando 0 de 0 itens
+                    </div>
+                    <nav aria-label="Navegação da tabela">
+                        <ul class="pagination pagination-sm mb-0" id="pagination">
+                            <!-- Preenchido via JS (bens.js) -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
         </div>
-    </div>
+    </section>
 </div>
 
 <!-- Modal Novo Bem -->
 <div class="modal fade" id="modalNovoBem" tabindex="-1" aria-labelledby="modalNovoBemLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0 p-4">
-                <h5 class="modal-title fw-bold" id="modalNovoBemLabel">Cadastrar Novo Equipamento</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalNovoBemLabel">Cadastrar novo equipamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <div class="modal-body p-4">
-                    <form id="formNovoBem">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Categoria</label>
-                            <select id="id_categoria" class="form-select border-2" required>
+            <div class="modal-body">
+                <form id="formNovoBem">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Categoria</label>
+                            <select id="id_categoria" class="form-select" required>
                                 <option value="">Selecione uma categoria...</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Nome do Equipamento</label>
-                            <input type="text" id="nome" class="form-control border-2" placeholder="Ex: Notebook Dell Latitude" required>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Nome do equipamento</label>
+                            <input type="text" id="nome" class="form-control" placeholder="Ex: Notebook Dell Latitude" required>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Código de Tombamento</label>
-                            <input type="text" id="codigo" class="form-control border-2 bg-light" placeholder="Selecione uma categoria..." readonly required>
-                            <small class="text-muted">Gerado automaticamente com base na categoria.</small>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Código de tombamento</label>
+                            <input type="text" id="codigo" class="form-control" placeholder="Selecione uma categoria..." readonly required>
+                            <div class="form-text">Gerado automaticamente com base na categoria.</div>
                         </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small">Valor de aquisição (R$)</label>
-                            <input type="number" step="0.01" id="valor" class="form-control border-2" placeholder="0,00" required>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Valor de aquisição (R$)</label>
+                            <input type="number" step="0.01" id="valor" class="form-control" placeholder="0,00" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small">Status Inicial</label>
-                            <select id="status" class="form-select border-2" required>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Status inicial</label>
+                            <select id="status" class="form-select" required>
                                 <option value="Disponível">Disponível</option>
-                                <option value="Em Uso">Em Uso</option>
+                                <option value="Em Uso">Em uso</option>
                                 <option value="Manutenção">Manutenção</option>
                                 <option value="Baixado">Baixado</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6"><label class="form-label fw-bold small">Marca</label><input type="text" id="marca" class="form-control border-2"></div>
-                        <div class="col-md-6"><label class="form-label fw-bold small">Modelo</label><input type="text" id="modelo" class="form-control border-2"></div>
-                        <div class="col-md-6"><label class="form-label fw-bold small">Número de série</label><input type="text" id="numero_serie" class="form-control border-2"></div>
-                        <div class="col-md-6"><label class="form-label fw-bold small">Nota fiscal</label><input type="text" id="nota_fiscal" class="form-control border-2"></div>
-                        <div class="col-md-6"><label class="form-label fw-bold small">Data de entrada</label><input type="date" id="data_entrada" class="form-control border-2"></div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small">Estado de conservação</label>
-                            <select id="estado_conservacao" class="form-select border-2" required>
+                        <div class="col-12 col-md-6"><label class="form-label fw-semibold">Marca</label><input type="text" id="marca" class="form-control"></div>
+                        <div class="col-12 col-md-6"><label class="form-label fw-semibold">Modelo</label><input type="text" id="modelo" class="form-control"></div>
+                        <div class="col-12 col-md-6"><label class="form-label fw-semibold">Número de série</label><input type="text" id="numero_serie" class="form-control"></div>
+                        <div class="col-12 col-md-6"><label class="form-label fw-semibold">Nota fiscal</label><input type="text" id="nota_fiscal" class="form-control"></div>
+                        <div class="col-12 col-md-6"><label class="form-label fw-semibold">Data de entrada</label><input type="date" id="data_entrada" class="form-control"></div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Estado de conservação</label>
+                            <select id="estado_conservacao" class="form-select" required>
                                 <option value="novo" selected>Novo</option><option value="bom">Bom</option><option value="regular">Regular</option><option value="ruim">Ruim</option><option value="inservivel">Inservível</option>
                             </select>
                         </div>
                     </div>
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary py-2 fw-bold">
-                            <i class="fas fa-save me-2"></i> Salvar Equipamento
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i> Salvar equipamento
                         </button>
                     </div>
                 </form>
@@ -153,35 +162,36 @@
     </div>
 </div>
 
+<!-- Modal Editar Bem -->
 <div class="modal fade" id="modalEditarBem" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-content">
             <form id="formEditarBem">
-                <div class="modal-header border-0 p-4 bg-primary text-white rounded-top-4">
-                    <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Editar Equipamento</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Editar equipamento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <div class="modal-body p-4">
+                <div class="modal-body">
                     <input type="hidden" id="editar_id">
-                    <div class="mb-3"><label class="form-label fw-bold small">Nome</label><input id="editar_nome" class="form-control border-2" required></div>
-                    <div class="mb-3"><label class="form-label fw-bold small">Valor (R$)</label><input id="editar_valor" type="number" step="0.01" min="0" class="form-control border-2" required></div>
-                    <div class="mb-3"><label class="form-label fw-bold small">Status</label><select id="editar_status" class="form-select border-2" required><option value="Disponível">Disponível</option><option value="Em Uso">Em Uso</option><option value="Manutenção">Manutenção</option><option value="Baixado">Baixado</option></select></div>
+                    <div class="mb-3"><label class="form-label fw-semibold">Nome</label><input id="editar_nome" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label fw-semibold">Valor (R$)</label><input id="editar_valor" type="number" step="0.01" min="0" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label fw-semibold">Status</label><select id="editar_status" class="form-select" required><option value="Disponível">Disponível</option><option value="Em Uso">Em uso</option><option value="Manutenção">Manutenção</option><option value="Baixado">Baixado</option></select></div>
                 </div>
-                <div class="modal-footer border-0"><button type="submit" class="btn btn-primary">Salvar</button></div>
+                <div class="modal-footer"><button type="submit" class="btn btn-primary">Salvar</button></div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Modal Detalhes Bem -->
+<!-- Modal Detalhes do Bem -->
 <div class="modal fade" id="modalDetalhesBem" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0 p-4 bg-primary text-white rounded-top-4">
-                <h5 class="modal-title fw-bold"><i class="fas fa-info-circle me-2"></i>Detalhes do Equipamento</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-info-circle me-2"></i>Detalhes do equipamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <div class="modal-body p-4" id="conteudoDetalhes">
+            <div class="modal-body" id="conteudoDetalhes">
                 <!-- Preenchido via JS (bens.js) -->
             </div>
         </div>
@@ -190,5 +200,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script type="module" src="/static/js/bens.js?v=2"></script>
+<script type="module" src="/static/js/bens.js?v=3"></script>
 {% endblock %}
