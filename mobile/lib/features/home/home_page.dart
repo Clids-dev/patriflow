@@ -7,6 +7,9 @@ import '../../core/services/session_manager.dart';
 import '../../core/utils/app_helpers.dart';
 import '../../core/widgets/app_states.dart';
 import '../admin/screens/assets_screen.dart';
+import '../admin/screens/categories_screen.dart';
+import '../admin/screens/responsibles_screen.dart';
+import '../admin/screens/sectors_screen.dart';
 import '../admin/screens/dashboard_screen.dart';
 import '../admin/screens/estrutura_hub_page.dart';
 import '../admin/screens/movements_screen.dart';
@@ -91,6 +94,26 @@ class _HomePageState extends State<HomePage> {
           selectedIcon: Icons.folder,
           page: EstruturaHubPage(adminId: adminId),
           bottomBar: true,
+          subitens: const [
+            ShellItem(
+              label: 'Categorias',
+              icon: Icons.category_outlined,
+              selectedIcon: Icons.category,
+              page: CategoriesScreen(),
+            ),
+            ShellItem(
+              label: 'Setores e localização',
+              icon: Icons.business_outlined,
+              selectedIcon: Icons.business,
+              page: SectorsScreen(),
+            ),
+            ShellItem(
+              label: 'Responsáveis',
+              icon: Icons.people_outline,
+              selectedIcon: Icons.people,
+              page: ResponsibleScreen(),
+            ),
+          ],
         ),
         ShellItem(
           label: 'Movimentações',

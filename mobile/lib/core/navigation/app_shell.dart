@@ -66,6 +66,19 @@ class AppShellState extends State<AppShell> {
     );
   }
 
+  /// Subitem do menu: abre a tela com barra superior própria, sem trocar o módulo atual.
+  void _abrirSubitem(ShellItem sub) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: Text(sub.label)),
+          body: sub.page,
+        ),
+      ),
+    );
+  }
+
   Future<void> _carregarBadges() async {
     for (var i = 0; i < widget.items.length; i++) {
       final badge = widget.items[i].badge;
@@ -110,6 +123,7 @@ class AppShellState extends State<AppShell> {
         onSelect: _select,
         onSettings: widget.onSettings,
         onLogout: widget.onLogout,
+        onOpenSub: _abrirSubitem,
       ),
       body: atual.page,
       bottomNavigationBar: _BottomBar(
