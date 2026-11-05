@@ -3,6 +3,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 EstadoConservacao = Literal["novo", "bom", "regular", "ruim", "inservivel"]
+StatusBem = Literal["Disponível", "Em Uso", "Manutenção", "Baixado"]
 
 
 class BemCampos(BaseModel):
@@ -31,7 +32,7 @@ class BemCreate(BemCampos):
     tipo: str = "Equipamento"
     codigo_tombamento: str
     valor: Optional[float] = None
-    status: str
+    status: StatusBem
     id_categoria: int
     estado_conservacao: EstadoConservacao
 
@@ -46,7 +47,7 @@ class BemUpdate(BaseModel):
 
     nome: Optional[str] = None
     valor: Optional[float] = Field(default=None, ge=0)
-    status: Optional[str] = None
+    status: Optional[StatusBem] = None
     marca: Optional[str] = None
     modelo: Optional[str] = None
     numero_serie: Optional[str] = None

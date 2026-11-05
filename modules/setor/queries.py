@@ -27,3 +27,6 @@ QUERY_PUT_SETOR = """UPDATE setores SET nome = %s, responsavel_id = %s, flag_alm
                     sala_id = COALESCE(%s, sala_id) WHERE id = %s RETURNING id"""
 
 QUERY_DELETE_SETOR = "UPDATE setores SET ativo = FALSE WHERE id = %s RETURNING id"
+
+# Almoxarifado ativo: único setor com flag_almoxarifado (índice único no banco).
+QUERY_ALMOXARIFADO = QUERY_SETORES + "\n                      AND s.flag_almoxarifado = TRUE\n                    LIMIT 1"

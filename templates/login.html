@@ -3,92 +3,431 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PatriFlow - Login</title>
+    <title>PatriFlow — Entrar</title>
 
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
+
+    <style>
+        html, body { height: 100%; overflow: hidden; }
+
+        .login-wrapper {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ---- Painel esquerdo ---- */
+        .login-panel-left {
+            flex: 1;
+            background: linear-gradient(150deg, #19002B 0%, #3D0070 55%, #820AD1 100%);
+            display: flex;
+            flex-direction: column;
+            padding: 48px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-panel-left::before {
+            content: '';
+            position: absolute;
+            width: 480px;
+            height: 480px;
+            background: rgba(168, 85, 247, 0.22);
+            border-radius: 50%;
+            top: -140px;
+            right: -120px;
+            filter: blur(90px);
+            pointer-events: none;
+        }
+
+        .login-panel-left::after {
+            content: '';
+            position: absolute;
+            width: 320px;
+            height: 320px;
+            background: rgba(130, 10, 209, 0.28);
+            border-radius: 50%;
+            bottom: -80px;
+            left: -60px;
+            filter: blur(70px);
+            pointer-events: none;
+        }
+
+        .left-top, .left-middle, .left-bottom {
+            position: relative;
+            z-index: 1;
+        }
+
+        .left-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .left-logo-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(12px);
+        }
+
+        .feature-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 14px;
+            backdrop-filter: blur(8px);
+            margin-bottom: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.10);
+        }
+
+        .feature-card-icon {
+            width: 38px;
+            height: 38px;
+            background: rgba(130, 10, 209, 0.45);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* ---- Painel direito ---- */
+        .login-panel-right {
+            width: 480px;
+            flex-shrink: 0;
+            background: var(--bg-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 40px;
+            overflow-y: auto;
+        }
+
+        .login-form-box {
+            width: 100%;
+            max-width: 360px;
+            animation: fadeSlideUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---- Inputs com ícone ---- */
+        .field-wrap {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .field-wrap .field-icon-left {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .field-wrap input {
+            padding-left: 42px !important;
+            padding-right: 42px !important;
+            height: 52px;
+            font-size: 0.95rem !important;
+            border-radius: 14px !important;
+        }
+
+        .field-wrap .field-icon-right {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            z-index: 2;
+            padding: 4px;
+            transition: color 0.2s ease;
+        }
+
+        .field-wrap .field-icon-right:hover {
+            color: var(--primary-color);
+        }
+
+        /* ---- Botões ---- */
+        .btn-login {
+            height: 52px;
+            font-size: 0.98rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            border-radius: 14px !important;
+        }
+
+        .btn-outline-secondary.btn-register {
+            height: 52px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 14px !important;
+            background: var(--surface-color) !important;
+            border: 1.5px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline-secondary.btn-register:hover {
+            border-color: var(--primary-color) !important;
+            color: var(--primary-color) !important;
+            background: var(--primary-light) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(130, 10, 209, 0.12);
+        }
+
+        /* ---- Alerta inline ---- */
+        .alert-inline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
+        }
+
+        .alert-inline.error {
+            background: #FFF1F0;
+            color: #C0392B;
+            border-left: 3px solid var(--danger);
+        }
+
+        .alert-inline.success {
+            background: #F0FFF4;
+            color: #1D6A3A;
+            border-left: 3px solid var(--success);
+        }
+
+        /* ---- Divider ---- */
+        .divider-or {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin: 18px 0;
+        }
+
+        .divider-or::before,
+        .divider-or::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        /* ---- Responsivo mobile ---- */
+        @media (max-width: 991.98px) {
+            html, body { overflow: auto; }
+
+            .login-wrapper {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .login-panel-left {
+                flex: none;
+                padding: 32px 24px 36px;
+            }
+
+            .login-panel-right {
+                width: 100%;
+                padding: 36px 24px 48px;
+            }
+
+            .feature-cards-wrap { display: none; }
+        }
+    </style>
 </head>
 
 <body class="login-body">
 
-    <div class="container d-flex align-items-center justify-content-center min-vh-100">
-        <div class="row w-100 align-items-center">
-            
-            <!-- Esquerda: Branding (Estilo Facebook) -->
-            <div class="col-lg-6 mb-5 mb-lg-0 text-center text-lg-start pe-lg-5">
-                <div class="d-flex align-items-center mb-3 justify-content-center justify-content-lg-start">
-                    <img src="/static/logo.png" alt="PatriFlow" style="height: 54px; width: auto;" class="rounded-3 shadow-sm bg-white p-1 me-3">
-                    <h1 class="display-4 fw-bold text-primary mb-0">PatriFlow</h1>
+<div class="login-wrapper">
+
+    <!-- ===================== PAINEL ESQUERDO ===================== -->
+    <div class="login-panel-left d-none d-lg-flex flex-column">
+
+        <!-- Logo -->
+        <div class="left-top">
+            <div class="left-logo">
+                <div class="left-logo-icon">
+                    <img src="/static/logo.png?v=2" alt="PatriFlow" style="height: 44px; width: auto;">
                 </div>
-                <p class="fs-4 text-dark-emphasis fw-medium">
-                    O sistema de tombamento que simplifica a gestão do seu patrimônio.
-                    <span class="d-block mt-2 fs-5 fw-normal text-muted">Acompanhe ativos, movimentações e responsabilidades em um só lugar.</span>
+            </div>
+        </div>
+
+        <!-- Headline + features -->
+        <div class="left-middle mt-auto">
+            <p class="mb-2 fw-semibold text-uppercase" style="color: rgba(255,255,255,0.45); font-size: 0.72rem; letter-spacing: 0.1em;">
+                Sistema de Tombamento
+            </p>
+            <h2 class="text-white fw-bold mb-5" style="font-size: clamp(1.5rem, 2.2vw, 2rem); line-height: 1.3; letter-spacing: -0.03em;">
+                Gestão patrimonial<br>inteligente e precisa.
+            </h2>
+
+            <div class="feature-cards-wrap">
+                <div class="feature-card">
+                    <div class="feature-card-icon">
+                        <i class="fas fa-shield-alt text-white" style="font-size: 0.85rem;"></i>
+                    </div>
+                    <div>
+                        <div class="text-white fw-semibold" style="font-size: 0.875rem;">Controle por perfil de acesso</div>
+                        <div style="color: rgba(255,255,255,0.45); font-size: 0.775rem;">Admin, agente de campo e responsável</div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-icon">
+                        <i class="fas fa-history text-white" style="font-size: 0.85rem;"></i>
+                    </div>
+                    <div>
+                        <div class="text-white fw-semibold" style="font-size: 0.875rem;">Rastreabilidade total</div>
+                        <div style="color: rgba(255,255,255,0.45); font-size: 0.775rem;">Histórico completo de movimentações</div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-icon">
+                        <i class="fas fa-file-export text-white" style="font-size: 0.85rem;"></i>
+                    </div>
+                    <div>
+                        <div class="text-white fw-semibold" style="font-size: 0.875rem;">Relatórios PDF e Excel</div>
+                        <div style="color: rgba(255,255,255,0.45); font-size: 0.775rem;">Exportação com filtros avançados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="left-bottom mt-5">
+            <p class="mb-0" style="color: rgba(255,255,255,0.3); font-size: 0.75rem;">
+                © 2026 PatriFlow Corporate. Todos os direitos reservados.
+            </p>
+        </div>
+
+    </div>
+
+    <!-- ===================== PAINEL DIREITO ===================== -->
+    <div class="login-panel-right">
+        <div class="login-form-box">
+
+            <!-- Logo mobile -->
+            <div class="d-flex d-lg-none align-items-center mb-5">
+                <div style="background: #820AD1; padding: 10px 16px; border-radius: 14px; display: inline-flex;">
+                    <img src="/static/logo.png?v=2" alt="PatriFlow" style="height: 38px; width: auto;">
+                </div>
+            </div>
+
+            <!-- Título -->
+            <div class="mb-5">
+                <h1 class="fw-bold mb-1" style="font-size: 1.7rem; letter-spacing: -0.03em; color: var(--text-primary);">
+                    Bem-vindo de volta
+                </h1>
+                <p class="mb-0" style="font-size: 0.925rem; color: var(--text-secondary);">
+                    Entre com suas credenciais para continuar.
                 </p>
             </div>
 
-            <!-- Direita: Formulário de Login (Card) -->
-            <div class="col-lg-5 offset-lg-1">
-                <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5">
-                    
-                    {% if erro %}
-                        <div class="alert alert-danger border-0 rounded-3 mb-4 small" role="alert">
-                            <i class="fas fa-exclamation-circle me-2"></i> {{ erro }}
-                        </div>
-                    {% endif %}
-
-                    {% if sucesso %}
-                        <div class="alert alert-success border-0 rounded-3 mb-4 small" role="alert">
-                            <i class="fas fa-check-circle me-2"></i> {{ sucesso }}
-                        </div>
-                    {% endif %}
-
-                    <form action="/login" method="POST">
-                        <div class="mb-3">
-                            <input type="text" id="login_usuario" name="login_usuario" 
-                                class="form-control form-control-lg border-2" 
-                                placeholder="Usuário ou e-mail" required autofocus>
-                        </div>
-
-                        <div class="mb-3">
-                            <input type="password" id="password_usuario" name="password_usuario" 
-                                class="form-control form-control-lg border-2" 
-                                placeholder="Senha" required>
-                        </div>
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg fw-bold py-3 shadow-sm">
-                                Entrar no Sistema
-                            </button>
-                        </div>
-                        
-                        <div class="text-center mt-3">
-                            <a href="#" class="text-decoration-none small text-primary fw-medium">Esqueceu a senha?</a>
-                        </div>
-                        
-                        <hr class="my-4 text-muted opacity-25">
-                        
-                        <div class="text-center">
-                            <a href="/criar-conta" class="btn btn-success btn-lg fw-bold px-4 py-2 border-0" style="background-color: #42b72a;">
-                                Criar nova conta
-                            </a>
-                        </div>
-                    </form>
-                </div>
-                <p class="text-center mt-4 small text-muted">
-                    <span class="fw-bold text-dark">PatriFlow Corporate</span> &copy; 2026. Todos os direitos reservados.
-                </p>
+            <!-- Alertas -->
+            {% if erro %}
+            <div class="alert-inline error" role="alert">
+                <i class="fas fa-exclamation-circle flex-shrink-0"></i>
+                <span>{{ erro }}</span>
             </div>
-            
+            {% endif %}
+
+            {% if sucesso %}
+            <div class="alert-inline success" role="alert">
+                <i class="fas fa-check-circle flex-shrink-0"></i>
+                <span>{{ sucesso }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Formulário -->
+            <form action="/login" method="POST" id="loginForm" novalidate>
+
+                <div class="field-wrap">
+                    <i class="fas fa-user field-icon-left"></i>
+                    <input type="text" name="login_usuario" id="login_usuario"
+                        class="form-control"
+                        placeholder="Usuário"
+                        required autofocus autocomplete="username">
+                </div>
+
+                <div class="field-wrap">
+                    <i class="fas fa-lock field-icon-left"></i>
+                    <input type="password" name="password_usuario" id="password_usuario"
+                        class="form-control"
+                        placeholder="Senha"
+                        required autocomplete="current-password">
+                    <i class="fas fa-eye field-icon-right" id="toggleSenha" title="Mostrar senha" role="button" aria-label="Mostrar senha"></i>
+                </div>
+
+                <div class="text-end mb-4" style="margin-top: -6px;">
+                    <a href="#" class="text-decoration-none fw-medium" style="font-size: 0.85rem; color: var(--primary-color);">
+                        Esqueceu a senha?
+                    </a>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-login w-100 shadow-sm">
+                    <span id="btnText">Entrar</span>
+                    <span id="btnSpinner" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Entrando…
+                    </span>
+                </button>
+
+                <div class="divider-or">ou</div>
+
+                <a href="/criar-conta" class="btn btn-outline-secondary btn-register w-100 text-decoration-none text-center d-block">
+                    Criar uma conta
+                </a>
+
+            </form>
+
         </div>
     </div>
 
-    <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const senhaInput = document.getElementById('password_usuario');
+    const toggleBtn  = document.getElementById('toggleSenha');
+
+    toggleBtn?.addEventListener('click', () => {
+        const show = senhaInput.type === 'password';
+        senhaInput.type = show ? 'text' : 'password';
+        toggleBtn.classList.toggle('fa-eye',       !show);
+        toggleBtn.classList.toggle('fa-eye-slash',  show);
+    });
+
+    document.getElementById('loginForm')?.addEventListener('submit', () => {
+        document.getElementById('btnText').classList.add('d-none');
+        document.getElementById('btnSpinner').classList.remove('d-none');
+    });
+</script>
 </body>
 </html>

@@ -1,0 +1,183 @@
+PERGUNTAS EM ABERTO - PatriFlow (regras de almoxarifado e autorização, W04)
+==========================================================================
+
+Preencha a linha "RESPOSTA:" de cada pergunta. Onde houver opções, marque
+uma (escreva a letra) ou escreva outra resposta. A sugestão do desenvolvedor
+aparece em "Sugestão" e pode ser aceita sem mudança.
+
+
+1. ROTA DE CORREÇÃO DE MOVIMENTAÇÃO (PUT /api/v1/movimentacao/{id})
+---------------------------------------------------------------------
+Situação: a rota já está restrita ao setor de patrimônio, mas a consulta
+grava o valor do destino no campo de origem (bug antigo, que existia antes
+desta etapa).
+
+  a) Corrigir a consulta para gravar o campo certo
+  b) Remover a rota de correção (movimentações só se corrigem por nova movimentação)
+  c) Manter como está
+
+Sugestão: b. Corrigir histórico de localização por edição abre brecha de auditoria.
+
+RESPOSTA:b
+
+
+2. BOTÕES DE AUTORIZAR NO APLICATIVO
+---------------------------------------------------------------------
+Situação: todo responsável de setor vê os botões Autorizar e Recusar na aba
+"Autorizações pendentes". Quem não é do almoxarifado recebe erro 403 ao clicar.
+
+  a) Mostrar os botões somente para o responsável do almoxarifado
+  b) Mostrar para todos os responsáveis (como está)
+
+Sugestão: a. Exige que o app saiba qual setor é o almoxarifado (pode ser
+consultado em /setores/ pelo campo flag_almoxarifado).
+
+RESPOSTA: a
+
+
+3. QUEM AUTORIZA SOLICITAÇÕES
+---------------------------------------------------------------------
+Hoje podem autorizar: o responsável vinculado ao almoxarifado e o setor de
+patrimônio (administrador).
+
+  a) Manter os dois
+  b) Somente o responsável do almoxarifado (o administrador também fica de fora)
+
+Sugestão: a.
+
+RESPOSTA:a
+
+
+4. VÍNCULO USUÁRIO -> SETOR
+---------------------------------------------------------------------
+Situação: a regra de solicitação exige que o responsável tenha setor
+vinculado. Hoje:
+  - o cadastro pelo aplicativo NÃO envia o setor;
+  - não existe tela para o administrador vincular um usuário já criado.
+Sem isso, um responsável criado pelo app recebe 403 ao solicitar.
+
+Como deve ser feito o vínculo?
+  a) Tela no painel do administrador para escolher o setor de cada usuário
+  b) Campo de setor no próprio cadastro pelo aplicativo (o administrador ativa depois)
+  c) As duas coisas
+
+Sugestão: c.
+
+RESPOSTA:c
+
+
+5. CONTA CRIADA PELO CADASTRO PÚBLICO
+---------------------------------------------------------------------
+Hoje o cadastro público cria conta de "agente_campo" já ativa e com acesso.
+
+  a) Criar a conta inativa até o administrador aprovar
+  b) Criar ativa, como está
+  c) Outro perfil padrão: ______________________
+
+Sugestão: a.
+
+RESPOSTA: a
+
+
+6. BENS SEM LOCALIZAÇÃO (ANTES DAS NOVAS REGRAS)
+---------------------------------------------------------------------
+Situação: 13 dos 17 bens ativos não têm nenhuma movimentação aprovada, por
+isso não aparecem em local nenhum. Bens novos já entram no almoxarifado.
+
+  a) Criar a entrada no almoxarifado para os 13 agora (data = hoje)
+  b) Criar a entrada usando a data de entrada cadastrada em cada bem
+  c) Não criar nada; o almoxarifado confirma cada bem manualmente pelo painel
+  d) Outra: ______________________
+
+Sugestão: b. Preserva a data real e deixa o histórico coerente.
+
+RESPOSTA: primeiro cria a entrada do jeiot do item b e começa pelo almoxarifado e voce escole o setor pra cada 
+bem
+
+7. MOVIMENTAÇÃO DO AGENTE DE CAMPO
+---------------------------------------------------------------------
+Hoje o agente de campo só solicita movimentação entre o almoxarifado e o
+próprio setor (e precisa ter setor vinculado). Antes ele movimentava livremente.
+
+  a) Manter a regra (somente almoxarifado <-> setor)
+  b) Agente pode movimentar livremente, sem autorização
+  c) Agente solicita movimentações entre quaisquer setores, com autorização
+
+Sugestão: a, para seguir a regra que você definiu para o almoxarifado.
+
+RESPOSTA: a
+
+
+8. SOLICITAÇÃO PELO APLICATIVO DO RESPONSÁVEL
+---------------------------------------------------------------------
+A API já permite solicitar. Falta a tela no app para o responsável escolher
+um bem do almoxarifado e pedir a transferência.
+
+  a) Construir a tela agora
+  b) Deixar para depois (solicitações só pela API por enquanto)
+
+Sugestão: a, se o responsável de setor vai usar o aplicativo no dia a dia.
+
+RESPOSTA: a
+
+
+9. ALMOXARIFADO ÚNICO
+---------------------------------------------------------------------
+Confirme que existe um único almoxarifado na organização.
+Hoje o marcado é: "Almoxarifado Central" (id 3).
+
+  a) Sim, é esse mesmo
+  b) Não, existem outros: ______________________
+
+RESPOSTA: a
+
+
+10. PERFIL DE AUDITORIA (SOMENTE LEITURA)
+---------------------------------------------------------------------
+O objetivo do sistema cita "auditoria". Existe alguém que só deve consultar,
+sem movimentar nem autorizar (ex.: controladoria)?
+
+  a) Sim, criar perfil "auditor" somente leitura
+  b) Não, por enquanto
+
+RESPOSTA: a
+
+
+11. SETORES DUPLICADOS NO BANCO
+---------------------------------------------------------------------
+No banco de desenvolvimento há três setores chamados "Produção" e um
+"Produçãi" (nome com erro de digitação). Podem ser limpos?
+
+  a) Sim: vou indicar quais manter (ids: ______________)
+  b) Não, deixar como está
+
+RESPOSTA: recrie os setores e apague setores que parecem estar com o nome errado
+
+
+12. DOCUMENTAÇÃO DESATUALIZADA
+---------------------------------------------------------------------
+README e tutorial mobile ainda descrevem os perfis antigos (admin/comum),
+o armazenamento antigo do token e a estrutura de pastas antiga do app.
+Atualizar agora?
+
+  a) Sim, atualizar os documentos com as regras W04 e a nova estrutura
+  b) Não, depois
+
+RESPOSTA: 1
+
+
+13. COMMIT E INSTALAÇÃO
+---------------------------------------------------------------------
+As alterações não foram commitadas. O APK instalado no aparelho é anterior
+às regras de W04 e à aba de autorização.
+
+  a) Commitar agora (mensagem a definir) e reinstalar o app no aparelho
+  b) Só reinstalar o app, sem commit
+  c) Só commitar, sem reinstalar
+  d) Nada por enquanto
+
+RESPOSTA: faça varios commis para cada  mudanca perigosa ja feita, para nao dar um commit so com varias mudanças
+
+
+==========================================================================
+Fim das perguntas. Quando terminar, avise e eu aplico as respostas.

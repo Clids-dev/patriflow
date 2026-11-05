@@ -1,16 +1,17 @@
-QUERY_MOVIMENTACOES = """SELECT id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo
+QUERY_MOVIMENTACOES = """SELECT id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo, status
                       FROM movimentacoes WHERE ativo = TRUE"""
 
 QUERY_MOVIMENTACOES_DETALHADAS = """
-    SELECT 
-        m.id, 
-        b.nome as bem_nome, 
+    SELECT
+        m.id,
+        b.nome as bem_nome,
         b.codigo_tombamento,
-        s1.nome as setor_origem_nome, 
-        s2.nome as setor_destino_nome, 
-        m.data_movimentacao, 
+        s1.nome as setor_origem_nome,
+        s2.nome as setor_destino_nome,
+        m.data_movimentacao,
         m.justificativa,
-        m.ativo
+        m.ativo,
+        m.status
     FROM movimentacoes m
     JOIN bens b ON m.bem_id = b.id
     LEFT JOIN setores s1 ON m.setor_origem_id = s1.id
@@ -20,15 +21,16 @@ QUERY_MOVIMENTACOES_DETALHADAS = """
 """
 
 QUERY_MOVIMENTACOES_POR_BEM_CODIGO = """
-    SELECT 
-        m.id, 
-        b.nome as bem_nome, 
+    SELECT
+        m.id,
+        b.nome as bem_nome,
         b.codigo_tombamento,
-        s1.nome as setor_origem_nome, 
-        s2.nome as setor_destino_nome, 
-        m.data_movimentacao, 
+        s1.nome as setor_origem_nome,
+        s2.nome as setor_destino_nome,
+        m.data_movimentacao,
         m.justificativa,
-        m.ativo
+        m.ativo,
+        m.status
     FROM movimentacoes m
     JOIN bens b ON m.bem_id = b.id
     LEFT JOIN setores s1 ON m.setor_origem_id = s1.id
@@ -37,14 +39,48 @@ QUERY_MOVIMENTACOES_POR_BEM_CODIGO = """
     ORDER BY m.data_movimentacao DESC
 """
 
-QUERY_MOVIMENTACOES_ID = """SELECT id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo FROM movimentacoes WHERE id = %s"""
+QUERY_MOVIMENTACOES_PENDENTES = """
+    SELECT
+        m.id,
+        b.nome as bem_nome,
+        b.codigo_tombamento,
+        s1.nome as setor_origem_nome,
+        s2.nome as setor_destino_nome,
+        m.data_movimentacao,
+        m.justificativa,
+        m.ativo,
+        m.status
+    FROM movimentacoes m
+    JOIN bens b ON m.bem_id = b.id
+    LEFT JOIN setores s1 ON m.setor_origem_id = s1.id
+    JOIN setores s2 ON m.setor_destino_id = s2.id
+    WHERE m.ativo = TRUE AND m.status = 'pendente'
+    ORDER BY m.data_movimentacao ASC
+"""
 
-QUERY_CREATE_MOVIMENTACOES = """INSERT INTO movimentacoes (bem_id, setor_origem_id, setor_destino_id, data_movimentacao, justificativa, ativo)
-                                VALUES (%s, %s, %s, %s, %s, TRUE)
-                                RETURNING id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo;"""
+QUERY_MOVIMENTACOES_ID = """SELECT id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo, status, solicitante_id
+                            FROM movimentacoes WHERE id = %s"""
 
-QUERY_PUT_MOVIMENTACAO = """UPDATE movimentacoes SET data_movimentacao = %s, setor_origem_id = %s, justificativa = %s 
-                            WHERE id = %s AND ativo = TRUE 
-                            RETURNING id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, justificativa, ativo;"""
+# Localização atual de um bem: destino da última movimentação aprovada e ativa.
+QUERY_LOCALIZACAO_ATUAL = """
+    SELECT setor_destino_id FROM movimentacoes
+    WHERE bem_id = %s AND ativo = TRUE AND status = 'aprovada'
+    ORDER BY COALESCE(data_decisao, data_movimentacao) DESC, id DESC
+    LIMIT 1
+"""
+
+QUERY_CREATE_MOVIMENTACOES = """INSERT INTO movimentacoes
+    (bem_id, setor_origem_id, setor_destino_id, data_movimentacao, justificativa,
+     ativo, status, solicitante_id, decisor_id, data_decisao)
+    VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s)
+    RETURNING id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo, status;"""
+
+# Decisão só é aplicada se a movimentação ainda estiver pendente (evita dupla decisão).
+QUERY_DECIDIR_MOVIMENTACAO = """
+    UPDATE movimentacoes
+    SET status = %s, decisor_id = %s, data_decisao = %s
+    WHERE id = %s AND ativo = TRUE AND status = 'pendente'
+    RETURNING id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo, status;
+"""
 
 QUERY_DELETE_MOVIMENTACAO = """UPDATE movimentacoes SET ativo = FALSE WHERE id = %s RETURNING id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo;"""

@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from modules.bem.repository import BemRepository
 from modules.bem.schemas import BemCreate, BemUpdate
 from modules.categoria.repository import CategoriaRepository
+from modules.setor.repository import SetorRepository
 from modules.bem.queries_stats import QUERY_STATS_CATEGORIA, QUERY_STATS_STATUS
 from core.database import DataBase
 from psycopg2 import errors
@@ -40,14 +41,38 @@ class BemService:
             raise HTTPException(status_code=404, detail="Bem não encontrado")
         return bem
 
-    def create_bem(self, bem : BemCreate):
+    def create_bem(self, bem: BemCreate, usuario: dict):
         require_valid_tombo(bem.codigo_tombamento)
         bem.codigo_tombamento = bem.codigo_tombamento.upper()
+        almoxarifado = SetorRepository().get_almoxarifado()
+        if almoxarifado is None:
+            raise HTTPException(status_code=400, detail="Cadastre um almoxarifado antes de cadastrar bens.")
         repository = BemRepository()
-        return repository.save(bem)
+        try:
+            return repository.save(bem, almoxarifado.id, usuario["id"])
+        except errors.UniqueViolation as exc:
+            # O índice único cobre também bens baixados: tombo nunca é reaproveitado.
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Já existe um bem com o tombo {bem.codigo_tombamento}. "
+                    "Números de tombo não são reaproveitados, mesmo de bens baixados."
+                ),
+            ) from exc
 
-    def put_bem(self, id: int, bem_atualizado: BemUpdate):
+    def put_bem(self, id: int, bem_atualizado: BemUpdate, usuario: dict):
         repository = BemRepository()
+        if bem_atualizado.status is not None:
+            atual = repository.get_by_id(id)
+            if atual is None:
+                raise HTTPException(status_code=404, detail=f"Bem com id {id} não encontrado")
+            # Tirar um bem da manutenção sem o reparo concluído é decisão do setor de patrimônio.
+            if (atual.status == "Manutenção" and bem_atualizado.status != "Manutenção"
+                    and usuario["perfil"] != "setor_patrimonio"):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Somente o setor de patrimônio pode tirar um bem da manutenção.",
+                )
         bem = repository.put(id, bem_atualizado)
         if not bem:
             raise HTTPException(status_code=404, detail=f"Bem com id {id} não encontrado")
@@ -80,12 +105,13 @@ class BemService:
         if not categoria:
             raise HTTPException(status_code=404, detail="Categoria não encontrada")
         
-        quantidade = repo_bem.count_by_categoria(id_categoria)
-        proximo_numero = quantidade + 1
         
         sigla = re.sub(r"[^A-Za-z0-9]", "", categoria.sigla)
         if not sigla:
             raise HTTPException(status_code=400, detail="A sigla da categoria não pode gerar um número de tombo")
+        # Próximo número depois do maior já usado pela sigla (inclusive bens baixados).
+        # Contar bens não serve: tombo manual ou lacuna faz a contagem repetir número.
+        proximo_numero = repo_bem.max_sequencia_tombo(sigla) + 1
         base = f"{sigla}-{str(proximo_numero).zfill(3)}"
         return format_tombo(base)
 

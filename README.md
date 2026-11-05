@@ -8,7 +8,8 @@ O **Sistema de Tombamento (PatriFlow)** é uma solução web e API REST moderna,
 
 ### 1. Gestão de Ativos (Bens)
 - **Cadastro Detalhado:** Registro de bens com nome, valor, categoria, status e setor de localização.
-- **Códigos de Tombamento Automáticos:** Geração padronizada no formato `SIGLA-00X`, onde a sigla (sem acentos) é derivada automaticamente da categoria.
+- **Códigos de Tombamento Automáticos:** Geração no formato `BASE-DV` (ex.: `INF-001-0`), com dígito verificador módulo 11 (ver W03).
+- **Entrada pelo almoxarifado:** todo bem cadastrado entra no almoxarifado central, com histórico iniciado na compra (ver W04).
 - **Ciclo de Vida (Soft Delete):** Inativação lógica (`ativo = FALSE`) que preserva o histórico de movimentações e auditoria.
 - **Histórico Completo (Timeline):** Visualização gráfica e cronológica das transferências de um bem no modal de detalhes.
 
@@ -32,7 +33,12 @@ O **Sistema de Tombamento (PatriFlow)** é uma solução web e API REST moderna,
 
 ### 5. Segurança e Controle de Acesso
 - **Autenticação de Usuários:** Sistema de login com persistência de sessão baseada em cookies seguros.
-- **Níveis de Permissão:** Controle do tipo de usuário (`admin` para gestão total e alterações cadastrais, e `comum` para consultas e operações básicas).
+- **Perfis de acesso:**
+  - `setor_patrimonio`: gestão total, aprovação de cadastros e autorização de movimentações.
+  - `agente_campo`: consulta, conferência e solicitação de movimentações entre o almoxarifado e o próprio setor.
+  - `responsavel_setor`: consulta do acervo do próprio setor, solicitação de bens do almoxarifado e autorização das solicitações (quando for o responsável do almoxarifado).
+  - `auditor`: somente leitura.
+- **Aprovação de cadastros:** contas criadas pelo cadastro público ficam pendentes até o setor de patrimônio ativar a conta e definir perfil e setor.
 
 ---
 
@@ -95,6 +101,24 @@ O tombo tem o formato `BASE-DV`; por exemplo, `INF-001-0`. Para conferir o DV ma
 O DV também é conferido pelo banco. O número não pode ser atualizado nem reutilizado após a baixa: o tombo é único, permanece registrado no bem inativo, e exclusões físicas ou limpeza da tabela são bloqueadas.
 
 Para atualizar uma base existente, aplique `database/migrations/20261018_w03_assets_locations_tombo.sql` após a migração W02. A migração acrescenta DV aos tombos históricos; reimprima as etiquetas com os novos códigos. Ela também associa os setores atuais a um local temporário “não informado”; atualize esses locais com os endereços reais depois.
+
+### W04 — almoxarifado e autorização de movimentações
+
+- Existe **um único almoxarifado** ativo (setor com `flag_almoxarifado = TRUE`; índice único no banco).
+- Bens entram sempre pelo almoxarifado. O cadastro grava o bem e a movimentação de entrada na mesma transação.
+- Movimentações feitas pelo setor de patrimônio são aprovadas na hora.
+- Demais perfis só solicitam movimentações entre o almoxarifado e o próprio setor. A solicitação fica `pendente` e só muda a localização do bem quando é autorizada pelo responsável do almoxarifado ou pelo setor de patrimônio.
+- A decisão é atômica: um bem baixado ou que mudou de local não pode ser autorizado, e uma solicitação só pode ser decidida uma vez.
+
+Migração: `database/migrations/20261104_w04_almoxarifado_autorizacao.sql`.
+
+### W05 — aprovação de cadastros e perfil auditor
+
+- Cadastros públicos nascem inativos e precisam de setor. O login informa que a conta aguarda aprovação.
+- O setor de patrimônio ativa a conta em `PATCH /api/v1/usuarios/{id}` (perfil, setor e situação).
+- Perfil `auditor` (somente leitura).
+
+Migração: `database/migrations/20261104_w05_usuarios_aprovacao_auditor.sql`. Aplicar após a W04.
 
 ### Pré-requisitos
 - Python 3.10+ instalado.

@@ -36,13 +36,14 @@ class BemRepository(DataBase):
             predio_nome=row[20], andar_identificacao=row[21], sala_nome=row[22]
         )
 
-    def save(self, bem: BemCreate):
+    def save(self, bem: BemCreate, almoxarifado_id: int, usuario_id: int):
         valor = bem.valor if bem.valor is not None else bem.valor_aquisicao
         valor_aquisicao = bem.valor_aquisicao if bem.valor_aquisicao is not None else valor
-        result = DataBase().commit(queries.QUERY_CREATE_BEM, (
+        result = DataBase().commit(queries.QUERY_CREATE_BEM_COM_ENTRADA, (
             bem.nome, bem.tipo, bem.codigo_tombamento, valor, bem.status, bem.id_categoria,
             bem.marca, bem.modelo, bem.numero_serie, valor_aquisicao, bem.nota_fiscal,
-            bem.data_entrada, bem.estado_conservacao
+            bem.data_entrada, bem.estado_conservacao,
+            almoxarifado_id, usuario_id, usuario_id,
         ))
         return Bem(
             id=result[0], nome=bem.nome, tipo=bem.tipo, codigo_tombamento=bem.codigo_tombamento,
@@ -52,15 +53,17 @@ class BemRepository(DataBase):
             data_entrada=bem.data_entrada, estado_conservacao=bem.estado_conservacao
         )
 
-    def count_by_categoria(self, id_categoria: int):
-        rows = DataBase().execute(queries.QUERY_COUNT_BY_CATEGORIA, (id_categoria,))
-        return rows[0][0] if rows else 0
+    def max_sequencia_tombo(self, sigla: str) -> int:
+        """Maior número já usado pela sigla, ou 0 se nenhum tombo existe."""
+        pattern = f"^{sigla.upper()}-[0-9]+-[0-9]$"
+        row = DataBase().execute(queries.QUERY_MAX_SEQUENCIA_TOMBO, (pattern,), many=False)
+        return (row[0] or 0) if row else 0
 
     def put(self, id: int, bem_atualizado: BemUpdate):
         values = bem_atualizado.model_dump()
         row = DataBase().commit(queries.QUERY_PUT_BEM, (
-            values["nome"], values["valor"], values["valor_aquisicao"], values["status"], values["marca"], values["modelo"],
-            values["numero_serie"], values["valor_aquisicao"], values["valor"], values["nota_fiscal"],
+            values["nome"], values["valor"], values["status"], values["marca"], values["modelo"],
+            values["numero_serie"], values["valor_aquisicao"], values["nota_fiscal"],
             values["data_entrada"], values["estado_conservacao"], id
         ))
         return self._model(row) if row else None

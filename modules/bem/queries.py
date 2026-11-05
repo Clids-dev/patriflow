@@ -18,8 +18,8 @@ QUERY_BEM_DETALHES = """
     LEFT JOIN (
         SELECT DISTINCT ON (bem_id) bem_id, setor_destino_id, data_movimentacao, justificativa
         FROM movimentacoes 
-        WHERE ativo = TRUE 
-        ORDER BY bem_id, data_movimentacao DESC
+        WHERE ativo = TRUE AND status = 'aprovada'
+        ORDER BY bem_id, COALESCE(data_decisao, data_movimentacao) DESC, id DESC
     ) m ON m.bem_id = b.id
     LEFT JOIN setores s ON s.id = m.setor_destino_id
     LEFT JOIN salas sa ON sa.id = s.sala_id
@@ -35,9 +35,9 @@ QUERY_CREATE_BEM = """INSERT INTO bens
     VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s, %s)
     RETURNING id"""
 
-QUERY_PUT_BEM = ("UPDATE bens SET nome = COALESCE(%s, nome), valor = COALESCE(%s, %s, valor), status = COALESCE(%s, status), "
+QUERY_PUT_BEM = ("UPDATE bens SET nome = COALESCE(%s, nome), valor = COALESCE(%s, valor), status = COALESCE(%s, status), "
                  "marca = COALESCE(%s, marca), modelo = COALESCE(%s, modelo), numero_serie = COALESCE(%s, numero_serie), "
-                 "valor_aquisicao = COALESCE(%s, %s, valor_aquisicao), nota_fiscal = COALESCE(%s, nota_fiscal), "
+                 "valor_aquisicao = COALESCE(%s, valor_aquisicao), nota_fiscal = COALESCE(%s, nota_fiscal), "
                  "data_entrada = COALESCE(%s, data_entrada), estado_conservacao = COALESCE(%s, estado_conservacao) "
                  "WHERE bens.id = %s AND ativo = TRUE "
                  f"RETURNING {_BEM_FIELDS}")
@@ -59,8 +59,8 @@ QUERY_BENS_POR_SETOR = """
                               b.marca, b.modelo, b.numero_serie, b.valor_aquisicao, b.nota_fiscal, b.data_entrada, b.estado_conservacao
                        FROM bens b
                        JOIN (SELECT DISTINCT ON (bem_id) bem_id, setor_destino_id 
-                             FROM movimentacoes WHERE ativo = TRUE 
-                             ORDER BY bem_id, data_movimentacao DESC) m ON m.bem_id = b.id
+                             FROM movimentacoes WHERE ativo = TRUE AND status = 'aprovada' 
+                             ORDER BY bem_id, COALESCE(data_decisao, data_movimentacao) DESC, id DESC) m ON m.bem_id = b.id
                        WHERE m.setor_destino_id = %s
                          AND b.ativo = TRUE"""
 
@@ -68,7 +68,14 @@ QUERY_DESATIVAR = "UPDATE bens SET ativo = false WHERE id = %s RETURNING id"
 
 QUERY_REATIVAR = "UPDATE bens SET ativo = true  WHERE id = %s RETURNING id"
 
-QUERY_COUNT_BY_CATEGORIA = "SELECT COUNT(*) FROM bens WHERE id_categoria = %s"
+# Maior sequência já usada por uma sigla de tombo. Não filtra por `ativo`: bens
+# baixados também ocupam o número, porque tombo nunca é reaproveitado.
+# O parâmetro é a regex que casa somente códigos SIGLA-NNN-DV.
+QUERY_MAX_SEQUENCIA_TOMBO = """
+    SELECT MAX(CAST(split_part(codigo_tombamento, '-', 2) AS INTEGER))
+    FROM bens
+    WHERE upper(codigo_tombamento) ~ %s
+"""
 
 QUERY_RELATORIO_ATIVOS = """
         SELECT status, COUNT(*) AS quantidade
@@ -89,3 +96,23 @@ QUERY_RECENTES = """SELECT id, nome, tipo, codigo_tombamento, valor, status, ati
                     FROM bens 
                     ORDER BY data_cadastro 
                     DESC LIMIT 3;"""
+
+# Cadastro do bem e sua movimentação de entrada no almoxarifado em uma única
+# instrução: não existe bem cadastrado sem localização, mesmo em falha parcial.
+QUERY_CREATE_BEM_COM_ENTRADA = """
+    WITH novo AS (
+        INSERT INTO bens
+            (nome, tipo, codigo_tombamento, valor, status, ativo, id_categoria, marca, modelo,
+             numero_serie, valor_aquisicao, nota_fiscal, data_entrada, estado_conservacao)
+        VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+    ), entrada AS (
+        INSERT INTO movimentacoes
+            (bem_id, setor_origem_id, setor_destino_id, data_movimentacao, justificativa,
+             ativo, status, solicitante_id, decisor_id, data_decisao)
+        SELECT id, NULL, %s, NOW(), 'Entrada no almoxarifado', TRUE, 'aprovada', %s, %s, NOW()
+        FROM novo
+    )
+    SELECT id FROM novo
+"""
+

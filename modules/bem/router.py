@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from api.v1.auth import current_user
 from modules.bem.service import BemService
 from modules.bem.schemas import BemCreate, BemUpdate
 
@@ -20,16 +21,20 @@ def get_stats_status(service: BemService = Depends(get_service)):
     return service.get_stats_status()
 
 @router.post("/")
-def add_bem(bem: BemCreate, service: BemService = Depends(get_service)):
-    return service.create_bem(bem)
+def add_bem(bem: BemCreate, service: BemService = Depends(get_service), usuario=Depends(current_user)):
+    return service.create_bem(bem, usuario)
 
 @router.put("/{id}")
-def update_bem(id: int, bem: BemUpdate, service: BemService = Depends(get_service)):
-    return service.put_bem(id, bem)
+def update_bem(id: int, bem: BemUpdate, service: BemService = Depends(get_service), usuario=Depends(current_user)):
+    return service.put_bem(id, bem, usuario)
 
 @router.get("/buscar")
 def buscar_por_codigo(codigo_tombamento: str, service: BemService = Depends(get_service)):
     return service.get_by_codTomb(codigo_tombamento)
+
+@router.get("/setor/{setor_id}")
+def get_bens_do_setor(setor_id: int, service: BemService = Depends(get_service)):
+    return service.get_por_setor(setor_id)
 
 @router.get("/{id}/detalhes")
 def get_detalhes(id: int, service: BemService = Depends(get_service)):
