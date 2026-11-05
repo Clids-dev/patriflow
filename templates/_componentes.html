@@ -1,0 +1,19 @@
+{#- Componentes reutilizáveis de página. Use com: {% from "_componentes.html" import cabecalho_pagina %} -#}
+{% macro cabecalho_pagina(titulo, subtitulo, pagina_atual) -%}
+<div class="page-title">
+    <div class="row">
+        <div class="col-12 col-md-6 order-md-1 order-last">
+            <h3>{{ titulo }}</h3>
+            <p class="text-muted">{{ subtitulo }}</p>
+        </div>
+        <div class="col-12 col-md-6 order-md-2 order-first">
+            <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/index">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ pagina_atual }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+{%- endmacro %}
