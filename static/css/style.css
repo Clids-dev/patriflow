@@ -1062,3 +1062,9 @@ html.auth-register, html.auth-register body { min-height: 100%; }
 /* Mazer recolhe o submenu com max-height: 0; aqui o aberto recebe a altura real. */
 .sidebar-item.has-sub > .submenu { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
 .sidebar-item.has-sub.open > .submenu { max-height: 320px; }
+/* O Mazer desenha uma seta própria em todo link com submenu; o submenu usa só a seta deste projeto. */
+.sidebar-item.has-sub .sidebar-link::after,
+.sidebar-item.has-sub .sidebar-link::before,
+.sidebar-item.has-sub .submenu-link::after,
+.sidebar-item.has-sub .submenu-link::before { content: none !important; display: none !important; }
+.submenu-link { white-space: nowrap; }
