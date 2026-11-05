@@ -108,6 +108,7 @@ class ApiClient {
     required String username,
     required String senha,
     required String nome,
+    required int setorId,
   }) async {
     final apiUrl = await _getApiBaseUrl();
     if (apiUrl == null) throw Exception('URL do servidor não configurada.');
@@ -119,6 +120,7 @@ class ApiClient {
             'username': username,
             'senha': senha,
             'nome': nome,
+            'setor_id': setorId,
           }),
         )
         .timeout(const Duration(seconds: 15));
@@ -165,6 +167,9 @@ class ApiClient {
   }) async => _decodeResponse(
     await _send('PUT', endpoint, body: body, queryParameters: queryParameters),
   );
+
+  static Future<dynamic> patch(String endpoint, Object body) async =>
+      _decodeResponse(await _send('PATCH', endpoint, body: body));
 
   static Future<dynamic> delete(
     String endpoint, {
