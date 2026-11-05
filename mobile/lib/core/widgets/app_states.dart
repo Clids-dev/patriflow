@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'app_components.dart';
 
 class AppLoading extends StatelessWidget {
   const AppLoading({super.key, this.label = 'Carregando...'});
@@ -12,9 +13,9 @@ class AppLoading extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const CircularProgressIndicator(),
-        const SizedBox(height: 16),
-        Text(label),
+        const CircularProgressIndicator(strokeWidth: 2.5),
+        const SizedBox(height: AppSpacing.lg),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     ),
   );
@@ -35,13 +36,14 @@ class AppErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _StateLayout(
     icon: AppIcons.error,
+    color: AppColors.error,
     title: title,
     description: description,
     action: onRetry == null
         ? null
         : OutlinedButton.icon(
             onPressed: onRetry,
-            icon: const Icon(AppIcons.retry),
+            icon: const Icon(AppIcons.retry, size: 18),
             label: const Text('Tentar novamente'),
           ),
   );
@@ -62,6 +64,7 @@ class AppEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _StateLayout(
     icon: AppIcons.empty,
+    color: AppColors.primary,
     title: title,
     description: description,
     action: action,
@@ -71,12 +74,14 @@ class AppEmptyState extends StatelessWidget {
 class _StateLayout extends StatelessWidget {
   const _StateLayout({
     required this.icon,
+    required this.color,
     required this.title,
     this.description,
     this.action,
   });
 
   final IconData icon;
+  final Color color;
   final String title;
   final String? description;
   final Widget? action;
@@ -84,22 +89,29 @@ class _StateLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppSpacing.xxxl),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 56, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 16),
+          AppIconBadge(icon: icon, color: color, size: 64),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           if (description != null) ...[
-            const SizedBox(height: 8),
-            Text(description!, textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              description!,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
-          if (action != null) ...[const SizedBox(height: 20), action!],
+          if (action != null) ...[
+            const SizedBox(height: AppSpacing.xl),
+            action!,
+          ],
         ],
       ),
     ),

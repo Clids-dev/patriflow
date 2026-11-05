@@ -16,9 +16,9 @@ class SessionManager {
       await SecureTokenStorage().clearToken();
       scaffoldMessengerKey.currentState
         ?..clearSnackBars()
-        ..showSnackBar(const SnackBar(
-          content: Text('Sua sessão expirou. Entre novamente.'),
-        ));
+        ..showSnackBar(
+          const SnackBar(content: Text('Sua sessão expirou. Entre novamente.')),
+        );
       navigatorKey.currentState?.pushNamedAndRemoveUntil(
         LoginPage.routeName,
         (_) => false,
