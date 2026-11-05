@@ -1,4 +1,4 @@
-import { $, api, ui } from '/static/js/utils.js';
+import { $, api, ui, esc } from '/static/js/utils.js';
 
 /**
  * Bens.js - Gerenciamento de Equipamentos
@@ -35,7 +35,7 @@ async function carregarCategorias() {
         const select = $("#id_categoria");
         if (select) {
             select.innerHTML = '<option value="">Selecione uma categoria...</option>' +
-                categorias.map(c => `<option value="${c.id}">${c.nome} (${c.sigla})</option>`).join('');
+                categorias.map(c => `<option value="${esc(c.id)}">${esc(c.nome)} (${esc(c.sigla)})</option>`).join('');
         }
     } catch (error) {
         console.error("Erro ao carregar categorias:", error);
@@ -62,18 +62,18 @@ function renderizarTabela() {
 
     tabela.innerHTML = itensPagina.map(bem => `
         <tr>
-            <td class="ps-4"><span class="text-muted">#${bem.id}</span></td>
-            <td><span class="fw-bold text-dark">${bem.nome}</span></td>
-            <td><code>${bem.codigo_tombamento}</code></td>
+            <td class="ps-4"><span class="text-muted">#${esc(bem.id)}</span></td>
+            <td><span class="fw-bold text-dark">${esc(bem.nome)}</span></td>
+            <td><code>${esc(bem.codigo_tombamento)}</code></td>
             <td>R$ ${parseFloat(bem.valor_aquisicao ?? bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
             <td>${getStatusBadge(bem.status, bem.ativo)}</td>
             <td class="text-end pe-4">
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-light text-primary btn-detalhes" data-id="${bem.id}" title="Ver Detalhes"><i class="fas fa-eye"></i></button>
-                    ${bem.ativo ? `<button class="btn btn-sm btn-light text-warning btn-editar" data-id="${bem.id}" title="Editar"><i class="fas fa-edit"></i></button>` : ''}
+                    <button class="btn btn-sm btn-light text-primary btn-detalhes" data-id="${esc(bem.id)}" title="Ver Detalhes"><i class="fas fa-eye"></i></button>
+                    ${bem.ativo ? `<button class="btn btn-sm btn-light text-warning btn-editar" data-id="${esc(bem.id)}" title="Editar"><i class="fas fa-edit"></i></button>` : ''}
                     ${bem.ativo ? 
-                        `<button class="btn btn-sm btn-light text-danger btn-deletar" data-id="${bem.id}" title="Desativar"><i class="fas fa-trash"></i></button>` :
-                        `<button class="btn btn-sm btn-light text-success btn-reativar" data-id="${bem.id}" title="Reativar"><i class="fas fa-redo"></i></button>`
+                        `<button class="btn btn-sm btn-light text-danger btn-deletar" data-id="${esc(bem.id)}" title="Desativar"><i class="fas fa-trash"></i></button>` :
+                        `<button class="btn btn-sm btn-light text-success btn-reativar" data-id="${esc(bem.id)}" title="Reativar"><i class="fas fa-redo"></i></button>`
                     }
                 </div>
             </td>
@@ -98,21 +98,21 @@ function renderizarPaginacao(totalItens) {
     if (totalPaginas <= 1) return;
 
     let html = `
-        <li class="page-item ${paginaAtual === 1 ? 'disabled' : ''}">
+        <li class="page-item ${esc(paginaAtual === 1 ? 'disabled' : '')}">
             <a class="page-link" href="#" data-page="${paginaAtual - 1}"><i class="fas fa-chevron-left"></i></a>
         </li>
     `;
 
     for (let i = 1; i <= totalPaginas; i++) {
         html += `
-            <li class="page-item ${paginaAtual === i ? 'active' : ''}">
+            <li class="page-item ${esc(paginaAtual === i ? 'active' : '')}">
                 <a class="page-link" href="#" data-page="${i}">${i}</a>
             </li>
         `;
     }
 
     html += `
-        <li class="page-item ${paginaAtual === totalPaginas ? 'disabled' : ''}">
+        <li class="page-item ${esc(paginaAtual === totalPaginas ? 'disabled' : '')}">
             <a class="page-link" href="#" data-page="${paginaAtual + 1}"><i class="fas fa-chevron-right"></i></a>
         </li>
     `;
@@ -129,22 +129,22 @@ async function verDetalhes(id) {
 
     try {
         const bem = await api.get(`/api/v1/bem/${id}/detalhes`);
-        const historico = await api.get(`/api/v1/movimentacao/bem/${bem.codigo_tombamento}`);
+        const historico = await api.get(`/api/v1/movimentacao/bem/${encodeURIComponent(bem.codigo_tombamento)}`);
         
         const dataFormatada = bem.data_ultima_movimentacao ? new Date(bem.data_ultima_movimentacao).toLocaleString('pt-BR') : "Sem registro";
         
         container.innerHTML = `
             <div class="mb-4">
                 <small class="text-muted text-uppercase fw-bold d-block mb-1">Informações Básicas</small>
-                <h4 class="fw-bold text-primary mb-0">${bem.nome}</h4>
-                <p class="text-muted mb-0">Código: <code>${bem.codigo_tombamento}</code> | Categoria: <span class="badge bg-secondary">${bem.categoria_nome || 'N/A'}</span></p>
+                <h4 class="fw-bold text-primary mb-0">${esc(bem.nome)}</h4>
+                <p class="text-muted mb-0">Código: <code>${esc(bem.codigo_tombamento)}</code> | Categoria: <span class="badge bg-secondary">${esc(bem.categoria_nome || 'N/A')}</span></p>
             </div>
             
             <div class="row g-3 mb-4">
                 <div class="col-6">
                     <div class="p-3 bg-light rounded-3">
                         <small class="text-muted d-block mb-1">Setor Atual</small>
-                        <span class="fw-bold text-dark"><i class="fas fa-map-marker-alt text-primary me-2"></i>${bem.setor_atual || "Não alocado"}</span>
+                        <span class="fw-bold text-dark"><i class="fas fa-map-marker-alt text-primary me-2"></i>${esc(bem.setor_atual || "Não alocado")}</span>
                     </div>
                 </div>
                 <div class="col-6">
@@ -158,14 +158,14 @@ async function verDetalhes(id) {
             <div class="border-top pt-3 mb-4">
                 <small class="text-muted text-uppercase fw-bold d-block mb-2">Identificação e conservação</small>
                 <div class="row g-2 small">
-                    <div class="col-6"><strong>Marca:</strong> ${bem.marca || '—'}</div>
-                    <div class="col-6"><strong>Modelo:</strong> ${bem.modelo || '—'}</div>
-                    <div class="col-6"><strong>Nº de série:</strong> ${bem.numero_serie || '—'}</div>
-                    <div class="col-6"><strong>Conservação:</strong> ${bem.estado_conservacao || '—'}</div>
-                    <div class="col-12"><strong>Localização física:</strong> ${bem.predio_nome ? `${bem.predio_nome} — ${bem.andar_identificacao} — ${bem.sala_nome}` : '—'}</div>
+                    <div class="col-6"><strong>Marca:</strong> ${esc(bem.marca || '—')}</div>
+                    <div class="col-6"><strong>Modelo:</strong> ${esc(bem.modelo || '—')}</div>
+                    <div class="col-6"><strong>Nº de série:</strong> ${esc(bem.numero_serie || '—')}</div>
+                    <div class="col-6"><strong>Conservação:</strong> ${esc(bem.estado_conservacao || '—')}</div>
+                    <div class="col-12"><strong>Localização física:</strong> ${bem.predio_nome ? `${esc(bem.predio_nome)} — ${esc(bem.andar_identificacao)} — ${esc(bem.sala_nome)}` : '—'}</div>
                     <div class="col-6"><strong>Aquisição:</strong> R$ ${Number(bem.valor_aquisicao ?? bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
-                    <div class="col-6"><strong>Nota fiscal:</strong> ${bem.nota_fiscal || '—'}</div>
-                    <div class="col-6"><strong>Entrada:</strong> ${bem.data_entrada ? new Date(`${bem.data_entrada}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</div>
+                    <div class="col-6"><strong>Nota fiscal:</strong> ${esc(bem.nota_fiscal || '—')}</div>
+                    <div class="col-6"><strong>Entrada:</strong> ${bem.data_entrada ? new Date(`${esc(bem.data_entrada)}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</div>
                 </div>
             </div>
 
@@ -191,11 +191,11 @@ function renderizarTimeline(historico) {
                     <div class="timeline-marker"></div>
                     <div class="timeline-content">
                         <span class="timeline-date">${new Date(m.data_movimentacao).toLocaleString('pt-BR')}</span>
-                        <div class="fw-bold text-dark small">${m.setor_destino_nome}</div>
+                        <div class="fw-bold text-dark small">${esc(m.setor_destino_nome)}</div>
                         <div class="text-muted smaller mt-1" style="font-size: 0.8rem;">
-                            <i class="fas fa-long-arrow-alt-right me-1 text-primary"></i> Origem: ${m.setor_origem_nome || 'Cadastro Inicial'}
+                            <i class="fas fa-long-arrow-alt-right me-1 text-primary"></i> Origem: ${esc(m.setor_origem_nome || 'Cadastro Inicial')}
                         </div>
-                        <p class="mb-0 mt-2 text-muted fst-italic" style="font-size: 0.85rem;">"${m.justificativa || 'Sem justificativa'}"</p>
+                        <p class="mb-0 mt-2 text-muted fst-italic" style="font-size: 0.85rem;">"${esc(m.justificativa || 'Sem justificativa')}"</p>
                     </div>
                 </div>
             `).join('')}
@@ -216,7 +216,7 @@ function getStatusBadge(status, ativo = true) {
     if (s.includes('manutencao')) 
         return '<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3"><i class="fas fa-tools me-1"></i>Manutenção</span>';
 
-    return `<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">${status}</span>`;
+    return `<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">${esc(status)}</span>`;
 }
 
 function normalizarString(str) {

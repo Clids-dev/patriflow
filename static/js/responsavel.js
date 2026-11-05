@@ -1,4 +1,4 @@
-import { $, $$, api, ui } from './utils.js';
+import { $, $$, api, ui, esc } from './utils.js';
 
 let todosResponsaveis = [];
 
@@ -27,17 +27,17 @@ function renderizarResponsaveis(responsaveis) {
 
     lista.innerHTML = responsaveis.map(resp => `
         <tr>
-            <td class="px-4 fw-bold text-muted">#${resp.id}</td>
-            <td><div class="fw-bold text-dark">${resp.nome}</div></td>
-            <td><span class="text-muted small">${resp.cargo}</span></td>
+            <td class="px-4 fw-bold text-muted">#${esc(resp.id)}</td>
+            <td><div class="fw-bold text-dark">${esc(resp.nome)}</div></td>
+            <td><span class="text-muted small">${esc(resp.cargo)}</span></td>
             <td>
-                <span class="badge ${resp.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3">
-                    ${resp.ativo ? 'Ativo' : 'Inativo'}
+                <span class="badge ${esc(resp.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">
+                    ${esc(resp.ativo ? 'Ativo' : 'Inativo')}
                 </span>
             </td>
             <td class="px-4 text-end">
-                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${resp.id}"><i class="fas fa-edit text-primary"></i></button>
-                <button class="btn btn-sm btn-light btn-delete" data-id="${resp.id}"><i class="fas fa-trash-alt text-danger"></i></button>
+                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(resp.id)}"><i class="fas fa-edit text-primary"></i></button>
+                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(resp.id)}"><i class="fas fa-trash-alt text-danger"></i></button>
             </td>
         </tr>
     `).join('');

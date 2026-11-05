@@ -2,6 +2,12 @@
  * Utils.js - Helpers Globais do PatriFlow
  */
 
+// Escapa texto vindo do servidor antes de inserir em innerHTML.
+// Use em todo dado que não seja HTML montado pelo próprio código.
+export const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+})[ch]);
+
 // Atalhos para manipulação do DOM
 export const $ = (selector) => {
     const el = document.querySelector(selector);

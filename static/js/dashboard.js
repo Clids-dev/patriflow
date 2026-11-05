@@ -1,4 +1,4 @@
-import { $, api } from '/static/js/utils.js';
+import { $, api, esc } from '/static/js/utils.js';
 
 /**
  * Dashboard.js - Lógica da página inicial com visualização de dados
@@ -146,9 +146,9 @@ async function renderizarUltimosRegistros() {
         
         tbody.innerHTML = recentes.map(bem => `
             <tr>
-                <td class="ps-4"><span class="text-muted">#${bem.id}</span></td>
-                <td><span class="fw-bold text-dark">${bem.nome || 'Sem nome'}</span></td>
-                <td><span class="badge ${bem.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3">${bem.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                <td class="ps-4"><span class="text-muted">#${esc(bem.id)}</span></td>
+                <td><span class="fw-bold text-dark">${esc(bem.nome || 'Sem nome')}</span></td>
+                <td><span class="badge ${esc(bem.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">${esc(bem.ativo ? 'Ativo' : 'Inativo')}</span></td>
                 <td class="text-end pe-4">
                     <a href="/bens" class="btn btn-sm btn-light"><i class="fas fa-arrow-right"></i></a>
                 </td>

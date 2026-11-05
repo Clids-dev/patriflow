@@ -1,4 +1,4 @@
-import { $, $$, api, ui, format } from '/static/js/utils.js';
+import { $, $$, api, ui, format, esc } from '/static/js/utils.js';
 
 let bemSelecionadoParaMov = null;
 let todosSetores = [];
@@ -28,12 +28,12 @@ function renderRecentList(dados) {
 
     container.innerHTML = unicos.map(m => `
         <div class="list-group-item recent-item p-3 border-0 border-bottom" 
-             data-codigo="${m.codigo_tombamento}">
+             data-codigo="${esc(m.codigo_tombamento)}">
             <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="fw-bold text-dark small">${m.codigo_tombamento}</span>
+                <span class="fw-bold text-dark small">${esc(m.codigo_tombamento)}</span>
                 <i class="fas fa-chevron-right text-muted x-small"></i>
             </div>
-            <div class="text-muted text-truncate x-small">${m.bem_nome}</div>
+            <div class="text-muted text-truncate x-small">${esc(m.bem_nome)}</div>
         </div>
     `).join('');
 
@@ -58,12 +58,12 @@ function renderTimeline(historico) {
                         <span class="badge bg-white text-primary border x-small">TRANSFERÊNCIA</span>
                     </div>
                     <div class="d-flex align-items-center gap-2 mb-2">
-                        <span class="text-muted small">${m.setor_origem_nome || 'Aquisição'}</span>
+                        <span class="text-muted small">${esc(m.setor_origem_nome || 'Aquisição')}</span>
                         <i class="fas fa-arrow-right text-muted x-small"></i>
-                        <span class="fw-bold text-primary small">${m.setor_destino_nome}</span>
+                        <span class="fw-bold text-primary small">${esc(m.setor_destino_nome)}</span>
                     </div>
                     <div class="p-2 bg-white rounded-3 x-small text-muted italic">
-                        "${m.justificativa || 'Sem observações.'}"
+                        "${esc(m.justificativa || 'Sem observações.')}"
                     </div>
                 </div>
             </div>
@@ -80,10 +80,10 @@ async function loadHistory(codigo) {
     toggleState('carregando');
     
     try {
-        const bem = await api.get(`/api/v1/bem/buscar?codigo_tombamento=${codigo}`);
+        const bem = await api.get(`/api/v1/bem/buscar?codigo_tombamento=${encodeURIComponent(codigo)}`);
         const [detalhes, historico] = await Promise.all([
             api.get(`/api/v1/bem/${bem.id}/detalhes`),
-            api.get(`/api/v1/movimentacao/bem/${codigo}`)
+            api.get(`/api/v1/movimentacao/bem/${encodeURIComponent(codigo)}`)
         ]);
 
         toggleState('resultado');
@@ -126,7 +126,7 @@ function getStatusBadge(status, ativo = true) {
     if (s.includes('disponivel')) { bg = 'bg-success text-white'; icon = 'fa-check-circle'; }
     else if (s.includes('uso')) { bg = 'bg-primary text-white'; icon = 'fa-user-check'; }
 
-    return `<span class="badge ${bg} rounded-pill px-3 shadow-sm"><i class="fas ${icon} me-1"></i>${status}</span>`;
+    return `<span class="badge ${esc(bg)} rounded-pill px-3 shadow-sm"><i class="fas ${esc(icon)} me-1"></i>${esc(status)}</span>`;
 }
 
 /**
@@ -144,7 +144,7 @@ $("#mov_codigo_bem").onchange = async (e) => {
     statusIcon.innerHTML = `<div class="spinner-border spinner-border-sm text-primary"></div>`;
 
     try {
-        const bem = await api.get(`/api/v1/bem/buscar?codigo_tombamento=${codigo}`);
+        const bem = await api.get(`/api/v1/bem/buscar?codigo_tombamento=${encodeURIComponent(codigo)}`);
         if (!bem.ativo) throw new Error("Bem inativo");
 
         const detalhes = await api.get(`/api/v1/bem/${bem.id}/detalhes`);
@@ -162,7 +162,7 @@ $("#mov_codigo_bem").onchange = async (e) => {
         select.innerHTML = '<option value="">Selecione o destino</option>' + 
             todosSetores
                 .filter(s => s.nome !== detalhes.setor_atual)
-                .map(s => `<option value="${s.id}">${s.nome}</option>`)
+                .map(s => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`)
                 .join('');
 
     } catch (error) {

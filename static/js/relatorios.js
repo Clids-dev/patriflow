@@ -1,4 +1,4 @@
-import { $, api, ui } from './utils.js';
+import { $, api, ui, esc } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     await carregarDadosFiltros();
@@ -19,14 +19,14 @@ async function carregarDadosFiltros() {
         if (selCat) {
             selCat.innerHTML += categorias
                 .filter(c => c.ativo)
-                .map(c => `<option value="${c.id}">${c.nome}</option>`)
+                .map(c => `<option value="${esc(c.id)}">${esc(c.nome)}</option>`)
                 .join('');
         }
 
         if (selSet) {
             selSet.innerHTML += setores
                 .filter(s => s.ativo)
-                .map(s => `<option value="${s.id}">${s.nome}</option>`)
+                .map(s => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`)
                 .join('');
         }
     } catch (error) {

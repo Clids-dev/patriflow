@@ -1,4 +1,4 @@
-import { $, $$, api, ui } from './utils.js';
+import { $, $$, api, ui, esc } from './utils.js';
 
 let todasCategorias = [];
 
@@ -44,25 +44,25 @@ function renderizarCategorias(categorias) {
 
     lista.innerHTML = categorias.map(cat => `
         <tr>
-            <td class="px-4 fw-bold text-muted">#${cat.id}</td>
+            <td class="px-4 fw-bold text-muted">#${esc(cat.id)}</td>
             <td>
-                <div class="fw-bold text-dark">${cat.nome}</div>
+                <div class="fw-bold text-dark">${esc(cat.nome)}</div>
             </td>
             <td class="text-center">
                 <span class="badge bg-light text-primary border border-primary border-opacity-25 px-3 py-2">
-                    ${cat.sigla}
+                    ${esc(cat.sigla)}
                 </span>
             </td>
             <td>
-                <span class="badge ${cat.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3">
-                    ${cat.ativo ? 'Ativo' : 'Inativo'}
+                <span class="badge ${esc(cat.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">
+                    ${esc(cat.ativo ? 'Ativo' : 'Inativo')}
                 </span>
             </td>
             <td class="px-4 text-end">
-                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${cat.id}" title="Editar">
+                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(cat.id)}" title="Editar">
                     <i class="fas fa-edit text-primary"></i>
                 </button>
-                <button class="btn btn-sm btn-light btn-delete" data-id="${cat.id}" title="Inativar">
+                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(cat.id)}" title="Inativar">
                     <i class="fas fa-trash-alt text-danger"></i>
                 </button>
             </td>

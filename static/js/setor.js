@@ -1,4 +1,4 @@
-import { $, $$, api, ui } from './utils.js';
+import { $, $$, api, ui, esc } from './utils.js';
 
 let todosSetores = [];
 let todosResponsaveis = [];
@@ -27,7 +27,7 @@ async function carregarLocais() {
             api.get('/api/v1/localizacao/andares'),
             api.get('/api/v1/localizacao/salas')
         ]);
-        const option = (id, label) => `<option value="${id}">${label}</option>`;
+        const option = (id, label) => `<option value="${esc(id)}">${esc(label)}</option>`;
         $('#andarPredio').innerHTML = '<option value="">Selecione o prédio</option>' + todosPredios.map(p => option(p.id, p.nome)).join('');
         $('#salaAndar').innerHTML = '<option value="">Selecione o andar</option>' + todosAndares.map(a => option(a.id, `${a.predio_nome} — ${a.identificacao}`)).join('');
         $('#sala_id').innerHTML = '<option value="">Selecione prédio, andar e sala...</option>' + todasSalas.map(s => option(s.id, `${s.predio_nome} — ${s.andar_identificacao} — ${s.identificacao}`)).join('');
@@ -44,7 +44,7 @@ async function carregarResponsaveis() {
             select.innerHTML = '<option value="">Selecione um responsável...</option>' + 
                 todosResponsaveis
                     .filter(r => r.ativo)
-                    .map(r => `<option value="${r.id}">${r.nome}</option>`)
+                    .map(r => `<option value="${esc(r.id)}">${esc(r.nome)}</option>`)
                     .join('');
         }
     } catch (error) {}
@@ -61,18 +61,18 @@ function renderizarSetores(setores) {
 
     lista.innerHTML = setores.map(setor => `
         <tr>
-            <td class="px-4 fw-bold text-muted">#${setor.id}</td>
-            <td><div class="fw-bold text-dark">${setor.nome}</div></td>
-            <td><span class="small">${setor.predio_nome} — ${setor.andar_identificacao} — ${setor.sala_nome}</span></td>
-            <td><span class="text-muted small">${setor.responsavel_nome || 'Não definido'}</span></td>
+            <td class="px-4 fw-bold text-muted">#${esc(setor.id)}</td>
+            <td><div class="fw-bold text-dark">${esc(setor.nome)}</div></td>
+            <td><span class="small">${esc(setor.predio_nome)} — ${esc(setor.andar_identificacao)} — ${esc(setor.sala_nome)}</span></td>
+            <td><span class="text-muted small">${esc(setor.responsavel_nome || 'Não definido')}</span></td>
             <td>
-                <span class="badge ${setor.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3">
-                    ${setor.ativo ? 'Ativo' : 'Inativo'}
+                <span class="badge ${esc(setor.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">
+                    ${esc(setor.ativo ? 'Ativo' : 'Inativo')}
                 </span>
             </td>
             <td class="px-4 text-end">
-                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${setor.id}"><i class="fas fa-edit text-primary"></i></button>
-                <button class="btn btn-sm btn-light btn-delete" data-id="${setor.id}"><i class="fas fa-trash-alt text-danger"></i></button>
+                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(setor.id)}"><i class="fas fa-edit text-primary"></i></button>
+                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(setor.id)}"><i class="fas fa-trash-alt text-danger"></i></button>
             </td>
         </tr>
     `).join('');
