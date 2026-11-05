@@ -7,11 +7,14 @@ from modules.bem import queries as queries
 class BemRepository(DataBase):
     @staticmethod
     def _model(row):
+        # Colunas novas (garantia e depreciação) são opcionais: consultas antigas não as trazem.
+        extra = list(row[15:18]) + [None] * (3 - len(row[15:18]))
         return Bem(
             id=row[0], nome=row[1], tipo=row[2], codigo_tombamento=row[3],
             valor=row[4], status=row[5], ativo=row[6], id_categoria=row[7],
             marca=row[8], modelo=row[9], numero_serie=row[10], valor_aquisicao=row[11],
-            nota_fiscal=row[12], data_entrada=row[13], estado_conservacao=row[14]
+            nota_fiscal=row[12], data_entrada=row[13], estado_conservacao=row[14],
+            garantia_fim=extra[0], vida_util_meses=extra[1], valor_residual=extra[2] or 0,
         )
 
     def get_all(self):
@@ -32,11 +35,25 @@ class BemRepository(DataBase):
             nota_fiscal=row[17], data_entrada=row[18], estado_conservacao=row[19],
             predio_nome=row[20], andar_identificacao=row[21], sala_nome=row[22],
             responsavel_nome=row[23], responsavel_cargo=row[24],
+            garantia_fim=row[25], vida_util_meses=row[26], valor_residual=row[27] or 0,
         )
 
     def get_detalhes(self, id: int):
         rows = DataBase().execute(queries.QUERY_BEM_DETALHES, (id,))
         return self._detalhes_de(rows[0]) if rows else None
+
+    def garantias_a_vencer(self, dias: int) -> list[dict]:
+        rows = DataBase().execute(
+            """SELECT id, nome, codigo_tombamento, garantia_fim,
+                      (garantia_fim < CURRENT_DATE) AS vencida
+               FROM bens
+               WHERE ativo = TRUE AND garantia_fim IS NOT NULL
+                 AND garantia_fim <= CURRENT_DATE + make_interval(days => %s)
+               ORDER BY garantia_fim""", (dias,)) or []
+        return [
+            {"id": r[0], "nome": r[1], "codigo_tombamento": r[2], "garantia_fim": r[3], "vencida": r[4]}
+            for r in rows
+        ]
 
     def get_detalhes_por_tombo(self, codigo_tombamento: str):
         rows = DataBase().execute(queries.QUERY_BEM_DETALHES_POR_TOMBO, (codigo_tombamento,))
@@ -49,10 +66,12 @@ class BemRepository(DataBase):
             bem.nome, bem.tipo, bem.codigo_tombamento, valor, bem.status, bem.id_categoria,
             bem.marca, bem.modelo, bem.numero_serie, valor_aquisicao, bem.nota_fiscal,
             bem.data_entrada, bem.estado_conservacao,
+            bem.garantia_fim, bem.vida_util_meses, bem.valor_residual,
             almoxarifado_id, usuario_id, usuario_id,
         ))
         return Bem(
             id=result[0], nome=bem.nome, tipo=bem.tipo, codigo_tombamento=bem.codigo_tombamento,
+            garantia_fim=bem.garantia_fim, vida_util_meses=bem.vida_util_meses, valor_residual=bem.valor_residual,
             valor=valor, status=bem.status, ativo=True, id_categoria=bem.id_categoria,
             marca=bem.marca, modelo=bem.modelo, numero_serie=bem.numero_serie,
             valor_aquisicao=valor_aquisicao, nota_fiscal=bem.nota_fiscal,
@@ -70,7 +89,8 @@ class BemRepository(DataBase):
         row = DataBase().commit(queries.QUERY_PUT_BEM, (
             values["nome"], values["valor"], values["status"], values["marca"], values["modelo"],
             values["numero_serie"], values["valor_aquisicao"], values["nota_fiscal"],
-            values["data_entrada"], values["estado_conservacao"], id
+            values["data_entrada"], values["estado_conservacao"],
+            values["garantia_fim"], values["vida_util_meses"], values["valor_residual"], id
         ))
         return self._model(row) if row else None
 

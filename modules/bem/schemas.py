@@ -7,6 +7,9 @@ StatusBem = Literal["Disponível", "Em Uso", "Manutenção", "Baixado"]
 
 
 class BemCampos(BaseModel):
+    garantia_fim: Optional[date] = None
+    vida_util_meses: Optional[int] = Field(default=None, gt=0)
+    valor_residual: float = Field(default=0, ge=0)
     marca: Optional[str] = None
     modelo: Optional[str] = None
     numero_serie: Optional[str] = None
@@ -45,6 +48,9 @@ class BemCreate(BemCampos):
 class BemUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    garantia_fim: Optional[date] = None
+    vida_util_meses: Optional[int] = Field(default=None, gt=0)
+    valor_residual: Optional[float] = Field(default=None, ge=0)
     nome: Optional[str] = None
     valor: Optional[float] = Field(default=None, ge=0)
     status: Optional[StatusBem] = None
@@ -72,3 +78,6 @@ class BemDetalhes(Bem):
     sala_nome: Optional[str] = None
     responsavel_nome: Optional[str] = None
     responsavel_cargo: Optional[str] = None
+    depreciacao_mensal: Optional[float] = None
+    depreciacao_acumulada: Optional[float] = None
+    valor_contabil: Optional[float] = None

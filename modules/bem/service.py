@@ -10,6 +10,16 @@ from psycopg2 import errors
 from core.tombamento import format_tombo, require_valid_tombo
 import re
 
+def _com_depreciacao(bem):
+    from datetime import date
+    from modules.bem import depreciacao
+    dados = depreciacao.calcular(bem.valor_aquisicao, bem.valor_residual, bem.vida_util_meses,
+                                 bem.data_entrada, date.today())
+    for chave, valor in dados.items():
+        setattr(bem, chave, valor)
+    return bem
+
+
 class BemService:
     def get_bens(self):
         repository = BemRepository()
@@ -40,7 +50,11 @@ class BemService:
         bem = repository.get_detalhes(id)
         if not bem:
             raise HTTPException(status_code=404, detail="Bem não encontrado")
-        return bem
+        return _com_depreciacao(bem)
+
+    def alertas_garantia(self, dias: int = 60) -> list[dict]:
+        """Bens ativos com garantia vencida ou vencendo nos próximos `dias` dias."""
+        return BemRepository().garantias_a_vencer(dias)
 
     def create_bem(self, bem: BemCreate, usuario: dict):
         require_valid_tombo(bem.codigo_tombamento)

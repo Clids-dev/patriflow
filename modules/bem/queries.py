@@ -1,4 +1,4 @@
-_BEM_FIELDS = "id, nome, tipo, codigo_tombamento, valor, status, ativo, id_categoria, marca, modelo, numero_serie, valor_aquisicao, nota_fiscal, data_entrada, estado_conservacao"
+_BEM_FIELDS = "id, nome, tipo, codigo_tombamento, valor, status, ativo, id_categoria, marca, modelo, numero_serie, valor_aquisicao, nota_fiscal, data_entrada, estado_conservacao, garantia_fim, vida_util_meses, valor_residual"
 QUERY_BENS = f"SELECT {_BEM_FIELDS} FROM bens"
 
 QUERY_BEM_ID = f"SELECT {_BEM_FIELDS} FROM bens WHERE id = %s"
@@ -14,7 +14,8 @@ QUERY_BEM_DETALHES_BASE = """
         c.nome as categoria_nome,
         b.marca, b.modelo, b.numero_serie, b.valor_aquisicao, b.nota_fiscal, b.data_entrada, b.estado_conservacao,
         p.nome AS predio_nome, a.identificacao AS andar_identificacao, sa.identificacao AS sala_nome,
-        r.nome AS responsavel_nome, r.cargo AS responsavel_cargo
+        r.nome AS responsavel_nome, r.cargo AS responsavel_cargo,
+        b.garantia_fim, b.vida_util_meses, b.valor_residual
     FROM bens b
     LEFT JOIN (
         SELECT DISTINCT ON (bem_id) bem_id, setor_destino_id, data_movimentacao, justificativa
@@ -39,14 +40,17 @@ QUERY_BEM_DETALHES_POR_TOMBO = QUERY_BEM_DETALHES_BASE + "    WHERE b.codigo_tom
 
 QUERY_CREATE_BEM = """INSERT INTO bens
     (nome, tipo, codigo_tombamento, valor, status, ativo, id_categoria, marca, modelo,
-     numero_serie, valor_aquisicao, nota_fiscal, data_entrada, estado_conservacao)
-    VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s, %s)
+     numero_serie, valor_aquisicao, nota_fiscal, data_entrada, estado_conservacao,
+     garantia_fim, vida_util_meses, valor_residual)
+    VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     RETURNING id"""
 
 QUERY_PUT_BEM = ("UPDATE bens SET nome = COALESCE(%s, nome), valor = COALESCE(%s, valor), status = COALESCE(%s, status), "
                  "marca = COALESCE(%s, marca), modelo = COALESCE(%s, modelo), numero_serie = COALESCE(%s, numero_serie), "
                  "valor_aquisicao = COALESCE(%s, valor_aquisicao), nota_fiscal = COALESCE(%s, nota_fiscal), "
-                 "data_entrada = COALESCE(%s, data_entrada), estado_conservacao = COALESCE(%s, estado_conservacao) "
+                 "data_entrada = COALESCE(%s, data_entrada), estado_conservacao = COALESCE(%s, estado_conservacao), "
+                 "garantia_fim = COALESCE(%s, garantia_fim), vida_util_meses = COALESCE(%s, vida_util_meses), "
+                 "valor_residual = COALESCE(%s, valor_residual) "
                  "WHERE bens.id = %s AND ativo = TRUE "
                  f"RETURNING {_BEM_FIELDS}")
 
@@ -111,8 +115,9 @@ QUERY_CREATE_BEM_COM_ENTRADA = """
     WITH novo AS (
         INSERT INTO bens
             (nome, tipo, codigo_tombamento, valor, status, ativo, id_categoria, marca, modelo,
-             numero_serie, valor_aquisicao, nota_fiscal, data_entrada, estado_conservacao)
-        VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s, %s)
+             numero_serie, valor_aquisicao, nota_fiscal, data_entrada, estado_conservacao,
+             garantia_fim, vida_util_meses, valor_residual)
+        VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
     ), entrada AS (
         INSERT INTO movimentacoes

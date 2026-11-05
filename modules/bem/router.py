@@ -53,6 +53,10 @@ def desativar_bem(id: int, service: BemService = Depends(get_service), usuario=D
 def reativar_bem(id: int, service: BemService = Depends(get_service), usuario=Depends(current_user)):
     return service.reativar_bem(id, usuario)
 
+@router.get("/alertas/garantias")
+def alertas_garantias(dias: int = 60, service: BemService = Depends(get_service)):
+    return service.alertas_garantia(dias)
+
 @router.get("/{id}/auditoria")
 def historico_de_alteracoes(id: int):
     return AuditoriaRepository().listar("bem", id)

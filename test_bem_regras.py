@@ -34,7 +34,7 @@ def test_update_envia_um_parametro_por_placeholder():
         db.return_value.commit.return_value = None
         BemRepository().put(8, update)
     sql, params = db.return_value.commit.call_args.args
-    assert sql.count("%s") == len(params) == 11
+    assert sql.count("%s") == len(params) == 14
     # Só o valor foi informado: valor_aquisicao (posição 7) deve ser None.
     assert params[1] == 999.0
     assert params[6] is None
