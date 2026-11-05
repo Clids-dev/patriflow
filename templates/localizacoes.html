@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import painel_topo, kpi %}
+
+{% block title %}Localizações{% endblock %}
+
+{% block content %}
+{% call painel_topo("Cadastros", "Localizações") %}
+    <a href="/cadastros" class="btn btn-outline-primary pill-btn">Painel de cadastros</a>
+    <button class="btn btn-primary pill-btn" data-bs-toggle="modal" data-bs-target="#modalLocal">
+        <i class="bi bi-plus-lg me-1"></i> Cadastrar local
+    </button>
+{% endcall %}
+
+<p class="text-muted mb-4">Onde os bens estão: prédio, andar e sala. Cada setor ocupa uma sala, e a árvore mostra quantos setores há em cada uma.</p>
+
+<section class="kpi-linha kpi-linha-3">
+    {{ kpi("Prédios", "kpiPredios", "buildings", "unidades cadastradas", destaque=true) }}
+    {{ kpi("Andares", "kpiAndares", "layers", "níveis dentro dos prédios", suave=true) }}
+    {{ kpi("Salas", "kpiSalas", "door-open", "com setores vinculados", suave=true) }}
+</section>
+
+<div class="card">
+    <div class="card-header">
+        <h4>Estrutura</h4>
+    </div>
+    <div class="card-body">
+        <div id="arvoreLocais">
+            <p class="text-muted mb-0">Carregando…</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: cadastrar prédio, andar ou sala -->
+<div class="modal fade" id="modalLocal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Cadastrar local</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formLocal">
+                    <div class="mb-3">
+                        <label class="form-label" for="tipoLocal">O que você quer cadastrar?</label>
+                        <select id="tipoLocal" class="form-select">
+                            <option value="predio">Prédio</option>
+                            <option value="andar">Andar</option>
+                            <option value="sala">Sala</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 d-none" id="campoPredioPai">
+                        <label class="form-label" for="predioPai">Prédio</label>
+                        <select id="predioPai" class="form-select"></select>
+                    </div>
+
+                    <div class="mb-3 d-none" id="campoAndarPai">
+                        <label class="form-label" for="andarPai">Andar</label>
+                        <select id="andarPai" class="form-select"></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="nomeLocal" id="rotuloNomeLocal">Nome do prédio</label>
+                        <input id="nomeLocal" class="form-control" required placeholder="Ex.: Sede Central">
+                    </div>
+
+                    <div class="mb-3" id="campoEndereco">
+                        <label class="form-label" for="enderecoLocal">Endereço (opcional)</label>
+                        <input id="enderecoLocal" class="form-control" placeholder="Rua, número, bairro">
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary" id="btnSalvarLocal">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/localizacoes.js"></script>
+{% endblock %}

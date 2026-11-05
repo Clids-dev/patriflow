@@ -40,8 +40,6 @@ async function carregarLocais() {
             api.get('/api/v1/localizacao/salas')
         ]);
         const option = (id, label) => `<option value="${esc(id)}">${esc(label)}</option>`;
-        $('#andarPredio').innerHTML = '<option value="">Selecione o prédio</option>' + todosPredios.map(p => option(p.id, p.nome)).join('');
-        $('#salaAndar').innerHTML = '<option value="">Selecione o andar</option>' + todosAndares.map(a => option(a.id, `${a.predio_nome} — ${a.identificacao}`)).join('');
         $('#sala_id').innerHTML = '<option value="">Selecione prédio, andar e sala...</option>' + todasSalas.map(s => option(s.id, `${s.predio_nome} — ${s.andar_identificacao} — ${s.identificacao}`)).join('');
     } catch (error) {
         ui.showNotification('Erro ao carregar locais físicos.', 'error');
@@ -93,27 +91,6 @@ function renderizarSetores(setores) {
 }
 
 function configurarEventos() {
-    $('#formPredio')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        try {
-            await api.post('/api/v1/localizacao/predios', { nome: $('#predioNome').value, endereco: $('#predioEndereco').value || null });
-            e.target.reset(); await carregarLocais(); ui.showNotification('Prédio cadastrado!');
-        } catch (error) { ui.showNotification(error.message, 'error'); }
-    });
-    $('#formAndar')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        try {
-            await api.post('/api/v1/localizacao/andares', { predio_id: Number($('#andarPredio').value), identificacao: $('#andarNome').value });
-            e.target.reset(); await carregarLocais(); ui.showNotification('Andar cadastrado!');
-        } catch (error) { ui.showNotification(error.message, 'error'); }
-    });
-    $('#formSala')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        try {
-            await api.post('/api/v1/localizacao/salas', { andar_id: Number($('#salaAndar').value), identificacao: $('#salaNome').value });
-            e.target.reset(); await carregarLocais(); ui.showNotification('Sala cadastrada!');
-        } catch (error) { ui.showNotification(error.message, 'error'); }
-    });
     $('#formSetor')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         await salvarSetor();

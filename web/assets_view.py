@@ -103,3 +103,8 @@ def registro_setor(registro_id: int, request: Request):
 def registro_responsavel(registro_id: int, request: Request):
     return templates.TemplateResponse("registro.html", _contexto(
         request, "responsaveis", entidade="responsavel", registro_id=registro_id))
+
+
+@router.get("/localizacoes")
+def tela_localizacoes(request: Request):
+    return templates.TemplateResponse("localizacoes.html", _contexto(request, "localizacoes"))

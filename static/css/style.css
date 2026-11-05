@@ -1024,3 +1024,13 @@ html.auth-register, html.auth-register body { min-height: 100%; }
     border-radius: 14px;
     font-size: 0.95rem;
 }
+
+/* Árvore de localizações */
+.arvore-predio { border-bottom: 1px solid var(--border-color); padding: 12px 0; }
+.arvore-predio:last-child { border-bottom: 0; }
+.arvore-predio > summary { cursor: pointer; list-style: none; padding: 6px 0; font-size: 1rem; }
+.arvore-predio > summary::-webkit-details-marker { display: none; }
+.arvore-lista { list-style: none; margin: 6px 0 0 18px; padding: 0; border-left: 2px solid var(--border-color); }
+.arvore-nivel { padding: 6px 0 6px 14px; }
+.arvore-titulo { font-weight: 600; color: var(--text-primary); }
+.arvore-item { padding: 6px 0 6px 14px; }
