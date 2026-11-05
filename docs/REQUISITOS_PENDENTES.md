@@ -84,14 +84,18 @@ Verificação: QR de etiquetas de exemplo lidos de volta com `zxing-cpp` (tombo 
 Migração: `database/migrations/20261105_w05_fotos.sql` (executar uma vez no banco de desenvolvimento).
 Testes: `test_fotos.py`.
 
-### W06 · Transferência com dupla confirmação — `[~]` parcial
-- [~] Estados: existem `pendente`, `aprovada` e `recusada` (quadro pede SOLICITADA, EFETIVADA, RECUSADA). Solicitação exige destino; motivo a verificar
-- [x] Enquanto pendente, o bem continua contabilizado na origem (checagem `local_mudou` na decisão)
-- [~] API lista pendentes, mas `/movimentacao/pendentes` não filtra pelo usuário logado
-- [ ] Aceite exige foto do recebimento (depende de W05)
-- [~] Aceite: hoje só patrimônio e responsável do almoxarifado; o quadro diz qualquer usuário do destino (ver C3)
-- [ ] Transferência sem resposta após prazo configurável é escalada ao patrimônio
-- [~] Nada apagado: `DELETE /movimentacao/` existe (restrito ao patrimônio). Ver W09
+### W06 · Transferência com dupla confirmação — `[x]` 7/7 (regra definida pelo cliente)
+Regra: a transferência vale se o responsável do almoxarifado (ou o setor de patrimônio) autorizar.
+Quem decide recebe o motivo da solicitação; na recusa, o motivo é obrigatório para quem pediu.
+- [x] Estados da transferência: pendente, autorizada, recusada (pendente é a aguardando decisão)
+- [x] Enquanto pendente, o bem continua na origem (checagem `local_mudou` na decisão)
+- [x] Solicitação exige destino e motivo
+- [x] Pendentes são listadas para quem decide; "Minhas solicitações" mostra o resultado e o motivo a quem pediu
+- [x] Autorizar exige a foto do recebimento (tipo `aceite_transferencia`, id da movimentação)
+- [x] Recusa exige o motivo; o motivo fica gravado (`motivo_decisao`)
+- [x] Transferência sem resposta além do prazo (`PATRIFLOW_PRAZO_TRANSFERENCIA_DIAS`, padrão 3) é escalada
+- [x] Escaladas vão para uma fila própria do setor de patrimônio (`GET /movimentacao/escaladas`)
+- [x] Nada apagado: a rota de exclusão de movimentações foi removida
 
 ### W07 · Inventário: abertura, congelamento e fechamento — `[ ]` 0/7
 - [ ] Abertura define período e setores
@@ -272,7 +276,7 @@ Concluídas (ver seção 8 para o detalhamento):
 - [x] Termo de responsabilidade por responsável
 - [x] Importação de bens por CSV, com simulação e relatório por linha
 
-Pendentes: REQ-EX-01 a REQ-EX-12 da seção 8.
+Feitos nesta etapa: REQ-EX-01 (alçada na baixa), REQ-EX-02 (bloqueio de login), REQ-EX-03 (backup e restauração testada). Parciais: REQ-EX-02 e REQ-EX-04. Pendentes: demais itens da seção 8.
 
 
 ---
@@ -286,25 +290,27 @@ descrição e os critérios de aceite. Prioridade: P1 (fazer antes), P2 (médio 
 ### REQ-EX-01 · Alçada por valor na baixa — P1
 Baixa de bem acima de um valor configurável (ex.: R$ 5.000) só se efetiva após aprovação de um
 segundo usuário do setor de patrimônio.
-- [ ] Valor limite configurável pelo setor de patrimônio
-- [ ] Baixa acima do limite fica "aguardando aprovação"; não altera o bem até aprovada
-- [ ] Quem solicita não pode aprovar a própria baixa
-- [ ] Aprovação e recusa entram na auditoria
+- [x] Valor limite configurável pelo setor de patrimônio
+- [x] Baixa acima do limite fica "aguardando aprovação"; não altera o bem até aprovada
+- [x] Quem solicita não pode aprovar a própria baixa
+- [x] Aprovação e recusa entram na auditoria
 
 ### REQ-EX-02 · Segurança de acesso: senha e sessão — P1
+Estado: bloqueio e registro de acessos feitos. Pendentes: recuperação de senha por e-mail (precisa de serviço de e-mail) e expiração por inatividade no app (depende da fila offline, A12).
 Recuperação de senha, bloqueio após tentativas erradas e expiração de sessão no login web e no app.
 - [ ] Recuperação de senha por link de uso único com validade curta
-- [ ] Conta bloqueada temporariamente após N tentativas erradas, com aviso claro
+- [x] Conta bloqueada temporariamente após N tentativas erradas, com aviso claro
 - [ ] Sessão expira por inatividade; app pede login de novo sem perder a fila offline
-- [ ] Tentativas de login (sucesso e falha) registradas, sem guardar a senha
+- [x] Tentativas de login (sucesso e falha) registradas, sem guardar a senha
 
 ### REQ-EX-03 · Backup e restauração — P1
 Cópia automática do banco e da pasta de fotos, com teste de restauração.
-- [ ] Backup diário do banco (pg_dump) e da pasta de fotos, com retenção definida
-- [ ] Script de restauração documentado
-- [ ] Teste de restauração feito em banco separado e registrado
+- [x] Backup diário do banco (pg_dump) e da pasta de fotos, com retenção definida
+- [x] Script de restauração documentado
+- [x] Teste de restauração feito em banco separado e registrado
 
 ### REQ-EX-04 · Card de alertas no dashboard — P1
+Estado: parcial. O painel já mostra garantias vencendo e transferências para autorizar (com escaladas). Falta \"bens sem conferência há muito tempo\", que depende da conferência em campo.
 Painel com os alertas que pedem ação: garantias vencendo, transferências paradas, bens sem conferência há muito tempo.
 - [ ] Card lista os alertas com a contagem e link para a tela correspondente
 - [ ] Dados vêm de endpoints já existentes ou novos, sem cálculo no navegador
