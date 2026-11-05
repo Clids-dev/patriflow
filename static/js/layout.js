@@ -55,6 +55,16 @@ function onResize() {
 if (sidebar) {
     if (isDesktop()) sidebar.classList.add('active', 'sidebar-desktop');
 
+    // Estrutura: a seta abre e fecha as opções sem sair da página atual.
+    sidebar.querySelectorAll('.sidebar-toggle').forEach((botao) => {
+        botao.addEventListener('click', (event) => {
+            event.preventDefault();
+            const item = botao.closest('.sidebar-item');
+            const aberto = item.classList.toggle('open');
+            botao.setAttribute('aria-expanded', String(aberto));
+        });
+    });
+
     document.querySelectorAll('.burger-btn').forEach((el) => el.addEventListener('click', toggleSidebar));
     document.querySelectorAll('.sidebar-hide').forEach((el) => el.addEventListener('click', toggleSidebar));
     window.addEventListener('resize', onResize);
