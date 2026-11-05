@@ -110,7 +110,10 @@ body {
 }
 
 /* Barra lateral */
+.sidebar-wrapper .sidebar-header .sidebar-brand { display: inline-block; }
 .sidebar-wrapper .sidebar-header .sidebar-brand img { width: 48px; height: auto; }
+/* Botão de fechar no celular fica no canto, sem atrapalhar o centro */
+.sidebar-wrapper .sidebar-header .sidebar-hide { position: absolute; top: 1rem; right: 1rem; color: var(--on-dark-muted); }
 
 /* Dashboard: logo da barra lateral em 300% */
 .page-dashboard .sidebar-wrapper .sidebar-header .sidebar-brand img { width: 144px; height: auto; }
@@ -119,11 +122,14 @@ body {
 .stats-icon { float: none; }
 .sidebar-subtitle {
     display: block;
+    text-align: center;
     margin-top: 0.5rem;
     color: var(--on-dark-muted);
     font-size: 0.75rem;
 }
 .sidebar-header {
+    position: relative;
+    text-align: center;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--glass-stroke);
 }
@@ -282,7 +288,7 @@ html.auth-register, html.auth-register body { min-height: 100%; }
     backdrop-filter: blur(12px);
 }
 
-.auth-login .auth-logo-img-lg { width: 144px; height: auto; }
+.auth-login .auth-logo-img-lg { width: 288px; height: auto; }
 .auth-login .auth-logo-img-md { width: 124px; height: auto; }
 
 .auth-login .auth-kicker {
