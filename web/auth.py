@@ -4,6 +4,7 @@ from fastapi.responses import RedirectResponse
 from api.v1.auth import jwt_secret
 from core import config
 from core.security import create_access_token
+from modules.usuario.seguranca import ContaBloqueada
 
 from modules.usuario.repository import UsuarioRepository
 from modules.usuario.service import UsuarioService
@@ -61,7 +62,10 @@ def login(
     repo = UsuarioRepository()
     service = UsuarioService(repo)
 
-    user = service.login(login_usuario, password_usuario)
+    try:
+        user = service.login(login_usuario, password_usuario)
+    except ContaBloqueada as exc:
+        return templates.TemplateResponse("login.html", {"request": request, "erro": str(exc)}, status_code=423)
 
     if not user:
         return templates.TemplateResponse("login.html", {

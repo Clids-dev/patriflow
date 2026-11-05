@@ -7,6 +7,7 @@ from core import config
 from core.security import create_access_token, decode_access_token
 from modules.usuario.repository import UsuarioRepository
 from modules.usuario.service import UsuarioService
+from modules.usuario.seguranca import ContaBloqueada
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 bearer = HTTPBearer(auto_error=False)
@@ -41,7 +42,10 @@ def user_payload(row):
 @router.post("/login")
 def login(data: LoginRequest):
     service = UsuarioService(UsuarioRepository())
-    row = service.login(data.username, data.senha)
+    try:
+        row = service.login(data.username, data.senha)
+    except ContaBloqueada as exc:
+        raise HTTPException(status_code=423, detail=str(exc))
     if not row:
         if service.conta_pendente(data.username, data.senha):
             raise HTTPException(status_code=403, detail="Conta aguardando aprovação do setor de patrimônio.")

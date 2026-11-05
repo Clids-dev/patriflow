@@ -6,17 +6,26 @@ class UsuarioService:
         self.repo = repo
 
     def login(self, username, senha):
+        from modules.usuario import seguranca
         user = self.repo.buscar_por_username(username)
 
         if not user:
+            seguranca.registrar_acesso(username, False, "usuario_inexistente")
             return None
 
+        _, bloqueio = seguranca.estado(user[0])
+        if bloqueio > 0:
+            seguranca.registrar_acesso(username, False, "bloqueada")
+            raise seguranca.ContaBloqueada(bloqueio)
+
         if not verify_password(senha, user[2]):
+            seguranca.registrar_falha(user[0], username)
             return None
 
         if not user[4]:  # ativo
             return None
 
+        seguranca.registrar_sucesso(user[0], username)
         return user
 
     def criar_conta(self, username: str, senha: str, nome: str, setor_id: int | None = None):
