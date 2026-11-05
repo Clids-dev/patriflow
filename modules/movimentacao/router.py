@@ -22,8 +22,13 @@ def get_detailed_movimentacoes():
 
 
 @router.get("/pendentes", response_model=list[MovimentacaoDetailed])
-def listar_pendentes():
-    return MovimentacaoService().listar_pendentes()
+def listar_pendentes(usuario=Depends(current_user)):
+    return MovimentacaoService().listar_pendentes(usuario)
+
+
+@router.get("/acompanhamento", response_model=list[MovimentacaoDetailed])
+def acompanhamento(usuario=Depends(current_user)):
+    return MovimentacaoService().acompanhamento(usuario)
 
 
 @router.get("/escaladas", response_model=list[MovimentacaoDetailed])
@@ -49,6 +54,11 @@ def add_movimentacao(movimentacao: MovimentacaoCreate, usuario=Depends(current_u
 @router.post("/{id}/aprovar", response_model=schemas.Movimentacao)
 def aprovar_movimentacao(id: int, usuario=Depends(current_user)):
     return MovimentacaoService().decidir_movimentacao(id, usuario, aprovar=True)
+
+
+@router.post("/{id}/intervir", response_model=schemas.Movimentacao)
+def intervir_movimentacao(id: int, decisao: schemas.DecisaoRecusa, usuario=Depends(current_user)):
+    return MovimentacaoService().intervir(id, usuario, decisao.motivo)
 
 
 @router.post("/{id}/recusar", response_model=schemas.Movimentacao)

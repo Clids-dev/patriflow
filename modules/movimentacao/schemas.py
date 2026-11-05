@@ -14,6 +14,7 @@ class Movimentacao(BaseModel):
     ativo: bool
     status: str = "aprovada"
     solicitante_id: Optional[int] = None
+    fluxo: str = "simples"
 
 
 class MovimentacaoCreate(BaseModel):
@@ -41,6 +42,12 @@ class MovimentacaoDetailed(BaseModel):
     status: str = "aprovada"
     solicitante_nome: Optional[str] = None
     escalada: bool = False
+    setor_origem_id: Optional[int] = None
+    setor_destino_id: Optional[int] = None
+    solicitante_id: Optional[int] = None
+    fluxo: str = "simples"
+    # Ação que a tela oferece agora: "liberar" (origem) ou "receber" (destino).
+    etapa: Optional[str] = None
 
 
 class DecisaoRecusa(BaseModel):

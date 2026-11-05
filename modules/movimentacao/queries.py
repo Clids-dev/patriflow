@@ -61,7 +61,7 @@ QUERY_MOVIMENTACOES_PENDENTES = """
     ORDER BY m.data_movimentacao ASC
 """
 
-QUERY_MOVIMENTACOES_ID = """SELECT id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo, status, solicitante_id
+QUERY_MOVIMENTACOES_ID = """SELECT id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo, status, solicitante_id, fluxo
                             FROM movimentacoes WHERE id = %s"""
 
 # Localização atual de um bem: destino da última movimentação aprovada e ativa.
@@ -74,8 +74,8 @@ QUERY_LOCALIZACAO_ATUAL = """
 
 QUERY_CREATE_MOVIMENTACOES = """INSERT INTO movimentacoes
     (bem_id, setor_origem_id, setor_destino_id, data_movimentacao, justificativa,
-     ativo, status, solicitante_id, decisor_id, data_decisao)
-    VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s)
+     ativo, status, solicitante_id, decisor_id, data_decisao, fluxo)
+    VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s)
     RETURNING id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo, status;"""
 
 # Decisão só é aplicada se a movimentação ainda estiver pendente (evita dupla decisão).
@@ -99,4 +99,50 @@ QUERY_MINHAS_SOLICITACOES = """
     WHERE m.solicitante_id = %s AND m.ativo = TRUE
       AND (m.status = 'pendente' OR m.decisor_id IS DISTINCT FROM m.solicitante_id)
     ORDER BY m.data_movimentacao DESC
+"""
+
+
+# Transferências abertas (aguardando liberação da origem ou recebimento do destino),
+# com o que a tela precisa para decidir. Escalada: passou do prazo na etapa atual.
+QUERY_MOVIMENTACOES_EM_ANDAMENTO = """
+    SELECT
+        m.id,
+        b.nome AS bem_nome,
+        b.codigo_tombamento,
+        s1.nome AS setor_origem_nome,
+        s2.nome AS setor_destino_nome,
+        m.data_movimentacao,
+        m.justificativa,
+        m.ativo,
+        m.status,
+        u.nome AS solicitante_nome,
+        (CASE WHEN m.status = 'pendente' THEN m.data_movimentacao ELSE m.data_decisao END
+            < NOW() - make_interval(days => %s)) AS escalada,
+        m.setor_origem_id,
+        m.setor_destino_id,
+        m.fluxo,
+        m.solicitante_id
+    FROM movimentacoes m
+    JOIN bens b ON m.bem_id = b.id
+    LEFT JOIN setores s1 ON m.setor_origem_id = s1.id
+    JOIN setores s2 ON m.setor_destino_id = s2.id
+    LEFT JOIN usuarios u ON u.id = m.solicitante_id
+    WHERE m.ativo = TRUE AND m.status IN ('pendente', 'liberada')
+    ORDER BY m.data_movimentacao ASC
+"""
+
+# Existe transferência aberta para o bem? (uma por vez)
+QUERY_EXISTE_ABERTA = """
+    SELECT 1 FROM movimentacoes
+    WHERE bem_id = %s AND ativo = TRUE AND status IN ('pendente', 'liberada')
+    LIMIT 1
+"""
+
+# Transição de etapa: só aplica se o status ainda for um dos esperados.
+QUERY_TRANSICIONAR = """
+    UPDATE movimentacoes
+    SET status = %s, decisor_id = %s, data_decisao = %s,
+        motivo_decisao = COALESCE(%s, motivo_decisao)
+    WHERE id = %s AND ativo = TRUE AND status = ANY(%s)
+    RETURNING id, bem_id, setor_origem_id, setor_destino_id, data_movimentacao, ativo, status;
 """

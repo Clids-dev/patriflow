@@ -33,6 +33,26 @@ def _model(row) -> Movimentacao:
     )
 
 
+def _em_andamento(row) -> schemas.MovimentacaoDetailed:
+    return schemas.MovimentacaoDetailed(
+        id=row[0],
+        bem_nome=row[1],
+        codigo_tombamento=row[2],
+        setor_origem_nome=row[3],
+        setor_destino_nome=row[4],
+        data_movimentacao=row[5],
+        justificativa=row[6],
+        ativo=bool(row[7]),
+        status=row[8],
+        solicitante_nome=row[9],
+        escalada=bool(row[10]),
+        setor_origem_id=row[11],
+        setor_destino_id=row[12],
+        fluxo=row[13],
+        solicitante_id=row[14],
+    )
+
+
 class MovimentacaoRepository:
     def get_all(self):
         rows = DataBase().execute(queries.QUERY_MOVIMENTACOES)
@@ -50,12 +70,21 @@ class MovimentacaoRepository:
         rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_POR_BEM_CODIGO, (codigo,))
         return [_detailed(row) for row in rows or []]
 
+    def get_em_andamento(self, prazo_dias: int = 3) -> list[schemas.MovimentacaoDetailed]:
+        rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_EM_ANDAMENTO, (prazo_dias,))
+        return [_em_andamento(row) for row in rows or []]
+
+    def existe_aberta(self, bem_id: int) -> bool:
+        rows = DataBase().execute(queries.QUERY_EXISTE_ABERTA, (bem_id,), many=False)
+        return bool(rows)
+
     def get_id(self, id: int):
         rows = DataBase().execute(queries.QUERY_MOVIMENTACOES_ID, (id,))
         if not rows:
             return None
         model = _model(rows[0])
         model.solicitante_id = rows[0][7]
+        model.fluxo = rows[0][8]
         return model
 
     def get_localizacao_atual(self, bem_id: int) -> Optional[int]:
@@ -70,13 +99,69 @@ class MovimentacaoRepository:
         solicitante_id: int,
         decisor_id: Optional[int] = None,
         data_decisao: Optional[datetime] = None,
+        fluxo: str = "simples",
     ) -> Movimentacao:
         result = DataBase().commit(queries.QUERY_CREATE_MOVIMENTACOES, (
             movimentacao.bem_id, origem_id, movimentacao.setor_destino_id,
             datetime.now(), movimentacao.justificativa, status,
-            solicitante_id, decisor_id, data_decisao,
+            solicitante_id, decisor_id, data_decisao, fluxo,
         ))
-        return _model(result)
+        model = _model(result)
+        model.fluxo = fluxo
+        model.solicitante_id = solicitante_id
+        return model
+
+    def transicionar(
+        self,
+        id: int,
+        bem_id: int,
+        origem_esperada: Optional[int],
+        status_esperados: tuple,
+        novo_status: str,
+        decisor_id: int,
+        data_decisao: datetime,
+        motivo: Optional[str] = None,
+        verificar_local: bool = False,
+    ) -> tuple[str, Optional[Movimentacao]]:
+        """Muda a etapa de uma transferência com o bem travado (FOR UPDATE).
+
+        Só muda se o status atual estiver em `status_esperados`. Se `verificar_local`,
+        o bem precisa continuar no setor de origem. Retorna (resultado, movimentação):
+        'ok', 'bem_inativo', 'ja_decidida' ou 'local_mudou'.
+        """
+        conn = DataBase().get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT ativo FROM bens WHERE id = %s FOR UPDATE", (bem_id,))
+                bem = cur.fetchone()
+                if novo_status == "aprovada" and (bem is None or not bem[0]):
+                    conn.rollback()
+                    return "bem_inativo", None
+
+                cur.execute("SELECT status FROM movimentacoes WHERE id = %s FOR UPDATE", (id,))
+                mov = cur.fetchone()
+                if mov is None or mov[0] not in status_esperados:
+                    conn.rollback()
+                    return "ja_decidida", None
+
+                if verificar_local:
+                    cur.execute(queries.QUERY_LOCALIZACAO_ATUAL, (bem_id,))
+                    row = cur.fetchone()
+                    atual = row[0] if row else None
+                    if atual != origem_esperada:
+                        conn.rollback()
+                        return "local_mudou", None
+
+                cur.execute(queries.QUERY_TRANSICIONAR,
+                            (novo_status, decisor_id, data_decisao, motivo, id, list(status_esperados)))
+                result = cur.fetchone()
+            conn.commit()
+            return "ok", _model(result)
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            DataBase().put_conn(conn)
 
     def decidir(
         self,

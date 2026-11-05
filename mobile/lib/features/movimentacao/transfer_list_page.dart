@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../core/services/api_client.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/app_helpers.dart';
 import '../../core/widgets/app_states.dart';
 import 'transferencias.dart';
 
 /// Qual lista de transferências a tela mostra.
 enum ModoTransferencias {
-  /// Aguardando decisão. Com [podeDecidir], mostra autorizar e recusar.
+  /// O que este usuário pode decidir agora (liberar ou confirmar recebimento).
   pendentes('/movimentacao/pendentes'),
 
-  /// Solicitações feitas pelo próprio usuário, com o motivo da decisão.
+  /// Solicitações feitas pelo próprio usuário, com o resultado e o motivo.
   minhas('/movimentacao/minhas'),
+
+  /// Todas as transferências abertas do sistema (almoxarifado acompanha).
+  acompanhamento('/movimentacao/acompanhamento'),
 
   /// Todas as movimentações, somente leitura.
   todas('/movimentacao/detailed/');
@@ -26,20 +28,22 @@ class TransferListPage extends StatefulWidget {
     super.key,
     required this.modo,
     this.podeDecidir = false,
-    this.almoxId,
+    this.podeIntervir = false,
     this.setorId,
   });
 
   final ModoTransferencias modo;
 
-  /// Só o responsável do almoxarifado (e o setor de patrimônio) decide.
+  /// Responsável do setor de origem libera; do destino confirma o recebimento.
   final bool podeDecidir;
 
-  /// Usados pelo botão de solicitar bem, no modo "minhas".
-  final int? almoxId;
+  /// Almoxarifado e setor de patrimônio podem cancelar uma transferência aberta.
+  final bool podeIntervir;
+
+  /// Setor do usuário, usado para solicitar bens (modo "minhas").
   final int? setorId;
 
-  /// Contagem de transferências pendentes, usada pela barra inferior.
+  /// Contagem de transferências que o usuário pode decidir, para a barra inferior.
   static Future<int> contarPendentes() async {
     final lista = await ApiClient.get(ModoTransferencias.pendentes.endpoint);
     return lista.length;
@@ -59,21 +63,8 @@ class _TransferListPageState extends State<TransferListPage> {
     await _future;
   }
 
-  Future<void> _decidir(Map<String, dynamic> mov, {required bool aprovar}) async {
-    final ok = aprovar
-        ? await autorizarTransferencia(context, mov)
-        : await recusarTransferencia(context, mov);
-    if (ok && mounted) _recarregar();
-  }
-
-  Future<void> _solicitar() async {
-    final almox = widget.almoxId;
-    final setor = widget.setorId;
-    if (almox == null || setor == null) {
-      showAppMessage(context, 'Seu setor ou o almoxarifado ainda não foi definido.');
-      return;
-    }
-    final ok = await escolherBemESolicitar(context, almoxId: almox, setorId: setor);
+  Future<void> _executar(Future<bool> acao) async {
+    final ok = await acao;
     if (ok && mounted) _recarregar();
   }
 
@@ -83,17 +74,17 @@ class _TransferListPageState extends State<TransferListPage> {
     child: FutureBuilder<List<dynamic>>(
       future: _future,
       builder: (context, snapshot) {
-        final cabecalho = widget.modo == ModoTransferencias.minhas &&
-                widget.almoxId != null &&
-                widget.setorId != null
+        final cabecalho = widget.modo == ModoTransferencias.minhas && widget.setorId != null
             ? Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: FilledButton.icon(
-                    onPressed: _solicitar,
+                    onPressed: () => _executar(
+                      escolherBemESolicitar(context, destinoId: widget.setorId!),
+                    ),
                     icon: const Icon(Icons.add),
-                    label: const Text('Solicitar bem do almoxarifado'),
+                    label: const Text('Solicitar bem'),
                   ),
                 ),
               )
@@ -128,48 +119,70 @@ class _TransferListPageState extends State<TransferListPage> {
               )
             else
               for (final mov in itens)
-                TransferenciaCard(
-                  mov: mov,
-                  acoes: widget.podeDecidir && widget.modo == ModoTransferencias.pendentes
-                      ? Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () => _decidir(mov, aprovar: false),
-                                child: const Text('Recusar'),
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: FilledButton(
-                                style: FilledButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(44),
-                                ),
-                                onPressed: () => _decidir(mov, aprovar: true),
-                                child: const Text('Autorizar com foto'),
-                              ),
-                            ),
-                          ],
-                        )
-                      : null,
-                ),
+                TransferenciaCard(mov: mov, acoes: _acoes(mov)),
           ],
         );
       },
     ),
   );
 
+  /// Ações por etapa. A etapa vem da API: "liberar" (origem), "receber" (destino)
+  /// ou, no fluxo antigo, a confirmação com foto.
+  Widget? _acoes(Map<String, dynamic> mov) {
+    final aberta = mov['status'] == 'pendente' || mov['status'] == 'liberada';
+    final decidivel = widget.podeDecidir && widget.modo == ModoTransferencias.pendentes && aberta;
+    final intervivel = widget.podeIntervir && aberta;
+    if (!decidivel && !intervivel) return null;
+
+    final liberar = mov['etapa'] == 'liberar' && mov['fluxo'] != 'simples';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (decidivel)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _executar(recusarTransferencia(context, mov)),
+                  child: const Text('Recusar'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+                  onPressed: () => _executar(autorizarTransferencia(context, mov)),
+                  child: Text(liberar ? 'Liberar bem' : 'Confirmar com foto'),
+                ),
+              ),
+            ],
+          ),
+        if (intervivel) ...[
+          if (decidivel) const SizedBox(height: AppSpacing.sm),
+          OutlinedButton.icon(
+            onPressed: () => _executar(intervirTransferencia(context, mov)),
+            icon: const Icon(Icons.gpp_maybe_outlined),
+            label: const Text('Intervir (cancelar)'),
+          ),
+        ],
+      ],
+    );
+  }
+
   String get _tituloVazio => switch (widget.modo) {
-    ModoTransferencias.pendentes => 'Nenhuma autorização pendente',
+    ModoTransferencias.pendentes => 'Nada aguardando sua decisão',
     ModoTransferencias.minhas => 'Nenhuma solicitação',
+    ModoTransferencias.acompanhamento => 'Nenhuma transferência em andamento',
     ModoTransferencias.todas => 'Sem movimentações',
   };
 
   String get _descricaoVazia => switch (widget.modo) {
     ModoTransferencias.pendentes =>
-      'As solicitações que aguardam a decisão do almoxarifado aparecem aqui.',
+      'Bens aguardando a liberação do seu setor, ou o recebimento, aparecem aqui.',
     ModoTransferencias.minhas =>
       'As solicitações que você fizer aparecem aqui, com a decisão e o motivo.',
+    ModoTransferencias.acompanhamento =>
+      'Todas as transferências abertas do sistema aparecem aqui para acompanhamento.',
     ModoTransferencias.todas => 'Nenhum registro de movimentação encontrado.',
   };
 }

@@ -14,7 +14,7 @@ PATRIMONIO = {"id": 1, "perfil": "setor_patrimonio", "setor_id": None}
 
 
 def _mov():
-    return MagicMock(status="pendente", bem_id=9, setor_origem_id=3, solicitante_id=12)
+    return MagicMock(status="pendente", bem_id=9, setor_origem_id=3, solicitante_id=12, fluxo="simples")
 
 
 def test_autorizar_sem_foto_e_bloqueado():
@@ -64,7 +64,8 @@ def test_listagem_usa_o_prazo_configurado(monkeypatch):
     from core import config
     monkeypatch.setattr(config, "PRAZO_TRANSFERENCIA_DIAS", 5)
     repo = MagicMock()
-    repo.get_pendentes.return_value = []
-    with patch.object(mov_service, "MovimentacaoRepository", return_value=repo):
-        MovimentacaoService().listar_pendentes()
-    repo.get_pendentes.assert_called_once_with(5)
+    repo.get_em_andamento.return_value = []
+    with patch.object(mov_service, "MovimentacaoRepository", return_value=repo), \
+         patch.object(mov_service, "SetorRepository"):
+        MovimentacaoService().listar_pendentes(PATRIMONIO)
+    repo.get_em_andamento.assert_called_once_with(5)

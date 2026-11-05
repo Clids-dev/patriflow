@@ -16,13 +16,16 @@ Estas decisões vêm das respostas do `PERGUNTAS_W04.txt` e do README, e **valem
 quando houver conflito. Ver seção 2.
 
 - Almoxarifado único (`flag_almoxarifado`). Bem novo entra sempre pelo almoxarifado.
-- Movimentação: o setor de patrimônio movimenta direto. Demais perfis só solicitam entre o
-  almoxarifado e o próprio setor. A solicitação fica `pendente`.
-- Quem autoriza: responsável do almoxarifado e setor de patrimônio.
-- O app mostra Autorizar/Recusar só para o responsável do almoxarifado.
+- Transferência (decisão do professor): pode ir de **qualquer setor para qualquer setor**; não precisa
+  passar pelo almoxarifado.
+- Dupla confirmação (decisão do professor): a transferência só se efetiva quando o **responsável do setor de
+  origem** libera o bem e o **responsável do setor de destino** confirma o recebimento, com foto.
+- Almoxarifado: é **notificado** de toda transferência e pode **intervir** (suspender ou cancelar) quando algo
+  estiver fora dos conformes. Intervenção exige motivo.
+- Setor de patrimônio movimenta direto (sem aprovação) e mantém a intervenção do almoxarifado.
 - Cadastro público cria conta **inativa** até o setor de patrimônio aprovar.
 - Não existe rota de correção de movimentação (PUT removido). Correção é nova movimentação.
-- Perfil `auditor` (somente leitura) foi criado (migração W05).
+- Perfil `auditor` (somente leitura) foi criado (migração W05) e foi aceito pelo professor.
 - Commits: um commit por mudança sensível, não um commit gigante.
 - Documentação (README e tutorial mobile) foi atualizada para os perfis e regras W04.
 
@@ -33,11 +36,13 @@ quando houver conflito. Ver seção 2.
   por maior sequência (sem reaproveitar número de bem baixado).
 - Sem nenhuma implementação: W04 (etiqueta QR), W05 (fotos), W07 (inventário),
   W08 (sincronização em lote), A03, A04, A06, A07, A10, A11, A12.
-- Parcial: W06, W09, W10, A02, A05, A08, A09.
+- Parcial: W06, W09, W10, A02, A04, A05, A08, A09 (app: transferências, leitura por QR, ficha e importação).
 
-**Atenção à numeração:** o repositório usa W04 = "almoxarifado e autorização" e W05 =
-"aprovação de cadastros e perfil auditor" (migrações `20261104_*`). O quadro usa W04 = etiqueta
-QR e W05 = fotos. Confirmar com o professor qual lista vale antes de planejar.
+**Numeração (decidida):** o progresso é reportado pela numeração do quadro da disciplina (W04 = etiqueta
+QR e consulta por tombo; W05 = fotos). Os códigos internos antigos do repositório deixam de ser usados como
+número de requisito e passam a ser descritos por nome: "autorização de movimentações" (antigo W04 interno,
+migração `20261104_w04_almoxarifado_autorizacao`) e "aprovação de cadastros e perfil auditor" (antigo W05
+interno, migração `20261104_w05_usuarios_aprovacao_auditor`). A migração `20261105_w05_fotos` é o W05 do quadro.
 
 ---
 
@@ -45,10 +50,10 @@ QR e W05 = fotos. Confirmar com o professor qual lista vale antes de planejar.
 
 | # | Tema | Quadro diz | Repositório decidiu | Ação sugerida |
 |---|------|-----------|---------------------|---------------|
-| C1 | Perfis | Três perfis (patrimônio, agente, responsável) | Quatro: também `auditor` | Confirmar com professor; manter se aceito |
-| C2 | Transferência (W06/A08) | Origem e destino livres | Só almoxarifado ↔ setor do usuário | Decidir qual modelo vale; afeta W06, A08, A09 |
-| C3 | Quem aceita (W06/A09) | Qualquer usuário autorizado do destino | Só responsável do almoxarifado e patrimônio | Idem C2 |
-| C4 | Aceite com foto (W06/A09) | Foto obrigatória | Sem foto | Implementar junto com W05 |
+| C1 | Perfis | Três perfis (patrimônio, agente, responsável) | Quatro: também `auditor` | **Decidido:** auditor mantido (aceito pelo professor) |
+| C2 | Transferência (W06/A08) | Origem e destino livres | Só almoxarifado ↔ setor do usuário | **Decidido:** origem e destino livres (qualquer setor); implementar na API e no app |
+| C3 | Quem aceita (W06/A09) | Qualquer usuário autorizado do destino | Só responsável do almoxarifado e patrimônio | **Decidido:** dupla confirmação (responsável da origem libera; responsável do destino recebe); almoxarifado notificado e pode intervir |
+| C4 | Aceite com foto (W06/A09) | Foto obrigatória | Foto obrigatória no aceite (implementada) | Resolvido: foto no recebimento do destino |
 | C5 | Auditor | Não citado | Perfil de leitura | Manter e documentar |
 
 ---
@@ -84,18 +89,25 @@ Verificação: QR de etiquetas de exemplo lidos de volta com `zxing-cpp` (tombo 
 Migração: `database/migrations/20261105_w05_fotos.sql` (executar uma vez no banco de desenvolvimento).
 Testes: `test_fotos.py`.
 
-### W06 · Transferência com dupla confirmação — `[x]` 7/7 (regra definida pelo cliente)
-Regra: a transferência vale se o responsável do almoxarifado (ou o setor de patrimônio) autorizar.
-Quem decide recebe o motivo da solicitação; na recusa, o motivo é obrigatório para quem pediu.
-- [x] Estados da transferência: pendente, autorizada, recusada (pendente é a aguardando decisão)
-- [x] Enquanto pendente, o bem continua na origem (checagem `local_mudou` na decisão)
-- [x] Solicitação exige destino e motivo
-- [x] Pendentes são listadas para quem decide; "Minhas solicitações" mostra o resultado e o motivo a quem pediu
-- [x] Autorizar exige a foto do recebimento (tipo `aceite_transferencia`, id da movimentação)
-- [x] Recusa exige o motivo; o motivo fica gravado (`motivo_decisao`)
-- [x] Transferência sem resposta além do prazo (`PATRIFLOW_PRAZO_TRANSFERENCIA_DIAS`, padrão 3) é escalada
-- [x] Escaladas vão para uma fila própria do setor de patrimônio (`GET /movimentacao/escaladas`)
-- [x] Nada apagado: a rota de exclusão de movimentações foi removida
+### W06 · Transferência com dupla confirmação — `[x]` 10/10 (API, app e web)
+Regra (decidida com o professor): origem e destino livres. Um colaborador do setor de destino solicita;
+o responsável do setor de origem libera; o responsável do setor de destino confirma o recebimento com foto;
+o almoxarifado é notificado de toda transferência e pode intervir com motivo.
+- [x] Estados: pendente (aguarda liberação), liberada (aguarda recebimento), aprovada, recusada, cancelada
+- [x] Enquanto a transferência não é concluída, o bem continua na origem (localização só muda em "aprovada")
+- [x] Solicitação exige motivo e não pode repetir uma transferência já aberta para o mesmo bem
+- [x] Pendentes são listadas para quem decide, com a etapa ("liberar" ou "receber")
+- [x] Confirmação de recebimento exige a foto (tipo `aceite_transferencia`)
+- [x] Recusa, em qualquer etapa, exige o motivo; o motivo fica gravado (`motivo_decisao`) para quem solicitou
+- [x] Almoxarifado acompanha todas as transferências abertas (`GET /movimentacao/acompanhamento`)
+- [x] Intervenção do almoxarifado cancela uma transferência aberta, com motivo (`POST /movimentacao/{id}/intervir`)
+- [x] Transferências sem resposta além do prazo são escaladas ao setor de patrimônio
+- [x] Transferências antigas (fluxo "simples") continuam com a regra anterior
+- [x] Web: solicitação de qualquer bem, liberação, confirmação com foto, acompanhamento e intervenção
+- [x] App: solicitação de qualquer bem (e a partir da ficha), liberação, confirmação com foto e intervenção
+
+Migração: `database/migrations/20261110_transferencia_dupla_confirmacao.sql`.
+Testes: `test_transferencia_dupla.py`, e os testes antigos ajustados para o fluxo "simples".
 
 ### W07 · Inventário: abertura, congelamento e fechamento — `[ ]` 0/7
 - [ ] Abertura define período e setores
@@ -138,13 +150,14 @@ Obs.: o PDF "Relatório de Inventário de Bens" existe, mas é só exportação 
 
 ## 4. Backlog — APP (agente de campo, responsável de setor)
 
-Estado do app: versão administrativa **online**. Não há armazenamento local, fila offline,
-câmera nem leitor de QR (`mobile/pubspec.yaml`: só `http`, `shared_preferences`,
-`flutter_secure_storage`, `share_plus`).
+Estado do app (atualizado): versão **online**, com menu e barra inferior no padrão da web. Já existem
+câmera para leitura de etiqueta (`mobile_scanner`, só QR Code), busca por tombo, ficha do bem, transferências
+com motivo, foto na autorização e recusa com motivo, baixa com motivo e documento, importação CSV, etiquetas
+(individual e em lote), termo de responsabilidade e o menu do agente sem itens sem função. Ainda **não há**
+armazenamento local, fila offline nem conferência no app (A03, A06, A11, A12).
 
-**Problema de apresentação:** no menu do agente, "Leitura", "Conferência" e "Inventário" abrem a
-lista genérica de bens (`mobile/lib/features/home/home_placeholder_page.dart`, `HomeTab.bens`), e
-"Sincronização" abre uma tela vazia de Relatórios. Itens sem função real.
+Branches com esse trabalho: `feat/app-regras-transferencia` (já na `main`), `feat/app-importacao-etiquetas-termo`
+e `feat/app-leitura-qr-ficha` (ainda não mescladas na `main`).
 
 ### A02 · Login e sessão no aplicativo — `[~]` 5/6 (card em "Fazendo")
 - [x] Tela de login envia usuário e senha à API e recebe o token
@@ -162,22 +175,21 @@ lista genérica de bens (`mobile/lib/features/home/home_placeholder_page.dart`, 
 - [ ] Baixar de novo não apaga a fila de sincronização
 - [ ] Falha no download avisa e mantém o acervo anterior
 
-### A04 · Leitura da etiqueta pela câmera e digitação do tombo — `[ ]` 0/6
-- [ ] Câmera abre na tela de leitura e decodifica o QR sem confirmação
-- [ ] Tombo lido busca o bem no banco local e abre a ficha
-- [ ] Campo de digitação manual na mesma tela da câmera
-- [ ] Tombo digitado com DV inválido avisa antes de buscar
-- [ ] Tombo válido fora do acervo oferece registrar como bem não cadastrado
-- [ ] Leitura e busca funcionam sem internet
+### A04 · Leitura da etiqueta pela câmera e digitação do tombo — `[~]` 3/6
+- [x] Câmera abre na tela de leitura e decodifica o QR sem confirmação (atalho central da barra inferior)
+- [x] Tombo lido busca o bem pela API (`/bem/buscar`) e abre a ficha
+- [x] Campo de digitação manual na mesma tela da câmera
+- [~] Tombo digitado com DV inválido: a API recusa e o app mostra a mensagem, mas a checagem ainda não é feita no aparelho, antes da busca
+- [ ] Tombo válido fora do acervo oferece registrar como bem não cadastrado (depende de A07)
+- [ ] Leitura e busca funcionam sem internet (depende de A03)
 
-### A05 · Ficha do bem e histórico no aplicativo — `[~]` 0/6 completos
-- [~] Detalhe online (tela admin de ativos) mostra nome, tombo e status
-- [ ] Ficha mostra tombo, descrição, categoria, marca, modelo, série, estado, setor, localização e responsável
-- [ ] Foto mais recente aparece na ficha
-- [ ] Ações de conferir, transferir, emprestar e enviar para manutenção partem da ficha
-- [ ] Histórico vem da API em ordem, com data, autor, tipo e foto
-- [ ] Nenhum evento pode ser editado ou apagado pelo app
-- [ ] Sem rede, ficha e histórico baixados continuam abrindo, com data de atualização
+### A05 · Ficha do bem e histórico no aplicativo — `[~]` 4/7 completos
+- [x] Ficha mostra tombo, nome, categoria, marca, modelo, série, estado, setor, localização, responsável, garantia e depreciação/valor contábil
+- [~] Foto mais recente aparece na ficha: falta a API listar fotos por bem (hoje as fotos são por registro)
+- [ ] Ações de conferir, transferir, emprestar e enviar para manutenção partem da ficha (a ficha é somente leitura)
+- [~] Histórico vem da API em ordem, com data, autor e tipo; falta a foto em cada evento
+- [x] Nenhum evento pode ser editado ou apagado pelo app
+- [ ] Sem rede, ficha e histórico baixados continuam abrindo (depende de A03)
 
 ### A06 · Conferência do bem, com foto — `[ ]` 0/6
 - [ ] Tela mostra dados do bem e estado de conservação cadastrado
@@ -195,24 +207,23 @@ lista genérica de bens (`mobile/lib/features/home/home_placeholder_page.dart`, 
 - [ ] Sincronizado, chega com foto e aparece na caixa de pendências do patrimônio
 - [ ] Continua aberto até o patrimônio tratar
 
-### A08 · Solicitar a transferência de um bem — `[ ]` 0/6 (parcial no backend)
-- [ ] Solicitação parte da ficha do bem e exige setor de destino e motivo
-- [ ] Tela deixa claro que o bem continua na origem enquanto SOLICITADA
-- [~] Solicitação vai à API (`POST /movimentacao/` existe, mas só almoxarifado ↔ setor, ver C2)
-- [ ] Agente vê a lista das transferências que solicitou, com estado
-- [ ] Solicitação sem rede entra na fila e aparece como pendente de envio
-- [ ] Transferência já solicitada não pode ser solicitada de novo
+### A08 · Solicitar a transferência de um bem — `[~]` 5/6
+- [x] Solicitação exige setor de destino e motivo
+- [x] Tela deixa claro que o bem continua na origem enquanto SOLICITADA (etapa "Aguarda liberação")
+- [x] Solicitação vai à API (almoxarifado ↔ setor, ver C2)
+- [x] Agente vê a lista das transferências que solicitou, com estado e motivo da decisão
+- [ ] Solicitação sem rede entra na fila e aparece como pendente de envio (depende de A12)
+- [x] Transferência já solicitada não pode ser solicitada de novo (API recusa com 409)
 
-Obs.: o diálogo "Nova transferência" existe em `movements_screen.dart`, mas só é acessível pelo
-painel do setor de patrimônio. Não há ação de solicitar na tela de movimentações do agente.
+Obs.: a solicitação é feita a partir de "Minhas solicitações", do Início e da ficha do bem.
 
-### A09 · Aceitar ou recusar a transferência, com foto — `[~]` 0/6 completos
-- [~] Lista de pendentes vem da API (tela do responsável com Autorizar/Recusar, pedindo confirmação)
-- [ ] Aceite exige foto do recebimento
-- [~] Aceita, guarda passa ao destino (existe via aprovar; sem foto)
-- [~] Recusa exige justificativa (a verificar)
-- [ ] Aceite ou recusa sem rede entra na fila
-- [ ] Respondida, sai da lista e fica no histórico
+### A09 · Aceitar ou recusar a transferência, com foto — `[~]` 5/6 (liberação pela origem e confirmação com foto pelo destino)
+- [x] Lista de pendentes vem da API (aba Autorizações e Movimentações > Pendentes)
+- [x] Aceite exige foto do recebimento (câmera ou galeria, enviada antes da autorização)
+- [x] Aceita, o bem passa ao destino
+- [x] Recusa exige motivo, que fica visível para quem solicitou
+- [ ] Aceite ou recusa sem rede entra na fila (depende de A12)
+- [x] Respondida, sai da lista de pendentes e aparece em "Minhas solicitações" e no histórico do bem
 
 ### A10 · Empréstimo e manutenção pelo aplicativo — `[ ]` 0/7
 - [ ] Empréstimo exige quem levou, motivo, data de saída e devolução prevista
@@ -253,7 +264,7 @@ painel do setor de patrimônio. Não há ação de solicitar na tela de moviment
 6. **W06 / A08 / A09** após decidir C2 e C3.
 7. **A05, A07** e o restante do app.
 
-Antes de começar: resolver C1 a C3 com o professor e confirmar a numeração de W04 e W05 (seção 1).
+Decisões de regra (C1 a C3) já foram confirmadas com o professor, e a numeração segue o quadro (seção 1).
 
 ---
 

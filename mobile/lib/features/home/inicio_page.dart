@@ -12,13 +12,11 @@ class InicioPage extends StatelessWidget {
     super.key,
     required this.nome,
     required this.perfil,
-    this.almoxId,
     this.setorId,
   });
 
   final String nome;
   final String perfil;
-  final int? almoxId;
   final int? setorId;
 
   void _ir(BuildContext context, String label) =>
@@ -72,21 +70,14 @@ class InicioPage extends StatelessWidget {
         ] else ...[
           _Atalho(
             icone: Icons.add_box_outlined,
-            titulo: 'Solicitar bem do almoxarifado',
-            descricao: 'Escolha um bem disponível e informe o motivo.',
+            titulo: 'Solicitar um bem',
+            descricao: 'Escolha um bem de qualquer setor e informe o motivo.',
             onTap: () {
-              if (almoxId == null || setorId == null) {
-                showAppMessage(
-                  context,
-                  'Seu setor ou o almoxarifado ainda não foi definido.',
-                );
+              if (setorId == null) {
+                showAppMessage(context, 'Seu usuário ainda não está vinculado a um setor.');
                 return;
               }
-              escolherBemESolicitar(
-                context,
-                almoxId: almoxId!,
-                setorId: setorId!,
-              );
+              escolherBemESolicitar(context, destinoId: setorId!);
             },
           ),
           _Atalho(

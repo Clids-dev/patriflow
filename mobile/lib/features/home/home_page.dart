@@ -13,6 +13,7 @@ import '../admin/screens/movements_screen.dart';
 import '../admin/screens/reports_screen.dart';
 import '../auth/login_page.dart';
 import '../bens/bens_leitura_page.dart';
+import '../bens/leitura_qr_page.dart';
 import '../movimentacao/transfer_list_page.dart';
 import '../server_config/server_config_page.dart';
 import 'inicio_page.dart';
@@ -62,7 +63,10 @@ class _HomePageState extends State<HomePage> {
   List<ShellItem> _itens(int? almoxId) {
     final perfil = widget.profile['perfil']?.toString();
     final setorId = widget.profile['setor_id'] as int?;
-    final podeDecidir = almoxId != null && setorId == almoxId;
+    // Responsável decide as etapas das transferências em que o seu setor é origem ou destino.
+    final podeDecidir = perfil == 'responsavel_setor';
+    // Responsável do almoxarifado acompanha e pode intervir em qualquer transferência.
+    final eAlmoxarifado = almoxId != null && setorId == almoxId;
     final adminId = widget.profile['id'] as int? ?? 0;
 
     return switch (perfil) {
@@ -111,7 +115,6 @@ class _HomePageState extends State<HomePage> {
           page: InicioPage(
             nome: _nome,
             perfil: perfil!,
-            almoxId: almoxId,
             setorId: setorId,
           ),
           bottomBar: true,
@@ -122,7 +125,6 @@ class _HomePageState extends State<HomePage> {
           selectedIcon: Icons.outbox,
           page: TransferListPage(
             modo: ModoTransferencias.minhas,
-            almoxId: almoxId,
             setorId: setorId,
           ),
           bottomBar: true,
@@ -143,7 +145,6 @@ class _HomePageState extends State<HomePage> {
           page: InicioPage(
             nome: _nome,
             perfil: perfil!,
-            almoxId: almoxId,
             setorId: setorId,
           ),
           bottomBar: true,
@@ -155,17 +156,27 @@ class _HomePageState extends State<HomePage> {
           page: TransferListPage(
             modo: ModoTransferencias.pendentes,
             podeDecidir: podeDecidir,
+            podeIntervir: eAlmoxarifado,
           ),
           bottomBar: true,
           badge: TransferListPage.contarPendentes,
         ),
+        if (eAlmoxarifado)
+          ShellItem(
+            label: 'Acompanhamento',
+            icon: Icons.visibility_outlined,
+            selectedIcon: Icons.visibility,
+            page: const TransferListPage(
+              modo: ModoTransferencias.acompanhamento,
+              podeIntervir: true,
+            ),
+          ),
         ShellItem(
           label: 'Minhas solicitações',
           icon: Icons.outbox_outlined,
           selectedIcon: Icons.outbox,
           page: TransferListPage(
             modo: ModoTransferencias.minhas,
-            almoxId: almoxId,
             setorId: setorId,
           ),
           bottomBar: true,
@@ -230,6 +241,10 @@ class _HomePageState extends State<HomePage> {
         perfil: perfilLabel(widget.profile['perfil']?.toString()),
         onSettings: _configurarServidor,
         onLogout: _sair,
+        onScan: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LeituraQrPage()),
+        ),
       );
     },
   );

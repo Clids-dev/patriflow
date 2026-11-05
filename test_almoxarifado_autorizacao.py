@@ -45,6 +45,7 @@ def repos():
         setor_repo.return_value.get_id.return_value = MagicMock()
         setor_repo.return_value.get_almoxarifado.return_value = MagicMock(id=ALMOX)
         mov_repo.return_value.get_localizacao_atual.return_value = ALMOX
+        mov_repo.return_value.existe_aberta.return_value = False
         yield {"bem": bem_repo, "setor": setor_repo, "mov": mov_repo}
 
 
@@ -65,11 +66,14 @@ def test_responsavel_solicita_saida_do_almoxarifado_para_o_proprio_setor(repos):
     assert args[3] == RESP_TI["id"]  # solicitante
 
 
-def test_responsavel_nao_pode_mover_bem_entre_setores_sem_passar_pelo_almoxarifado(repos):
-    repos["mov"].return_value.get_localizacao_atual.return_value = 4  # bem está no RH
-    with pytest.raises(HTTPException) as exc:
-        MovimentacaoService().add_movimentacao(_create(destino=1), RESP_TI)
-    assert exc.value.status_code == 403
+def test_solicitacao_entre_setores_quaisquer_passa_sem_o_almoxarifado(repos):
+    # Regra nova: origem e destino livres. O bem está no RH e o TI solicita para si.
+    repos["mov"].return_value.get_localizacao_atual.return_value = 4
+    MovimentacaoService().add_movimentacao(_create(destino=1), RESP_TI)
+    args = repos["mov"].return_value.save.call_args.args
+    assert args[1] == 4                      # origem = RH
+    assert args[2] == "pendente"             # aguarda a liberação do RH
+    assert repos["mov"].return_value.save.call_args.kwargs["fluxo"] == "duplo"
 
 
 def test_responsavel_nao_pode_solicitar_para_outro_setor(repos):

@@ -14,6 +14,7 @@ class AppShell extends StatefulWidget {
     required this.perfil,
     required this.onSettings,
     required this.onLogout,
+    required this.onScan,
   });
 
   final List<ShellItem> items;
@@ -21,6 +22,9 @@ class AppShell extends StatefulWidget {
   final String perfil;
   final VoidCallback onSettings;
   final VoidCallback onLogout;
+
+  /// Atalho central da barra: abre a leitura de etiqueta pela câmera.
+  final VoidCallback onScan;
 
   @override
   State<AppShell> createState() => AppShellState();
@@ -50,6 +54,18 @@ class AppShellState extends State<AppShell> {
     _carregarBadges();
   }
 
+  /// Posição k da barra: um módulo, ou espaço vazio quando o perfil tem menos módulos.
+  Widget _slot(List<int> naBarra, int k, List<ShellItem> items) {
+    if (k >= naBarra.length) return const SizedBox.shrink();
+    final i = naBarra[k];
+    return _BottomIcon(
+      item: items[i],
+      selected: i == _index,
+      badge: _badges[i] ?? 0,
+      onTap: () => _select(i),
+    );
+  }
+
   Future<void> _carregarBadges() async {
     for (var i = 0; i < widget.items.length; i++) {
       final badge = widget.items[i].badge;
@@ -71,7 +87,6 @@ class AppShellState extends State<AppShell> {
       for (var i = 0; i < items.length; i++)
         if (items[i].bottomBar) i,
     ].take(_maxBottomItems).toList();
-    final maisAtivo = !naBarra.contains(_index);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -99,22 +114,20 @@ class AppShellState extends State<AppShell> {
       body: atual.page,
       bottomNavigationBar: _BottomBar(
         children: [
-          for (final i in naBarra)
-            _BottomIcon(
-              item: items[i],
-              selected: i == _index,
-              badge: _badges[i] ?? 0,
-              onTap: () => _select(i),
-            ),
+          // Metade dos módulos à esquerda, o atalho da câmera no centro e o resto à direita.
+          for (var k = 0; k < 2; k++)
+            _slot(naBarra, k, items),
           _BottomIcon(
             item: null,
-            label: 'Mais',
-            icon: Icons.menu,
-            selectedIcon: Icons.menu,
-            selected: maisAtivo,
+            label: 'Ler etiqueta',
+            icon: Icons.photo_camera_outlined,
+            selectedIcon: Icons.photo_camera,
+            selected: false,
             badge: 0,
-            onTap: () => _scaffoldKey.currentState?.openDrawer(),
+            onTap: widget.onScan,
           ),
+          for (var k = 2; k < 4; k++)
+            _slot(naBarra, k, items),
         ],
       ),
     );
