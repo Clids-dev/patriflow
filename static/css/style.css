@@ -111,12 +111,12 @@ body {
 
 /* Barra lateral */
 .sidebar-wrapper .sidebar-header .sidebar-brand { display: inline-block; }
-.sidebar-wrapper .sidebar-header .sidebar-brand img { width: 48px; height: auto; }
+/* Logo da barra lateral: mesmo tamanho em todas as telas (igual ao dashboard) */
+.sidebar-wrapper .sidebar-header .sidebar-brand img { width: 144px; height: auto; }
 /* Botão de fechar no celular fica no canto, sem atrapalhar o centro */
 .sidebar-wrapper .sidebar-header .sidebar-hide { position: absolute; top: 1rem; right: 1rem; color: var(--on-dark-muted); }
 
-/* Dashboard: logo da barra lateral em 300% */
-.page-dashboard .sidebar-wrapper .sidebar-header .sidebar-brand img { width: 144px; height: auto; }
+
 
 /* Ícones de estatística ficam no fluxo normal dos cards */
 .stats-icon { float: none; }
