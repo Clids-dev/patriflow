@@ -1,0 +1,29 @@
+ATRIBUIÇÃO DE SETORES - 13 bens que entraram no almoxarifado (W04)
+==================================================================
+
+Estes bens entraram no Almoxarifado Central com a data de hoje, porque
+não havia data de entrada cadastrada. Para cada bem, escreva o id do
+setor de destino (ex.: 1). Deixe em branco o que não deve ser movido.
+
+SETORES ATIVOS:
+  1  Departamento de Tecnologia
+  2  Financeiro
+  3  Almoxarifado Central
+  4  Recursos Humanos
+  (o id 7 'Produção' é um setor ativo sem movimentações; confirme se deve ser usado)
+
+BENS (id | tombo | nome | status | SETOR DE DESTINO)
+------------------------------------------------------------------
+  8 | TMB-008-1    | Switch Cisco 24 Portas       | Disponível   | SETOR: 
+  9 | TMB-009-0    | Nobreak APC 1500VA           | Em Uso       | SETOR: 
+ 10 | TMB-010-3    | Tablet Samsung S9            | Em Uso       | SETOR: 
+ 11 | TMB-011-1    | Webcam Logitech C920         | Disponível   | SETOR: 
+ 12 | TMB-012-0    | Impressora HP LaserJet       | Manutenção   | SETOR: 
+ 13 | TMB-013-8    | Ar Condicionado Split        | Em Uso       | SETOR: 
+ 14 | TMB-014-6    | Mesa de Reunião              | Disponível   | SETOR: 
+ 15 | TMB-015-4    | Roteador Wi-Fi 6             | Em Uso       | SETOR: 
+ 16 | TMB-016-2    | Headset HyperX Cloud         | Em Uso       | SETOR: 
+ 17 | TMB-017-0    | Estabilizador SMS            | Disponível   | SETOR: 
+ 18 | TMB-018-9    | MacBook Air M2               | Em Uso       | SETOR: 
+ 19 | TMB-019-7    | Smartphone iPhone 15         | Em Uso       | SETOR: 
+ 20 | TMB-020-0    | Drone DJI Mini 4             | Disponível   | SETOR: 
