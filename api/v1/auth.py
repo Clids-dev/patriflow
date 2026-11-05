@@ -40,8 +40,11 @@ def user_payload(row):
 
 @router.post("/login")
 def login(data: LoginRequest):
-    row = UsuarioService(UsuarioRepository()).login(data.username, data.senha)
+    service = UsuarioService(UsuarioRepository())
+    row = service.login(data.username, data.senha)
     if not row:
+        if service.conta_pendente(data.username, data.senha):
+            raise HTTPException(status_code=403, detail="Conta aguardando aprovação do setor de patrimônio.")
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
     user = user_payload(row)
     token = create_access_token(user, jwt_secret(), config.JWT_EXPIRES_SECONDS)
@@ -60,7 +63,7 @@ def register(data: RegisterRequest):
 
 
 def current_user(request: Request, credentials: HTTPAuthorizationCredentials = Depends(bearer)):
-    if request.url.path.endswith(("/auth/login", "/auth/register")):
+    if request.url.path.endswith(("/auth/login", "/auth/register", "/auth/setores-cadastro")):
         return None
     token = credentials.credentials if credentials else request.cookies.get("access_token")
     if not token:
@@ -75,15 +78,23 @@ def current_user(request: Request, credentials: HTTPAuthorizationCredentials = D
     return user_payload(row)
 
 
+@router.get("/setores-cadastro")
+def setores_para_cadastro():
+    """Lista pública (id e nome) dos setores ativos, para o formulário de cadastro."""
+    from modules.setor.repository import SetorRepository
+    return [{"id": s.id, "nome": s.nome} for s in SetorRepository().get_all() if s.ativo]
+
+
 @router.get("/me")
 def me(user=Depends(current_user)):
     return {"id": user["id"], "username": user["username"], "nome": user["nome"], "perfil": user["perfil"], "setor_id": user["setor_id"]}
 
 
 ROLE_PERMISSIONS = {
-    "setor_patrimonio": {"bem:read", "bem:create", "bem:update", "bem:delete", "categoria:*", "setores:*", "localizacao:*", "relatorio:read", "responsavel:*", "movimentacao:*"},
+    "setor_patrimonio": {"bem:read", "bem:create", "bem:update", "bem:delete", "categoria:*", "setores:*", "localizacao:*", "relatorio:read", "responsavel:*", "movimentacao:*", "usuarios:*"},
     "agente_campo": {"bem:read", "bem:update", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:update"},
-    "responsavel_setor": {"bem:read", "localizacao:read", "movimentacao:read", "movimentacao:accept"},
+    "responsavel_setor": {"bem:read", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:accept"},
+    "auditor": {"bem:read", "categoria:read", "setores:read", "responsavel:read", "localizacao:read", "movimentacao:read", "relatorio:read"},
 }
 
 
@@ -95,7 +106,8 @@ def action_for(method: str, path: str) -> str:
         action = "read"
     if resource == "movimentacao" and method == "POST":
         action = "create"
-    if resource == "movimentacao" and method == "PUT":
+    # Fila de decisão: listar pendentes e aprovar/recusar exigem permissão de aceite.
+    if resource == "movimentacao" and (parts[-1:] == ["pendentes"] or parts[-1:] in (["aprovar"], ["recusar"])):
         action = "accept"
     return f"{resource}:{action}"
 
@@ -107,6 +119,8 @@ def require_api_access(request: Request, user=Depends(current_user)):
     # necessário para completar o login e validar o auto-login do aplicativo.
     if request.url.path.endswith("/auth/me"):
         return user
+    if request.url.path.endswith("/auth/setores-cadastro"):
+        return None
     action = action_for(request.method, request.url.path.removeprefix("/api/v1/"))
     profile = user["perfil"]
     permissions = ROLE_PERMISSIONS.get(profile, set())

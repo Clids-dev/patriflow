@@ -28,3 +28,16 @@ class UsuarioRepository:
             raise ValueError("Este nome de utilizador já está em uso") from exc
         except ForeignKeyViolation as exc:
             raise ValueError("O setor informado não existe") from exc
+
+    def listar(self):
+        rows = DataBase().execute(queries.QUERY_LISTAR_USUARIOS) or []
+        return [
+            {"id": r[0], "username": r[1], "nome": r[2], "perfil": r[3], "ativo": bool(r[4]),
+             "setor_id": r[5], "setor_nome": r[6]}
+            for r in rows
+        ]
+
+    def atualizar(self, user_id: int, tipo: str, setor_id, ativo: bool):
+        row = DataBase().commit(queries.QUERY_ATUALIZAR_USUARIO, (tipo, setor_id, ativo, user_id))
+        return row
+

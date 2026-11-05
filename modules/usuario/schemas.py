@@ -9,3 +9,10 @@ class UsuarioResponse(BaseModel):
     username: str
     tipo: str
     ativo: bool
+
+
+class UsuarioAtualizacao(BaseModel):
+    perfil: str
+    setor_id: int | None = None
+    ativo: bool
+
