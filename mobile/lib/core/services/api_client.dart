@@ -168,6 +168,31 @@ class ApiClient {
     await _send('PUT', endpoint, body: body, queryParameters: queryParameters),
   );
 
+  /// Envia um arquivo com campos de formulário (multipart), como as fotos.
+  static Future<dynamic> postMultipart(
+    String endpoint, {
+    required Map<String, String> fields,
+    required String fileField,
+    required String filePath,
+  }) async {
+    final apiUrl = await _getApiBaseUrl();
+    if (apiUrl == null) throw Exception('URL do servidor não configurada.');
+    final request = http.MultipartRequest('POST', Uri.parse('$apiUrl$endpoint'))
+      ..fields.addAll(fields)
+      ..files.add(await http.MultipartFile.fromPath(fileField, filePath));
+    final token = await SecureTokenStorage().readToken();
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    final streamed = await request.send().timeout(const Duration(seconds: 30));
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode == 401) {
+      await SessionManager.handleUnauthorized();
+      throw Exception('Sua sessão expirou. Entre novamente.');
+    }
+    return _decodeResponse(response);
+  }
+
   static Future<dynamic> patch(String endpoint, Object body) async =>
       _decodeResponse(await _send('PATCH', endpoint, body: body));
 

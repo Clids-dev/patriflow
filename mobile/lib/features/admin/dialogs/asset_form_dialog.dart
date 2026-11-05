@@ -44,6 +44,15 @@ class _AssetFormDialogState extends State<AssetFormDialog> {
   late final _tombo = TextEditingController(
     text: '${widget.asset?['codigo_tombamento'] ?? ''}',
   );
+  late final _warranty = TextEditingController(
+    text: '${widget.asset?['garantia_fim'] ?? ''}'.split('T').first,
+  );
+  late final _life = TextEditingController(
+    text: '${widget.asset?['vida_util_meses'] ?? ''}',
+  );
+  late final _residual = TextEditingController(
+    text: '${widget.asset?['valor_residual'] ?? 0}',
+  );
   late int? _category = widget.asset?['id_categoria'] as int?;
   late String _status = '${widget.asset?['status'] ?? 'Disponível'}';
   late String _condition = '${widget.asset?['estado_conservacao'] ?? 'novo'}';
@@ -61,6 +70,9 @@ class _AssetFormDialogState extends State<AssetFormDialog> {
       _invoice,
       _date,
       _tombo,
+      _warranty,
+      _life,
+      _residual,
     ]) {
       c.dispose();
     }
@@ -91,6 +103,12 @@ class _AssetFormDialogState extends State<AssetFormDialog> {
         'nota_fiscal': blankOrNull(_invoice.text),
         'data_entrada': blankOrNull(_date.text),
         'estado_conservacao': _condition,
+        'garantia_fim': blankOrNull(_warranty.text),
+        'vida_util_meses': int.tryParse(_life.text.trim()),
+        'valor_residual': double.tryParse(
+              _residual.text.trim().replaceAll(',', '.'),
+            ) ??
+            0,
       };
       if (isNew) {
         payload['codigo_tombamento'] = code;
@@ -164,6 +182,9 @@ class _AssetFormDialogState extends State<AssetFormDialog> {
             formTextField(_serial, 'Número de série'),
             formTextField(_invoice, 'Nota fiscal'),
             formTextField(_date, 'Data de entrada (AAAA-MM-DD)'),
+            formTextField(_warranty, 'Garantia até (AAAA-MM-DD)'),
+            formTextField(_life, 'Vida útil (meses)', number: true),
+            formTextField(_residual, 'Valor residual', number: true),
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: DropdownButtonFormField<String>(

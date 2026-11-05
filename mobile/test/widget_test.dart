@@ -5,7 +5,7 @@ void main() {
   testWidgets('exibe a abertura do PatriFlow', (tester) async {
     await tester.pumpWidget(const PatriFlowApp());
 
-    expect(find.text('PatriFlow'), findsOneWidget);
+    // A logo é imagem (o nome já vem nela); o texto da abertura é o slogan.
     expect(find.text('Gestão patrimonial simplificada'), findsOneWidget);
   });
 }

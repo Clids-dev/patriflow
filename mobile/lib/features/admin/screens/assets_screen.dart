@@ -6,6 +6,7 @@ import '../../../core/utils/app_helpers.dart';
 import '../../../core/widgets/app_components.dart';
 import '../../../core/widgets/app_states.dart';
 import '../dialogs/asset_form_dialog.dart';
+import '../dialogs/baixa_dialog.dart';
 
 class AssetsScreen extends StatefulWidget {
   const AssetsScreen({super.key});
@@ -48,18 +49,28 @@ class _AssetsScreenState extends State<AssetsScreen> {
     if (saved == true && mounted) _reloadData();
   }
 
+  /// Baixa exige motivo, justificativa e documento. Reativar só pede confirmação.
   Future<void> _toggleActive(Map<String, dynamic> asset) async {
     final active = asset['ativo'] == true;
-    final confirmed = await confirmAction(
-      context,
-      active ? 'Dar baixa neste bem?' : 'Reativar este bem?',
-    );
-    if (!mounted || !confirmed) return;
     try {
-      await ApiClient.post(
-        '/bem/${asset['id']}/${active ? 'desativar' : 'reativar'}',
-        {},
-      );
+      if (active) {
+        final dados = await pedirBaixa(context, asset);
+        if (dados == null || !mounted) return;
+        final resposta = await ApiClient.post(
+          '/bem/${asset['id']}/desativar',
+          dados,
+        );
+        if (mounted) {
+          showAppMessage(
+            context,
+            '${(resposta as Map)['mensagem'] ?? 'Baixa registrada.'}',
+          );
+        }
+      } else {
+        final confirmado = await confirmAction(context, 'Reativar este bem?');
+        if (!mounted || !confirmado) return;
+        await ApiClient.post('/bem/${asset['id']}/reativar', {});
+      }
       if (mounted) _reloadData();
     } catch (e) {
       if (mounted) showAppMessage(context, '$e');
@@ -140,6 +151,32 @@ class _AssetsScreenState extends State<AssetsScreen> {
                       AppDetailLine(
                         label: 'Conservação',
                         value: details['estado_conservacao'],
+                      ),
+                      AppDetailLine(
+                        label: 'Garantia até',
+                        value: shortDate(details['garantia_fim']),
+                      ),
+                      AppDetailLine(
+                        label: 'Vida útil',
+                        value: details['vida_util_meses'] == null
+                            ? null
+                            : '${details['vida_util_meses']} meses',
+                      ),
+                      AppDetailLine(
+                        label: 'Valor residual',
+                        value: 'R\$ ${details['valor_residual'] ?? 0}',
+                      ),
+                      AppDetailLine(
+                        label: 'Depreciação acumulada',
+                        value: details['depreciacao_acumulada'] == null
+                            ? null
+                            : 'R\$ ${details['depreciacao_acumulada']}',
+                      ),
+                      AppDetailLine(
+                        label: 'Valor contábil',
+                        value: details['valor_contabil'] == null
+                            ? null
+                            : 'R\$ ${details['valor_contabil']}',
                       ),
                       AppDetailLine(
                         label: 'Local atual',
@@ -225,6 +262,15 @@ class _AssetsScreenState extends State<AssetsScreen> {
                     hint: 'Buscar nome ou tombo',
                     onSubmitted: (_) => _applySearch(),
                   ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                IconButton.outlined(
+                  tooltip: 'Baixas aguardando aprovação',
+                  onPressed: () => abrirBaixasPendentes(
+                    context,
+                    onChanged: _reloadData,
+                  ),
+                  icon: const Icon(Icons.fact_check_outlined),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 IconButton.filled(

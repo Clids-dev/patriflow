@@ -5,6 +5,18 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_helpers.dart';
 import '../../../core/widgets/app_components.dart';
 import '../../../core/widgets/app_states.dart';
+import '../../movimentacao/transferencias.dart';
+
+/// Filtros da tela. "Pendentes" e "Escaladas" são a fila de decisão do setor de patrimônio.
+enum _Filtro {
+  todas('Todas', '/movimentacao/detailed/'),
+  pendentes('Pendentes', '/movimentacao/pendentes'),
+  escaladas('Escaladas', '/movimentacao/escaladas');
+
+  const _Filtro(this.label, this.endpoint);
+  final String label;
+  final String endpoint;
+}
 
 class MovementsScreen extends StatefulWidget {
   const MovementsScreen({super.key});
@@ -16,6 +28,7 @@ class MovementsScreen extends StatefulWidget {
 class _MovementsScreenState extends State<MovementsScreen> {
   String _query = '';
   final _searchController = TextEditingController();
+  _Filtro _filtro = _Filtro.todas;
   late Future<List<dynamic>> _dataFuture;
 
   @override
@@ -25,12 +38,26 @@ class _MovementsScreenState extends State<MovementsScreen> {
   }
 
   Future<List<dynamic>> _loadData() => Future.wait([
-    ApiClient.get('/movimentacao/detailed/'),
+    ApiClient.get(_filtro.endpoint),
     ApiClient.get('/bem/'),
     ApiClient.get('/setores/'),
   ]);
 
   void _reloadData() => setState(() => _dataFuture = _loadData());
+
+  void _trocarFiltro(_Filtro filtro) {
+    setState(() {
+      _filtro = filtro;
+      _dataFuture = _loadData();
+    });
+  }
+
+  Future<void> _decidir(Map<String, dynamic> mov, {required bool aprovar}) async {
+    final ok = aprovar
+        ? await autorizarTransferencia(context, mov)
+        : await recusarTransferencia(context, mov);
+    if (ok && mounted) _reloadData();
+  }
 
   @override
   void dispose() {
@@ -181,9 +208,30 @@ class _MovementsScreenState extends State<MovementsScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            children: [
+              for (final f in _Filtro.values)
+                ChoiceChip(
+                  label: Text(f.label),
+                  selected: _filtro == f,
+                  onSelected: (_) => _trocarFiltro(f),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
           if (movements.isEmpty)
-            const AppEmptyState(title: 'Sem movimentações')
-          else
+            AppEmptyState(
+              title: _filtro == _Filtro.todas
+                  ? 'Sem movimentações'
+                  : _filtro == _Filtro.pendentes
+                  ? 'Nenhuma transferência aguardando decisão'
+                  : 'Nenhuma transferência escalada',
+              description: _filtro == _Filtro.escaladas
+                  ? 'Escaladas são solicitações sem resposta do almoxarifado além do prazo.'
+                  : null,
+            )
+          else if (_filtro == _Filtro.todas)
             for (final raw in movements)
               AppListCard(
                 leading: const AppIconBadge(icon: Icons.swap_horiz),
@@ -194,6 +242,37 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 title: '${raw['bem_nome']}',
                 subtitle:
                     '${raw['codigo_tombamento']}\n${raw['setor_origem_nome'] ?? 'Origem não informada'} → ${raw['setor_destino_nome']} • ${shortDate(raw['data_movimentacao'])}\n${raw['justificativa'] ?? ''}',
+              )
+          else
+            for (final raw in movements)
+              TransferenciaCard(
+                mov: Map<String, dynamic>.from(raw),
+                acoes: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _decidir(
+                          Map<String, dynamic>.from(raw),
+                          aprovar: false,
+                        ),
+                        child: const Text('Recusar'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(44),
+                        ),
+                        onPressed: () => _decidir(
+                          Map<String, dynamic>.from(raw),
+                          aprovar: true,
+                        ),
+                        child: const Text('Autorizar com foto'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
         ],
       );
