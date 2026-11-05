@@ -110,10 +110,10 @@ body {
 }
 
 /* Barra lateral */
-.sidebar-wrapper .sidebar-header .sidebar-brand img { height: 44px; width: auto; }
+.sidebar-wrapper .sidebar-header .sidebar-brand img { width: 48px; height: auto; }
 
 /* Dashboard: logo da barra lateral em 300% */
-.page-dashboard .sidebar-wrapper .sidebar-header .sidebar-brand img { height: 132px; width: auto; }
+.page-dashboard .sidebar-wrapper .sidebar-header .sidebar-brand img { width: 144px; height: auto; }
 
 /* Ícones de estatística ficam no fluxo normal dos cards */
 .stats-icon { float: none; }
@@ -282,8 +282,8 @@ html.auth-register, html.auth-register body { min-height: 100%; }
     backdrop-filter: blur(12px);
 }
 
-.auth-login .auth-logo-img-lg { height: 132px; width: auto; }
-.auth-login .auth-logo-img-md { height: 114px; width: auto; }
+.auth-login .auth-logo-img-lg { width: 144px; height: auto; }
+.auth-login .auth-logo-img-md { width: 124px; height: auto; }
 
 .auth-login .auth-kicker {
     color: var(--on-dark-muted);
@@ -518,7 +518,7 @@ html.auth-register, html.auth-register body { min-height: 100%; }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-.auth-register .auth-logo-img-sm { height: 36px; width: auto; }
+.auth-register .auth-logo-img-sm { width: 39px; height: auto; }
 
 .auth-register .auth-title-sm {
     font-size: 1.5rem;
