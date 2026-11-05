@@ -15,7 +15,7 @@
     {% block styles %}{% endblock %}
 </head>
 
-<body>
+<body class="{% if active_page == 'index' %}page-dashboard{% endif %}">
 <div id="app">
     <div id="sidebar">
         <div class="sidebar-wrapper active">

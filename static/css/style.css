@@ -112,6 +112,9 @@ body {
 /* Barra lateral */
 .sidebar-wrapper .sidebar-header .sidebar-brand img { height: 44px; width: auto; }
 
+/* Dashboard: logo da barra lateral em 300% */
+.page-dashboard .sidebar-wrapper .sidebar-header .sidebar-brand img { height: 132px; width: auto; }
+
 /* Ícones de estatística ficam no fluxo normal dos cards */
 .stats-icon { float: none; }
 .sidebar-subtitle {
@@ -267,8 +270,9 @@ html.auth-register, html.auth-register body { min-height: 100%; }
 .auth-login .left-logo { display: inline-flex; align-items: center; gap: 12px; }
 
 .auth-login .left-logo-icon {
-    width: 64px;
-    height: 64px;
+    width: auto;
+    height: auto;
+    padding: 12px 18px;
     background: var(--glass-logo);
     border: 1px solid var(--glass-stroke-strong);
     border-radius: 16px;
@@ -278,8 +282,8 @@ html.auth-register, html.auth-register body { min-height: 100%; }
     backdrop-filter: blur(12px);
 }
 
-.auth-login .auth-logo-img-lg { height: 44px; width: auto; }
-.auth-login .auth-logo-img-md { height: 38px; width: auto; }
+.auth-login .auth-logo-img-lg { height: 132px; width: auto; }
+.auth-login .auth-logo-img-md { height: 114px; width: auto; }
 
 .auth-login .auth-kicker {
     color: var(--on-dark-muted);
