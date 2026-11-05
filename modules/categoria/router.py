@@ -37,3 +37,17 @@ def update_categoria(id: int, novo_nome: str):
 def delete_categoria(id: int):
     service = CategoriaService()
     return service.delete_categoria(id)
+
+
+@router.get("/{id}/bens")
+def bens_da_categoria(id: int):
+    """Bens ativos da categoria, mais recentes primeiro."""
+    from core.database import DataBase
+    rows = DataBase().execute(
+        """SELECT b.id, b.codigo_tombamento, b.nome, b.status, b.estado_conservacao, b.valor_aquisicao
+           FROM bens b WHERE b.id_categoria = %s AND b.ativo = TRUE ORDER BY b.id DESC""", (id,)) or []
+    return [
+        {"id": r[0], "codigo_tombamento": r[1], "nome": r[2], "status": r[3],
+         "estado_conservacao": r[4], "valor_aquisicao": float(r[5] or 0)}
+        for r in rows
+    ]

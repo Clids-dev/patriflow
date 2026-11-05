@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import painel_topo, kpi %}
+
+{% block title %}Estrutura{% endblock %}
+
+{% block content %}
+{% call painel_topo("Gestão", "Estrutura") %}
+    <div class="dropdown">
+        <button class="btn btn-outline-primary pill-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-list-ul me-1"></i> Ver lista
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+            <li><a class="dropdown-item" href="/categoria"><i class="bi bi-tags me-2"></i>Categorias</a></li>
+            <li><a class="dropdown-item" href="/setores"><i class="bi bi-building me-2"></i>Setores</a></li>
+            <li><a class="dropdown-item" href="/responsaveis"><i class="bi bi-people me-2"></i>Responsáveis</a></li>
+            <li><a class="dropdown-item" href="/localizacoes"><i class="bi bi-geo-alt me-2"></i>Localizações</a></li>
+        </ul>
+    </div>
+    <div class="dropdown">
+        <button class="btn btn-primary pill-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-plus-lg me-1"></i> Cadastrar
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+            <li><a class="dropdown-item" href="/categoria?novo=1"><i class="bi bi-tags me-2"></i>Nova categoria</a></li>
+            <li><a class="dropdown-item" href="/setores?novo=1"><i class="bi bi-building me-2"></i>Novo setor</a></li>
+            <li><a class="dropdown-item" href="/responsaveis?novo=1"><i class="bi bi-people me-2"></i>Novo responsável</a></li>
+            <li><a class="dropdown-item" href="/localizacoes?novo=1"><i class="bi bi-geo-alt me-2"></i>Novo local</a></li>
+        </ul>
+    </div>
+{% endcall %}
+
+<p class="text-muted mb-4">A estrutura de apoio ao tombamento: o que os bens são, onde estão e quem responde por eles. Abra uma entidade pelos indicadores ou pelo menu acima.</p>
+
+<section class="kpi-linha kpi-linha-3">
+    {{ kpi("Categorias", "totalCategorias", "tags", "tipos de bens e prefixos do tombo", destaque=true, link="/categoria") }}
+    {{ kpi("Setores", "totalSetores", "building", "onde os bens estão, com sala e responsável", suave=true, link="/setores") }}
+    {{ kpi("Responsáveis", "totalResponsaveis", "people", "quem responde pela guarda dos bens", suave=true, link="/responsaveis") }}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/estrutura.js"></script>
+{% endblock %}

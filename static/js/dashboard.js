@@ -1,58 +1,156 @@
-import { $, api } from '/static/js/utils.js';
+import { $, api, esc } from '/static/js/utils.js';
 
 /**
  * Dashboard.js - Lógica da página inicial com visualização de dados
  */
 
+// Cores vêm dos tokens de style.css, para os gráficos seguirem a paleta do sistema.
+const cor = (token) => getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+
 async function init() {
     console.log("Iniciando Dashboard...");
+    mostrarDataDeHoje();
+    configurarChartsGlobal();
     await Promise.all([
         renderizarGraficoCategorias(),
         renderizarGraficoStatus(),
-        renderizarUltimosRegistros()
+        renderizarUltimosRegistros(),
+        renderizarAtencao()
     ]);
+}
+
+function mostrarDataDeHoje() {
+    const el = $('#dataHoje');
+    if (!el) return;
+    const texto = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    el.textContent = texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+// "O que pede atenção": transferências aguardando aceite e garantias vencidas ou a vencer.
+// Cada consulta é independente: quem não tem permissão para uma delas só não vê aquele item.
+async function renderizarAtencao() {
+    const lista = $('#atencaoLista');
+    const total = $('#atencaoTotal');
+    const itens = [];
+
+    let garantias = [];
+    try {
+        garantias = await api.get('/api/v1/bem/alertas/garantias?dias=60');
+        const kpi = $('#kpiGarantias');
+        if (kpi) kpi.textContent = garantias.length;
+        garantias.filter(g => g.vencida).forEach(g => itens.push({
+            icone: 'bi-shield-exclamation',
+            titulo: `Garantia vencida: ${g.nome}`,
+            detalhe: `${g.codigo_tombamento} · venceu em ${new Date(g.garantia_fim + 'T00:00:00').toLocaleDateString('pt-BR')}`,
+            link: '/bens'
+        }));
+        garantias.filter(g => !g.vencida).forEach(g => itens.push({
+            icone: 'bi-shield-check',
+            titulo: `Garantia a vencer: ${g.nome}`,
+            detalhe: `${g.codigo_tombamento} · vence em ${new Date(g.garantia_fim + 'T00:00:00').toLocaleDateString('pt-BR')}`,
+            link: '/bens'
+        }));
+    } catch (erro) {
+        console.warn("Garantias indisponíveis:", erro);
+        const kpi = $('#kpiGarantias');
+        if (kpi) kpi.textContent = '--';
+    }
+
+    try {
+        const pendentes = await api.get('/api/v1/movimentacao/pendentes');
+        pendentes.forEach(m => itens.push({
+            icone: 'bi-arrow-left-right',
+            titulo: `${m.escalada ? 'Escalada: ' : ''}Transferência aguardando autorização: ${m.bem_nome}`,
+            detalhe: `${m.codigo_tombamento} → ${m.setor_destino_nome}`,
+            link: '/movimentacao'
+        }));
+    } catch (erro) {
+        console.warn("Pendências indisponíveis:", erro);
+    }
+
+    total.textContent = `${itens.length} ${itens.length === 1 ? 'ponto' : 'pontos'}`;
+    if (itens.length === 0) {
+        lista.innerHTML = '<li class="atencao-vazio">Nada pendente agora. Tudo em ordem.</li>';
+        return;
+    }
+    lista.innerHTML = itens.slice(0, 6).map(item => `
+        <li>
+            <a href="${esc(item.link)}" class="atencao-item">
+                <span class="atencao-icone"><i class="bi ${esc(item.icone)}"></i></span>
+                <span class="atencao-texto">
+                    <strong>${esc(item.titulo)}</strong>
+                    <small>${esc(item.detalhe)}</small>
+                </span>
+                <i class="bi bi-chevron-right atencao-seta"></i>
+            </a>
+        </li>`).join('');
+}
+
+// ----- Estilo dos gráficos: paleta e tipografia do projeto -----
+function configurarChartsGlobal() {
+    if (typeof Chart === 'undefined') return;
+    Chart.defaults.font.family = "Inter, -apple-system, BlinkMacSystemFont, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = cor('--text-secondary');
+    Chart.defaults.borderColor = cor('--border-color');
+    const tip = Chart.defaults.plugins.tooltip;
+    tip.backgroundColor = cor('--primary-dark');
+    tip.padding = 12;
+    tip.cornerRadius = 12;
+    tip.boxPadding = 6;
+    tip.titleFont = { weight: '700', size: 13 };
+}
+
+// Degradê vertical entre dois tokens, aplicado na área real do gráfico.
+function degrade(chart, de, para) {
+    const area = chart.chartArea;
+    if (!area) return cor(de);
+    const g = chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+    g.addColorStop(0, cor(de));
+    g.addColorStop(1, cor(para));
+    return g;
 }
 
 async function renderizarGraficoCategorias() {
     try {
         const stats = await api.get('/api/v1/bem/stats/categoria');
-        console.log("Stats Categorias:", stats);
-
-        if (!stats || stats.length === 0) {
-            console.warn("Nenhum dado de categoria encontrado.");
-            return;
-        }
+        if (!stats || stats.length === 0) return;
 
         const labels = stats.map(s => s[0]);
         const data = stats.map(s => s[1]);
-
         const ctx = document.getElementById('chartCategorias');
         if (!ctx) return;
 
         if (window.chartCat) window.chartCat.destroy();
-
         window.chartCat = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels,
                 datasets: [{
-                    label: 'Quantidade de Bens',
-                    data: data,
-                    backgroundColor: 'rgba(130, 10, 209, 0.7)',
-                    borderColor: 'rgba(130, 10, 209, 1)',
-                    borderWidth: 1,
-                    borderRadius: 8
+                    label: 'Bens',
+                    data,
+                    backgroundColor: (c) => degrade(c.chart, '--primary-accent', '--primary-color'),
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    maxBarThickness: 44,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: { duration: 700, easing: 'easeOutQuart' },
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (c) => ` ${c.parsed.y} bem(ns)` } }
                 },
                 scales: {
-                    y: { beginAtZero: true, grid: { display: false } },
-                    x: { grid: { display: false } }
+                    x: { grid: { display: false }, border: { display: false }, ticks: { font: { weight: '600' } } },
+                    y: {
+                        beginAtZero: true,
+                        border: { display: false },
+                        grid: { color: cor('--border-color'), drawTicks: false },
+                        ticks: { precision: 0, padding: 8 }
+                    }
                 }
             }
         });
@@ -64,63 +162,81 @@ async function renderizarGraficoCategorias() {
 async function renderizarGraficoStatus() {
     try {
         const stats = await api.get('/api/v1/bem/stats/status');
-        console.log("Stats Status:", stats);
-
-        if (!stats || stats.length === 0) {
-            console.warn("Nenhum dado de status encontrado.");
-            return;
-        }
+        if (!stats || stats.length === 0) return;
 
         const labels = stats.map(s => s[0]);
         const data = stats.map(s => s[1]);
-
+        const total = data.reduce((soma, v) => soma + v, 0);
         const ctx = document.getElementById('chartStatus');
         if (!ctx) return;
 
         if (window.chartStat) window.chartStat.destroy();
 
-        // Função para normalizar strings de status (remove acentos, espaços e caracteres especiais)
-        const normalizarStatus = (str) => {
-            if (!str) return '';
-            return str.toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .replace(/\s+/g, '')
-                .replace(/_/g, '');
-        };
+        const normalizarStatus = (str) => (str || '').toLowerCase()
+            .normalize("NFD").replace(/[̀-ͯ]/g, "")
+            .replace(/\s+/g, '').replace(/_/g, '');
 
-        // Mapeamento semântico de cores intuitivas
+        // Cores dos status pelos tokens do projeto.
         const colorMap = {
-            'disponivel': '#22c55e', // Verde (Disponível/Sucesso)
-            'emuso': '#3b82f6',      // Azul (Em Uso/Ativo)
-            'manutencao': '#f59e0b',  // Amarelo/Laranja (Manutenção/Atenção)
-            'baixado': '#ef4444',     // Vermelho (Baixado/Perigo)
-            'inativo': '#6c757d'      // Cinza (Inativo)
+            'disponivel': '--success',
+            'emuso': '--primary-accent',
+            'manutencao': '--warning',
+            'baixado': '--danger',
+            'inativo': '--text-secondary'
         };
+        const backgroundColors = labels.map(label => cor(colorMap[normalizarStatus(label)] || '--text-secondary'));
 
-        const backgroundColors = labels.map(label => {
-            const key = normalizarStatus(label);
-            return colorMap[key] || '#6c757d'; // Cinza como fallback
-        });
+        // Número total no centro da rosca.
+        const centroTotal = {
+            id: 'centroTotal',
+            afterDraw(chart) {
+                const { ctx: g, chartArea } = chart;
+                if (!chartArea) return;
+                const x = (chartArea.left + chartArea.right) / 2;
+                const y = (chartArea.top + chartArea.bottom) / 2;
+                g.save();
+                g.textAlign = 'center';
+                g.textBaseline = 'middle';
+                g.fillStyle = cor('--text-primary');
+                g.font = '800 28px Inter, sans-serif';
+                g.fillText(String(total), x, y - 8);
+                g.fillStyle = cor('--text-secondary');
+                g.font = '600 12px Inter, sans-serif';
+                g.fillText('itens', x, y + 18);
+                g.restore();
+            }
+        };
 
         window.chartStat = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: labels,
+                labels,
                 datasets: [{
-                    data: data,
+                    data,
                     backgroundColor: backgroundColors,
-                    hoverOffset: 4,
-                    borderWidth: 0
+                    borderColor: cor('--surface-color'),
+                    borderWidth: 4,
+                    borderRadius: 6,
+                    hoverOffset: 8,
                 }]
             },
+            plugins: [centroTotal],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '74%',
+                animation: { animateRotate: true, duration: 800 },
                 plugins: {
-                    legend: { position: 'bottom' }
-                },
-                cutout: '70%'
+                    legend: {
+                        position: 'bottom',
+                        labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 18, font: { weight: '600' } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (c) => ` ${c.label}: ${c.parsed} (${Math.round(c.parsed * 100 / total)}%)`
+                        }
+                    }
+                }
             }
         });
     } catch (error) {
@@ -146,11 +262,11 @@ async function renderizarUltimosRegistros() {
         
         tbody.innerHTML = recentes.map(bem => `
             <tr>
-                <td class="ps-4"><span class="text-muted">#${bem.id}</span></td>
-                <td><span class="fw-bold text-dark">${bem.nome || 'Sem nome'}</span></td>
-                <td><span class="badge ${bem.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3">${bem.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                <td class="ps-4"><span class="text-muted">#${esc(bem.id)}</span></td>
+                <td><span class="fw-bold text-dark">${esc(bem.nome || 'Sem nome')}</span></td>
+                <td><span class="badge ${esc(bem.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">${esc(bem.ativo ? 'Ativo' : 'Inativo')}</span></td>
                 <td class="text-end pe-4">
-                    <a href="/bens" class="btn btn-sm btn-light"><i class="fas fa-arrow-right"></i></a>
+                    <a href="/bens" class="btn btn-sm btn-light"><i class="bi bi-arrow-right"></i></a>
                 </td>
             </tr>
         `).join('');

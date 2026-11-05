@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Movimentacao(BaseModel):
@@ -39,3 +39,9 @@ class MovimentacaoDetailed(BaseModel):
     justificativa: Optional[str] = None
     ativo: bool
     status: str = "aprovada"
+    solicitante_nome: Optional[str] = None
+    escalada: bool = False
+
+
+class DecisaoRecusa(BaseModel):
+    motivo: str = Field(min_length=3, max_length=500)

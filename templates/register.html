@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" class="auth-login">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,240 +7,178 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
-
-    <style>
-        html, body { min-height: 100%; }
-
-        .register-wrap {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 16px;
-            background: var(--bg-main);
-        }
-
-        .register-card {
-            width: 100%;
-            max-width: 460px;
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 40px 36px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-            animation: fadeSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
-        }
-
-        @keyframes fadeSlideUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Inputs com ícone */
-        .field-wrap {
-            position: relative;
-            margin-bottom: 14px;
-        }
-
-        .field-wrap label {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-            display: block;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .field-wrap .field-icon-left {
-            position: absolute;
-            left: 14px;
-            bottom: 14px;
-            color: var(--text-secondary);
-            font-size: 0.82rem;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .field-wrap .field-icon-right {
-            position: absolute;
-            right: 14px;
-            bottom: 14px;
-            color: var(--text-secondary);
-            font-size: 0.82rem;
-            cursor: pointer;
-            z-index: 2;
-            padding: 2px;
-            transition: color 0.2s ease;
-        }
-
-        .field-wrap .field-icon-right:hover { color: var(--primary-color); }
-
-        .field-wrap input {
-            height: 50px;
-            padding-left: 40px !important;
-            padding-right: 40px !important;
-            font-size: 0.9rem !important;
-            border-radius: 12px !important;
-        }
-
-        .field-wrap .form-text {
-            font-size: 0.775rem;
-            color: var(--text-secondary);
-            margin-top: 5px;
-        }
-
-        .btn-create {
-            height: 52px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            border-radius: 14px !important;
-            letter-spacing: -0.01em;
-        }
-
-        .alert-inline {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-size: 0.875rem;
-            margin-bottom: 20px;
-        }
-
-        .alert-inline.error {
-            background: #FFF1F0;
-            color: #C0392B;
-            border-left: 3px solid var(--danger);
-        }
-
-        @media (max-width: 480px) {
-            .register-card { padding: 32px 20px; }
-        }
-    </style>
 </head>
 
 <body class="login-body">
 
-<div class="register-wrap">
-    <div class="register-card">
+<div class="login-wrapper">
 
-        <!-- Logo -->
-        <div class="text-center mb-5">
-            <div class="d-inline-block mb-4" style="background: #820AD1; padding: 10px 16px; border-radius: 14px;">
-                <img src="/static/logo.png?v=2" alt="PatriFlow" style="height: 36px; width: auto;">
+    <!-- ===================== PAINEL ESQUERDO ===================== -->
+    <div class="login-panel-left d-none d-lg-flex flex-column">
+        <div class="left-top">
+            <div class="left-logo">
+                <div class="left-logo-icon">
+                    <img src="/static/logo.png?v=3" alt="PatriFlow" class="auth-logo-img-lg">
+                </div>
             </div>
-            <h1 class="fw-bold mb-1" style="font-size: 1.5rem; letter-spacing: -0.03em; color: var(--text-primary);">
-                Criar conta
-            </h1>
-            <p class="mb-0" style="font-size: 0.875rem; color: var(--text-secondary);">
-                Acesso de Agente de Campo.
-            </p>
         </div>
 
-        {% if erro %}
-        <div class="alert-inline error" role="alert">
-            <i class="fas fa-exclamation-circle flex-shrink-0 mt-1" style="font-size: 0.85rem;"></i>
-            <span>{{ erro }}</span>
+        <div class="left-middle mt-auto">
+            <p class="mb-2 fw-semibold text-uppercase auth-kicker">Novo acesso</p>
+            <h2 class="text-white fw-bold mb-5 auth-headline">
+                Crie sua conta e acompanhe<br>o patrimônio da instituição.
+            </h2>
+
+            <div class="feature-cards-wrap">
+                <div class="feature-card">
+                    <div class="feature-card-icon">
+                        <i class="fas fa-user-check text-white feature-glyph"></i>
+                    </div>
+                    <div>
+                        <div class="text-white fw-semibold feature-title">Acesso conforme o seu papel</div>
+                        <div class="feature-text">Cada perfil vê apenas o que precisa</div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-icon">
+                        <i class="fas fa-user-clock text-white feature-glyph"></i>
+                    </div>
+                    <div>
+                        <div class="text-white fw-semibold feature-title">Aprovação pelo setor de patrimônio</div>
+                        <div class="feature-text">A conta é ativada depois da análise</div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-icon">
+                        <i class="fas fa-shield-alt text-white feature-glyph"></i>
+                    </div>
+                    <div>
+                        <div class="text-white fw-semibold feature-title">Dados protegidos</div>
+                        <div class="feature-text">Senhas guardadas de forma criptografada</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% endif %}
 
-        <form action="/criar-conta" method="POST" id="registerForm" novalidate>
+        <div class="left-bottom mt-5">
+            <p class="mb-0 auth-footer">© 2026 PatriFlow Corporate. Todos os direitos reservados.</p>
+        </div>
+    </div>
 
-            <div class="field-wrap">
-                <label for="nome">Nome completo</label>
-                <i class="fas fa-id-card field-icon-left"></i>
-                <input id="nome" name="nome" type="text"
-                    class="form-control"
-                    maxlength="120"
-                    value="{{ nome or '' }}"
-                    placeholder="Seu nome"
-                    required autofocus>
+    <!-- ===================== PAINEL DIREITO ===================== -->
+    <div class="login-panel-right">
+        <div class="login-form-box">
+
+            <div class="d-flex d-lg-none align-items-center mb-5">
+                <div class="auth-logo-chip">
+                    <img src="/static/logo.png?v=3" alt="PatriFlow" class="auth-logo-img-md">
+                </div>
             </div>
 
-            <div class="field-wrap">
-                <label for="username">Usuário</label>
-                <i class="fas fa-user field-icon-left"></i>
-                <input id="username" name="username" type="text"
-                    class="form-control"
-                    minlength="3" maxlength="50"
-                    pattern="[A-Za-z0-9_.-]+"
-                    value="{{ username or '' }}"
-                    placeholder="nome.usuario"
-                    autocomplete="username"
-                    required>
-                <span class="form-text">Letras, números, ponto, hífen ou sublinhado.</span>
+            <div class="mb-4">
+                <h1 class="fw-bold mb-1 auth-title">Criar conta</h1>
+                <p class="mb-0 auth-subtitle">Preencha os dados. O setor de patrimônio ativa a sua conta.</p>
             </div>
 
-            <div class="field-wrap">
-                <label for="setor_id">Setor <span class="fw-normal" style="text-transform: none; letter-spacing: 0;">(opcional)</span></label>
-                <i class="fas fa-building field-icon-left"></i>
-                <input id="setor_id" name="setor_id" type="number"
-                    class="form-control"
-                    min="1"
-                    placeholder="ID do setor">
+            {% if erro %}
+            <div class="alert-inline error" role="alert">
+                <i class="fas fa-exclamation-circle flex-shrink-0"></i>
+                <span>{{ erro }}</span>
             </div>
+            {% endif %}
 
-            <div class="field-wrap">
-                <label for="senha">Senha</label>
-                <i class="fas fa-lock field-icon-left"></i>
-                <input id="senha" name="senha" type="password"
-                    class="form-control"
-                    minlength="8"
-                    placeholder="Mínimo 8 caracteres"
-                    autocomplete="new-password"
-                    required>
-                <i class="fas fa-eye field-icon-right" id="toggleSenha" role="button" aria-label="Mostrar senha"></i>
-                <span class="form-text">Mínimo de 8 caracteres.</span>
-            </div>
+            <form action="/criar-conta" method="POST" id="registerForm" novalidate>
 
-            <div class="field-wrap" style="margin-bottom: 24px;">
-                <label for="confirmar_senha">Confirmar senha</label>
-                <i class="fas fa-lock field-icon-left"></i>
-                <input id="confirmar_senha" name="confirmar_senha" type="password"
-                    class="form-control"
-                    minlength="8"
-                    placeholder="Repita a senha"
-                    autocomplete="new-password"
-                    required>
-                <i class="fas fa-eye field-icon-right" id="toggleConfirmar" role="button" aria-label="Mostrar senha"></i>
-            </div>
+                <div class="field-wrap">
+                    <i class="fas fa-id-card field-icon-left"></i>
+                    <input id="nome" name="nome" type="text" class="form-control"
+                        maxlength="120" value="{{ nome or '' }}" placeholder="Nome completo" required autofocus>
+                </div>
 
-            <button type="submit" class="btn btn-primary btn-create w-100 shadow-sm mb-3">
-                <span id="btnText">Criar conta</span>
-                <span id="btnSpinner" class="d-none">
-                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Criando…
-                </span>
-            </button>
+                <div class="field-wrap">
+                    <i class="fas fa-user field-icon-left"></i>
+                    <input id="username" name="username" type="text" class="form-control"
+                        minlength="3" maxlength="50" pattern="[A-Za-z0-9_.-]+"
+                        value="{{ username or '' }}" placeholder="Usuário (ex: nome.sobrenome)"
+                        autocomplete="username" required>
+                </div>
 
-        </form>
+                <div class="field-wrap">
+                    <i class="fas fa-building field-icon-left"></i>
+                    <select id="setor_id" name="setor_id" class="form-select">
+                        <option value="">Setor (opcional)</option>
+                    </select>
+                </div>
 
-        <p class="text-center mb-0" style="font-size: 0.875rem; color: var(--text-secondary);">
-            Já tem uma conta?
-            <a href="/login" class="fw-semibold text-decoration-none" style="color: var(--primary-color);">Entrar</a>
-        </p>
+                <div class="field-wrap">
+                    <i class="fas fa-lock field-icon-left"></i>
+                    <input id="senha" name="senha" type="password" class="form-control"
+                        minlength="8" placeholder="Senha (mínimo 8 caracteres)" autocomplete="new-password" required>
+                    <i class="fas fa-eye field-icon-right" id="toggleSenha" role="button" aria-label="Mostrar senha"></i>
+                </div>
 
+                <div class="field-wrap">
+                    <i class="fas fa-lock field-icon-left"></i>
+                    <input id="confirmar_senha" name="confirmar_senha" type="password" class="form-control"
+                        minlength="8" placeholder="Repita a senha" autocomplete="new-password" required>
+                    <i class="fas fa-eye field-icon-right" id="toggleConfirmar" role="button" aria-label="Mostrar senha"></i>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-login w-100 shadow-sm mt-2" id="btnCriar">
+                    <span id="btnText">Criar conta</span>
+                    <span id="btnSpinner" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Criando…
+                    </span>
+                </button>
+
+                <div class="divider-or">ou</div>
+
+                <a href="/login" class="btn btn-outline-secondary btn-register w-100 text-decoration-none text-center d-block">
+                    Já tenho conta
+                </a>
+            </form>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    function setupToggle(toggleId, inputId) {
-        const btn   = document.getElementById(toggleId);
-        const input = document.getElementById(inputId);
-        btn?.addEventListener('click', () => {
-            const show = input.type === 'password';
-            input.type = show ? 'text' : 'password';
-            btn.classList.toggle('fa-eye',      !show);
-            btn.classList.toggle('fa-eye-slash', show);
+    // Setores disponíveis para o cadastro (lista pública).
+    fetch('/api/v1/auth/setores-cadastro')
+        .then(r => r.ok ? r.json() : [])
+        .then(setores => {
+            const select = document.getElementById('setor_id');
+            const atual = {{ (setor_id or '')|tojson }};
+            setores.forEach(s => {
+                const opcao = new Option(s.nome, s.id, false, String(s.id) === String(atual));
+                select.add(opcao);
+            });
+        })
+        .catch(() => {});
+
+    function alternarSenha(botaoId, campoId) {
+        const botao = document.getElementById(botaoId);
+        const campo = document.getElementById(campoId);
+        botao?.addEventListener('click', () => {
+            const mostrar = campo.type === 'password';
+            campo.type = mostrar ? 'text' : 'password';
+            botao.classList.toggle('fa-eye', !mostrar);
+            botao.classList.toggle('fa-eye-slash', mostrar);
         });
     }
-    setupToggle('toggleSenha',     'senha');
-    setupToggle('toggleConfirmar', 'confirmar_senha');
+    alternarSenha('toggleSenha', 'senha');
+    alternarSenha('toggleConfirmar', 'confirmar_senha');
 
-    document.getElementById('registerForm')?.addEventListener('submit', () => {
+    document.getElementById('registerForm')?.addEventListener('submit', (evento) => {
+        const senha = document.getElementById('senha').value;
+        const confirmar = document.getElementById('confirmar_senha').value;
+        if (senha !== confirmar) {
+            evento.preventDefault();
+            alert('As senhas não coincidem.');
+            return;
+        }
         document.getElementById('btnText').classList.add('d-none');
         document.getElementById('btnSpinner').classList.remove('d-none');
     });

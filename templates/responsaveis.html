@@ -1,59 +1,66 @@
 {% extends "base.html" %}
+{% from "_componentes.html" import painel_topo, kpi %}
 
-{% block title %}Gestão de Responsáveis{% endblock %}
+{% block title %}Responsáveis{% endblock %}
+
+{% set active_page = 'responsaveis' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-bold mb-0">Responsáveis</h2>
-        <p class="text-muted">Gerencie as pessoas que respondem pelos setores e bens.</p>
-    </div>
-    <button class="btn btn-primary px-4 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#modalResponsavel">
-        <i class="fas fa-plus me-2"></i> Novo Responsável
+{% call painel_topo("Estrutura", "Responsáveis") %}
+    <a href="/estrutura" class="btn btn-outline-primary pill-btn">Painel de estrutura</a>
+    <button class="btn btn-primary pill-btn" data-bs-toggle="modal" data-bs-target="#modalResponsavel">
+        <i class="bi bi-plus-lg me-1"></i> Cadastrar responsável
     </button>
-</div>
+{% endcall %}
 
-<!-- Tabela de Responsáveis -->
-<div class="card border-0 shadow-sm rounded-3">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="bg-light">
-                <tr>
-                    <th class="px-4 py-3 border-0">ID</th>
-                    <th class="py-3 border-0">Nome Completo</th>
-                    <th class="py-3 border-0">Cargo / Função</th>
-                    <th class="py-3 border-0">Status</th>
-                    <th class="px-4 py-3 border-0 text-end">Ações</th>
-                </tr>
-            </thead>
-            <tbody id="listaResponsaveis">
-                <!-- Preenchido via JS -->
-            </tbody>
-        </table>
+<section class="kpi-linha kpi-linha-3">
+    {{ kpi("Total de responsáveis", "kpiTotal", "people", "cadastrados", destaque=true) }}
+    {{ kpi("Ativos", "kpiAtivas", "person-check", "podem responder por bens", suave=true) }}
+    {{ kpi("Inativos", "kpiInativas", "person-dash", "fora da guarda", suave=true) }}
+</section>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-lg align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Nome completo</th>
+                        <th>Cargo / função</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="listaResponsaveis">
+                    <!-- Preenchido via JS -->
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <!-- Modal Responsável -->
 <div class="modal fade" id="modalResponsavel" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-bottom-0 p-4">
-                <h5 class="modal-title fw-bold" id="tituloModal">Novo Responsável</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="tituloModal">Novo responsável</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <div class="modal-body px-4 pb-4">
+            <div class="modal-body">
                 <form id="formResponsavel">
                     <input type="hidden" id="responsavelId">
                     <div class="mb-3">
-                        <label for="nome" class="form-label fw-medium small text-muted">Nome Completo</label>
+                        <label for="nome" class="form-label fw-semibold">Nome completo</label>
                         <input type="text" class="form-control" id="nome" required placeholder="Ex: João da Silva">
                     </div>
                     <div class="mb-3">
-                        <label for="cargo" class="form-label fw-medium small text-muted">Cargo</label>
+                        <label for="cargo" class="form-label fw-semibold">Cargo</label>
                         <input type="text" class="form-control" id="cargo" required placeholder="Ex: Gerente de TI">
                     </div>
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary py-2 fw-bold" id="btnSalvar">Salvar Responsável</button>
+                        <button type="submit" class="btn btn-primary" id="btnSalvar">Salvar responsável</button>
                     </div>
                 </form>
             </div>

@@ -1,99 +1,111 @@
 {% extends "base.html" %}
+{% from "_componentes.html" import cabecalho_pagina %}
 
-{% block title %}Relatórios e Exportação{% endblock %}
+{% block title %}Relatórios{% endblock %}
+
+{% set active_page = 'relatorios' %}
 
 {% block content %}
-<div class="mb-4">
-    <h2 class="fw-bold mb-0">Relatórios</h2>
-    <p class="text-muted">Gere inventários e exporte dados para controle externo.</p>
-</div>
+<div class="page-heading">
+    {{ cabecalho_pagina("Relatórios", "Gere inventários e exporte dados para controle externo.", "Relatórios") }}
 
-<div class="row g-4">
-    <!-- Card de Exportação de Inventário -->
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-0 p-4">
-                <h5 class="fw-bold mb-0"><i class="fas fa-file-export me-2 text-primary"></i>Exportar Inventário de Bens</h5>
+    <section class="section">
+        <div class="row">
+            <!-- Exportação -->
+            <div class="col-12 col-lg-8">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4><i class="bi bi-file-earmark-arrow-up me-2 text-primary"></i>Exportar inventário de bens</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-4">Selecione os filtros abaixo para refinar o relatório de ativos.</p>
+
+                        <form id="formRelatorio">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold">Filtrar por categoria</label>
+                                    <select id="filtroCategoria" class="form-select">
+                                        <option value="">Todas as categorias</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold">Filtrar por setor</label>
+                                    <select id="filtroSetor" class="form-select">
+                                        <option value="">Todos os setores</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold">Status do bem</label>
+                                    <select id="filtroStatus" class="form-select">
+                                        <option value="">Qualquer status</option>
+                                        <option value="Disponível">Disponível</option>
+                                        <option value="Em Uso">Em uso</option>
+                                        <option value="Manutenção">Manutenção</option>
+                                        <option value="Baixado">Baixado / inativo</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold d-block">Formato do arquivo</label>
+                                    <div class="d-flex gap-2">
+                                        <div class="flex-fill">
+                                            <input type="radio" class="btn-check" name="formato" id="fmtExcel" value="xlsx" checked>
+                                            <label class="btn btn-outline-success w-100" for="fmtExcel">
+                                                <i class="bi bi-file-earmark-excel me-2"></i>Excel
+                                            </label>
+                                        </div>
+                                        <div class="flex-fill">
+                                            <input type="radio" class="btn-check" name="formato" id="fmtPdf" value="pdf">
+                                            <label class="btn btn-outline-danger w-100" for="fmtPdf">
+                                                <i class="bi bi-file-earmark-pdf me-2"></i>PDF
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 pt-4 border-top">
+                                <button type="submit" id="btnGerar" class="btn btn-primary btn-lg w-100">
+                                    <i class="bi bi-download me-2"></i> Gerar e baixar relatório
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="card-body p-4 pt-0">
-                <p class="text-muted small mb-4">Selecione os filtros abaixo para refinar o relatório de ativos.</p>
-                
-                <form id="formRelatorio">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Filtrar por Categoria</label>
-                            <select id="filtroCategoria" class="form-select border-2">
-                                <option value="">Todas as Categorias</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Filtrar por Setor</label>
-                            <select id="filtroSetor" class="form-select border-2">
-                                <option value="">Todos os Setores</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Status do Bem</label>
-                            <select id="filtroStatus" class="form-select border-2">
-                                <option value="">Qualquer Status</option>
-                                <option value="Disponível">Disponível</option>
-                                <option value="Em Uso">Em Uso</option>
-                                <option value="Manutenção">Manutenção</option>
-                                <option value="Baixado">Baixado / Inativo</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Formato do Arquivo</label>
-                            <div class="d-flex gap-2">
-                                <div class="flex-fill">
-                                    <input type="radio" class="btn-check" name="formato" id="fmtExcel" value="xlsx" checked>
-                                    <label class="btn btn-outline-success w-100 border-2 fw-bold" for="fmtExcel">
-                                        <i class="fas fa-file-excel me-2"></i>Excel
-                                    </label>
+
+            <!-- Resumo e dicas -->
+            <div class="col-12 col-lg-4">
+                <div class="card">
+                    <div class="card-body px-4 py-4-5">
+                        <div class="row align-items-center">
+                            <div class="col-5 d-flex justify-content-start">
+                                <div class="stats-icon purple mb-2">
+                                    <i class="bi bi-boxes"></i>
                                 </div>
-                                <div class="flex-fill">
-                                    <input type="radio" class="btn-check" name="formato" id="fmtPdf" value="pdf">
-                                    <label class="btn btn-outline-danger w-100 border-2 fw-bold" for="fmtPdf">
-                                        <i class="fas fa-file-pdf me-2"></i>PDF
-                                    </label>
-                                </div>
+                            </div>
+                            <div class="col-7">
+                                <h6 class="text-muted font-semibold">Total de patrimônios</h6>
+                                <h6 class="font-extrabold mb-0" id="totalBens">--</h6>
                             </div>
                         </div>
                     </div>
-
-                    <div class="mt-5 border-top pt-4">
-                        <button type="submit" id="btnGerar" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
-                            <i class="fas fa-download me-2"></i> Gerar e Baixar Relatório
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card de Estatísticas Rápidas -->
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body p-4 text-center">
-                <div class="bg-primary-subtle p-3 rounded-circle d-inline-block mb-3">
-                    <i class="fas fa-boxes fa-2x text-primary"></i>
                 </div>
-                <h6 class="text-muted fw-bold small text-uppercase mb-1">Total de Patrimônios</h6>
-                <h2 class="fw-bold mb-0" id="totalBens">--</h2>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Dicas de exportação</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0 small text-muted">
+                            <li class="mb-3"><i class="bi bi-info-circle text-primary me-2"></i>O formato <strong>Excel</strong> é ideal para manipulação de dados e cálculos.</li>
+                            <li class="mb-3"><i class="bi bi-info-circle text-primary me-2"></i>O formato <strong>PDF</strong> é recomendado para auditorias e assinaturas.</li>
+                            <li><i class="bi bi-info-circle text-primary me-2"></i>Relatórios filtrados por <strong>setor</strong> ajudam na conferência física local.</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <div class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                <h6 class="fw-bold mb-3 small text-uppercase text-muted">Dicas de Exportação</h6>
-                <ul class="list-unstyled mb-0 small text-muted">
-                    <li class="mb-2"><i class="fas fa-info-circle text-primary me-2"></i> O formato **Excel** é ideal para manipulação de dados e cálculos.</li>
-                    <li class="mb-2"><i class="fas fa-info-circle text-primary me-2"></i> O formato **PDF** é recomendado para auditorias e assinaturas.</li>
-                    <li><i class="fas fa-info-circle text-primary me-2"></i> Relatórios filtrados por **Setor** ajudam na conferência física local.</li>
-                </ul>
-            </div>
-        </div>
-    </div>
+    </section>
 </div>
 {% endblock %}
 

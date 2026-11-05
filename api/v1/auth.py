@@ -7,6 +7,7 @@ from core import config
 from core.security import create_access_token, decode_access_token
 from modules.usuario.repository import UsuarioRepository
 from modules.usuario.service import UsuarioService
+from modules.usuario.seguranca import ContaBloqueada
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 bearer = HTTPBearer(auto_error=False)
@@ -41,7 +42,10 @@ def user_payload(row):
 @router.post("/login")
 def login(data: LoginRequest):
     service = UsuarioService(UsuarioRepository())
-    row = service.login(data.username, data.senha)
+    try:
+        row = service.login(data.username, data.senha)
+    except ContaBloqueada as exc:
+        raise HTTPException(status_code=423, detail=str(exc))
     if not row:
         if service.conta_pendente(data.username, data.senha):
             raise HTTPException(status_code=403, detail="Conta aguardando aprovação do setor de patrimônio.")
@@ -91,10 +95,10 @@ def me(user=Depends(current_user)):
 
 
 ROLE_PERMISSIONS = {
-    "setor_patrimonio": {"bem:read", "bem:create", "bem:update", "bem:delete", "categoria:*", "setores:*", "localizacao:*", "relatorio:read", "responsavel:*", "movimentacao:*", "usuarios:*"},
-    "agente_campo": {"bem:read", "bem:update", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:update"},
-    "responsavel_setor": {"bem:read", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:accept"},
-    "auditor": {"bem:read", "categoria:read", "setores:read", "responsavel:read", "localizacao:read", "movimentacao:read", "relatorio:read"},
+    "setor_patrimonio": {"bem:read", "bem:create", "bem:update", "bem:delete", "categoria:*", "setores:*", "localizacao:*", "relatorio:read", "responsavel:*", "movimentacao:*", "usuarios:*", "fotos:*", "etiquetas:*", "termos:*"},
+    "agente_campo": {"bem:read", "bem:update", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:update", "fotos:read", "fotos:create", "etiquetas:read"},
+    "responsavel_setor": {"bem:read", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:accept", "fotos:read", "fotos:create", "etiquetas:read", "termos:read"},
+    "auditor": {"bem:read", "categoria:read", "setores:read", "responsavel:read", "localizacao:read", "movimentacao:read", "relatorio:read", "fotos:read", "etiquetas:read", "termos:read"},
 }
 
 

@@ -1,15 +1,27 @@
-import { $, $$, api, ui } from './utils.js';
+import { $, $$, api, ui, esc } from './utils.js';
 
 let todosResponsaveis = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (new URLSearchParams(window.location.search).get('novo') === '1') {
+        bootstrap.Modal.getOrCreateInstance($('#modalResponsavel')).show();
+    }
     await carregarResponsaveis();
     configurarEventos();
 });
 
+// Indicadores do topo da página: total e ativos/inativos da base completa (não da busca).
+function atualizarIndicadores(lista) {
+    const ativos = lista.filter(item => item.ativo).length;
+    $('#kpiTotal').textContent = lista.length;
+    $('#kpiAtivas').textContent = ativos;
+    $('#kpiInativas').textContent = lista.length - ativos;
+}
+
 async function carregarResponsaveis() {
     try {
         todosResponsaveis = await api.get('/api/v1/responsavel/');
+        atualizarIndicadores(todosResponsaveis);
         renderizarResponsaveis(todosResponsaveis);
     } catch (error) {
         ui.showNotification('Erro ao carregar responsáveis', 'error');
@@ -27,17 +39,18 @@ function renderizarResponsaveis(responsaveis) {
 
     lista.innerHTML = responsaveis.map(resp => `
         <tr>
-            <td class="px-4 fw-bold text-muted">#${resp.id}</td>
-            <td><div class="fw-bold text-dark">${resp.nome}</div></td>
-            <td><span class="text-muted small">${resp.cargo}</span></td>
+            <td class="px-4 fw-bold text-muted">#${esc(resp.id)}</td>
+            <td><a href="/responsaveis/${esc(resp.id)}" class="fw-bold text-dark text-decoration-none">${esc(resp.nome)}</a></td>
+            <td><span class="text-muted small">${esc(resp.cargo)}</span></td>
             <td>
-                <span class="badge ${resp.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3">
-                    ${resp.ativo ? 'Ativo' : 'Inativo'}
+                <span class="badge ${esc(resp.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">
+                    ${esc(resp.ativo ? 'Ativo' : 'Inativo')}
                 </span>
             </td>
             <td class="px-4 text-end">
-                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${resp.id}"><i class="fas fa-edit text-primary"></i></button>
-                <button class="btn btn-sm btn-light btn-delete" data-id="${resp.id}"><i class="fas fa-trash-alt text-danger"></i></button>
+                <button class="btn btn-sm btn-light btn-termo me-1" data-id="${esc(resp.id)}" title="Termo de responsabilidade"><i class="bi bi-file-earmark-text text-dark"></i></button>
+                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(resp.id)}"><i class="bi bi-pencil-square text-primary"></i></button>
+                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(resp.id)}"><i class="bi bi-trash text-danger"></i></button>
             </td>
         </tr>
     `).join('');
@@ -86,6 +99,10 @@ async function salvarResponsavel() {
 }
 
 function vincularAcoesTabela() {
+    $$('.btn-termo').forEach(btn => {
+        btn.addEventListener('click', () => window.open(`/api/v1/termos/responsavel/${btn.dataset.id}`, '_blank', 'noopener'));
+    });
+
     $$('.btn-edit').forEach(btn => {
         btn.addEventListener('click', () => {
             const resp = todosResponsaveis.find(r => r.id == btn.dataset.id);

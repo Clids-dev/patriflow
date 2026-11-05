@@ -1,4 +1,4 @@
-import { $, $$, api, ui } from './utils.js';
+import { $, $$, api, ui, esc } from './utils.js';
 
 let todasCategorias = [];
 
@@ -6,6 +6,9 @@ let todasCategorias = [];
  * Inicialização da página
  */
 document.addEventListener('DOMContentLoaded', async () => {
+    if (new URLSearchParams(window.location.search).get('novo') === '1') {
+        bootstrap.Modal.getOrCreateInstance($('#modalCategoria')).show();
+    }
     await carregarCategorias();
     configurarEventos();
 });
@@ -13,9 +16,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 /**
  * Carrega a lista de categorias da API
  */
+// Indicadores do topo da página: total e ativos/inativos da base completa (não da busca).
+function atualizarIndicadores(lista) {
+    const ativos = lista.filter(item => item.ativo).length;
+    $('#kpiTotal').textContent = lista.length;
+    $('#kpiAtivas').textContent = ativos;
+    $('#kpiInativas').textContent = lista.length - ativos;
+}
+
 async function carregarCategorias() {
     try {
         todasCategorias = await api.get('/api/v1/categoria/');
+        atualizarIndicadores(todasCategorias);
         renderizarCategorias(todasCategorias);
         atualizarContadores(todasCategorias.length);
     } catch (error) {
@@ -34,7 +46,7 @@ function renderizarCategorias(categorias) {
         lista.innerHTML = `
             <tr>
                 <td colspan="5" class="text-center py-5 text-muted">
-                    <i class="fas fa-folder-open fa-3x mb-3 d-block opacity-25"></i>
+                    <i class="bi bi-folder2-open fs-1 mb-3 d-block opacity-25"></i>
                     Nenhuma categoria encontrada.
                 </td>
             </tr>
@@ -44,26 +56,26 @@ function renderizarCategorias(categorias) {
 
     lista.innerHTML = categorias.map(cat => `
         <tr>
-            <td class="px-4 fw-bold text-muted">#${cat.id}</td>
+            <td class="px-4 fw-bold text-muted">#${esc(cat.id)}</td>
             <td>
-                <div class="fw-bold text-dark">${cat.nome}</div>
+                <a href="/categoria/${esc(cat.id)}" class="fw-bold text-dark text-decoration-none">${esc(cat.nome)}</a>
             </td>
             <td class="text-center">
                 <span class="badge bg-light text-primary border border-primary border-opacity-25 px-3 py-2">
-                    ${cat.sigla}
+                    ${esc(cat.sigla)}
                 </span>
             </td>
             <td>
-                <span class="badge ${cat.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3">
-                    ${cat.ativo ? 'Ativo' : 'Inativo'}
+                <span class="badge ${esc(cat.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">
+                    ${esc(cat.ativo ? 'Ativo' : 'Inativo')}
                 </span>
             </td>
             <td class="px-4 text-end">
-                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${cat.id}" title="Editar">
-                    <i class="fas fa-edit text-primary"></i>
+                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(cat.id)}" title="Editar">
+                    <i class="bi bi-pencil-square text-primary"></i>
                 </button>
-                <button class="btn btn-sm btn-light btn-delete" data-id="${cat.id}" title="Inativar">
-                    <i class="fas fa-trash-alt text-danger"></i>
+                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(cat.id)}" title="Inativar">
+                    <i class="bi bi-trash text-danger"></i>
                 </button>
             </td>
         </tr>

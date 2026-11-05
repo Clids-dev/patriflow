@@ -162,3 +162,12 @@ test_*.py
 # Documentações internas e de suporte ao agente
 GEMINI.md
 DOCUMENTACAO.md
+
+# Build do CSS do Mazer (tools/mazer)
+tools/mazer/node_modules/
+
+# Fotos enviadas pelo app (guardadas no servidor)
+uploads/
+
+# Backups do banco e das fotos (gerados por tools/backup.sh)
+backups/

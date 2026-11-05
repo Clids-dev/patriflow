@@ -5,108 +5,119 @@
 {% set active_page = 'index' %}
 
 {% block content %}
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Cabeçalho do painel -->
+<div class="painel-topo">
     <div>
-        <h2 class="fw-bold">Dashboard Overview</h2>
-        <p class="text-muted">Bem-vindo de volta ao sistema, {{username}}!</p>
+        <p class="painel-kicker">Visão geral do patrimônio</p>
+        <h2 class="painel-titulo">Olá, {{username}}</h2>
     </div>
-    <div>
-        <a href="/bens" class="btn btn-primary shadow-sm px-4 py-2">
-            <i class="fas fa-plus me-2"></i> Novo Patrimônio
-        </a>
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <span class="painel-data" id="dataHoje"></span>
+        <a href="/bens" class="btn btn-primary pill-btn"><i class="bi bi-plus-lg me-1"></i> Novo patrimônio</a>
     </div>
 </div>
 
-<!-- Stats Cards -->
-<div class="row g-4 mb-4">
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-            <div class="d-flex align-items-center">
-                <div class="bg-primary-subtle text-primary p-3 rounded-4 me-3">
-                    <i class="fas fa-boxes fa-2x"></i>
-                </div>
-                <div>
-                    <small class="text-muted text-uppercase fw-bold">Total de Itens</small>
-                    <h3 class="mb-0 fw-bold">{{bens_total}}</h3>
-                </div>
-            </div>
+<!-- Indicadores -->
+<section class="kpi-linha">
+    <div class="kpi kpi-destaque">
+        <div class="kpi-topo">
+            <span class="kpi-chip"><i class="bi bi-graph-up-arrow"></i></span>
+            <a href="/bens" class="kpi-seta" aria-label="Ver equipamentos"><i class="bi bi-arrow-up-right"></i></a>
         </div>
+        <span class="kpi-rotulo">Patrimônio ativo</span>
+        <span class="kpi-valor" id="statAtivos">{{bens_ativos}}</span>
+        <span class="kpi-sub">de {{bens_total}} itens cadastrados</span>
     </div>
 
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-            <div class="d-flex align-items-center">
-                <div class="bg-success-subtle text-success p-3 rounded-4 me-3">
-                    <i class="fas fa-check-circle fa-2x"></i>
-                </div>
-                <div>
-                    <small class="text-muted text-uppercase fw-bold">Itens Ativos</small>
-                    <h3 class="mb-0 fw-bold">{{bens_ativos}}</h3>
-                </div>
-            </div>
+    <div class="kpi">
+        <div class="kpi-topo">
+            <span class="kpi-chip"><i class="bi bi-boxes"></i></span>
+            <a href="/bens" class="kpi-seta" aria-label="Ver equipamentos"><i class="bi bi-arrow-up-right"></i></a>
         </div>
+        <span class="kpi-rotulo">Total de itens</span>
+        <span class="kpi-valor" id="statTotal">{{bens_total}}</span>
+        <span class="kpi-sub">incluindo baixados</span>
     </div>
 
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-            <div class="d-flex align-items-center">
-                <div class="bg-danger-subtle text-danger p-3 rounded-4 me-3">
-                    <i class="fas fa-times-circle fa-2x"></i>
-                </div>
-                <div>
-                    <small class="text-muted text-uppercase fw-bold">Itens Inativos</small>
-                    <h3 class="mb-0 fw-bold">{{bens_inativos}}</h3>
-                </div>
-            </div>
+    <div class="kpi">
+        <div class="kpi-topo">
+            <span class="kpi-chip"><i class="bi bi-x-circle"></i></span>
+            <a href="/bens" class="kpi-seta" aria-label="Ver baixados"><i class="bi bi-arrow-up-right"></i></a>
         </div>
+        <span class="kpi-rotulo">Itens baixados</span>
+        <span class="kpi-valor" id="statInativos">{{bens_inativos}}</span>
+        <span class="kpi-sub">fora das listagens ativas</span>
     </div>
-</div>
 
-<!-- Gráficos Section -->
-<div class="row g-4 mb-4">
-    <div class="col-xl-6">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-white border-0 p-4 pb-0">
-                <h5 class="fw-bold mb-0">Distribuição por Categoria</h5>
+    <div class="kpi">
+        <div class="kpi-topo">
+            <span class="kpi-chip"><i class="bi bi-shield-check"></i></span>
+            <a href="/bens" class="kpi-seta" aria-label="Ver garantias"><i class="bi bi-arrow-up-right"></i></a>
+        </div>
+        <span class="kpi-rotulo">Garantias a vencer</span>
+        <span class="kpi-valor" id="kpiGarantias">--</span>
+        <span class="kpi-sub">nos próximos 60 dias</span>
+    </div>
+</section>
+
+<!-- O que pede atenção -->
+<section class="atencao" aria-labelledby="atencaoTitulo">
+    <div class="atencao-topo">
+        <div>
+            <p class="painel-kicker atencao-kicker">Hoje</p>
+            <h3 id="atencaoTitulo">O que pede atenção</h3>
+        </div>
+        <span class="atencao-badge" id="atencaoTotal">0 pontos</span>
+    </div>
+    <ul class="atencao-lista" id="atencaoLista">
+        <li class="atencao-vazio">Carregando…</li>
+    </ul>
+</section>
+
+<!-- Gráficos -->
+<section class="row g-4 mb-4">
+    <div class="col-12 col-xl-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h4>Distribuição por categoria</h4>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body">
                 <div style="height: 300px;">
                     <canvas id="chartCategorias"></canvas>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-6">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-white border-0 p-4 pb-0">
-                <h5 class="fw-bold mb-0">Distribuição por Status</h5>
+    <div class="col-12 col-xl-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h4>Distribuição por status</h4>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body">
                 <div style="height: 300px;">
                     <canvas id="chartStatus"></canvas>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
-<div class="row g-4">
-    <!-- Table Section -->
-    <div class="col-xl-12">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header bg-white border-0 p-4">
-                <h5 class="fw-bold mb-0">Últimos Registros</h5>
+<!-- Últimos registros -->
+<section class="row g-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Últimos registros</h4>
             </div>
-            <div class="card-body p-0">
+            <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
+                    <table class="table table-hover table-lg align-middle mb-0">
+                        <thead>
                             <tr>
-                                <th class="ps-4">ID</th>
-                                <th>Nome do Bem</th>
+                                <th>ID</th>
+                                <th>Nome do bem</th>
                                 <th>Status</th>
-                                <th class="text-end pe-4">Ações</th>
+                                <th class="text-end">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="listaRecentes">
@@ -115,14 +126,14 @@
                     </table>
                 </div>
             </div>
-            <div class="card-footer bg-white border-0 p-4 text-center">
-                <a href="/bens" class="text-primary text-decoration-none fw-bold">Ver todos os equipamentos <i class="fas fa-arrow-right ms-1"></i></a>
+            <div class="card-footer text-center">
+                <a href="/bens" class="fw-bold text-decoration-none">Ver todos os equipamentos <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}
 
 {% block scripts %}
-<script type="module" src="/static/js/dashboard.js?v=1.1"></script>
+<script type="module" src="/static/js/dashboard.js?v=1.4"></script>
 {% endblock %}

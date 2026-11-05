@@ -4,6 +4,7 @@ from fastapi.responses import RedirectResponse
 from api.v1.auth import jwt_secret
 from core import config
 from core.security import create_access_token
+from modules.usuario.seguranca import ContaBloqueada
 
 from modules.usuario.repository import UsuarioRepository
 from modules.usuario.service import UsuarioService
@@ -30,15 +31,17 @@ def register(
     username: str = Form(...),
     senha: str = Form(...),
     confirmar_senha: str = Form(...),
-    setor_id: int | None = Form(None),
+    setor_id: str = Form(""),
 ):
+    # Campo vazio = sem setor. Chega como texto para não virar erro de validação do FastAPI.
+    setor = int(setor_id) if setor_id.strip().isdigit() else None
     if senha != confirmar_senha:
         return templates.TemplateResponse("register.html", {
             "request": request, "erro": "As senhas não coincidem.",
             "nome": nome, "username": username,
         }, status_code=422)
     try:
-        UsuarioService(UsuarioRepository()).criar_conta(username, senha, nome, setor_id)
+        UsuarioService(UsuarioRepository()).criar_conta(username, senha, nome, setor)
     except ValueError as exc:
         status_code = 409 if "já está em uso" in str(exc) else 422
         return templates.TemplateResponse("register.html", {
@@ -59,7 +62,10 @@ def login(
     repo = UsuarioRepository()
     service = UsuarioService(repo)
 
-    user = service.login(login_usuario, password_usuario)
+    try:
+        user = service.login(login_usuario, password_usuario)
+    except ContaBloqueada as exc:
+        return templates.TemplateResponse("login.html", {"request": request, "erro": str(exc)}, status_code=423)
 
     if not user:
         return templates.TemplateResponse("login.html", {

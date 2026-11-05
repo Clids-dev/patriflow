@@ -7,6 +7,8 @@ from modules.bem.repository import BemRepository
 from modules.movimentacao.repository import MovimentacaoRepository
 from modules.movimentacao.schemas import MovimentacaoCreate
 from core.tombamento import require_valid_tombo
+from core import config
+from modules.foto.repository import FotoRepository
 
 
 ROLE_ADMIN = "setor_patrimonio"
@@ -28,7 +30,13 @@ class MovimentacaoService:
         return MovimentacaoRepository().get_id(id)
 
     def listar_pendentes(self):
-        return MovimentacaoRepository().get_pendentes()
+        return MovimentacaoRepository().get_pendentes(config.PRAZO_TRANSFERENCIA_DIAS)
+
+    def listar_escaladas(self, usuario: dict):
+        """Fila do setor de patrimônio: transferências sem resposta além do prazo."""
+        if usuario["perfil"] != ROLE_ADMIN:
+            raise HTTPException(status_code=403, detail="Somente o setor de patrimônio acompanha as escaladas.")
+        return [m for m in self.listar_pendentes() if m.escalada]
 
     def add_movimentacao(self, movimentacao: MovimentacaoCreate, usuario: dict):
         """Registra uma movimentação aplicando as regras de almoxarifado.
@@ -96,9 +104,15 @@ class MovimentacaoService:
                 status_code=403,
                 detail="Movimentação permitida somente entre o almoxarifado e o seu setor.",
             )
+        if not (movimentacao.justificativa or "").strip():
+            raise HTTPException(status_code=400, detail="Informe o motivo da transferência.")
         return repository.save(movimentacao, atual, "pendente", usuario["id"])
 
-    def decidir_movimentacao(self, id: int, usuario: dict, aprovar: bool):
+    def decidir_movimentacao(self, id: int, usuario: dict, aprovar: bool, motivo: str | None = None):
+        if aprovar and FotoRepository().contar("aceite_transferencia", id) == 0:
+            raise HTTPException(status_code=400, detail="Envie a foto do recebimento do bem antes de autorizar a transferência.")
+        if not aprovar and not (motivo or "").strip():
+            raise HTTPException(status_code=400, detail="Informe o motivo da recusa. Quem solicitou precisa saber por quê.")
         repository = MovimentacaoRepository()
         mov = repository.get_id(id)
         if mov is None:
@@ -123,7 +137,7 @@ class MovimentacaoService:
             )
 
         resultado, decidida = repository.decidir(
-            id, mov.bem_id, mov.setor_origem_id, aprovar, usuario["id"], datetime.now()
+            id, mov.bem_id, mov.setor_origem_id, aprovar, usuario["id"], datetime.now(), (motivo or "").strip() or None
         )
         if resultado == "bem_inativo":
             raise HTTPException(status_code=400, detail="Este bem foi baixado e não pode mais ser movimentado.")
@@ -135,9 +149,3 @@ class MovimentacaoService:
                 detail="O bem mudou de local desde a solicitação. Recuse e solicite novamente.",
             )
         return decidida
-
-    def delete_movimentacao(self, id: int):
-        try:
-            return MovimentacaoRepository().delete(id)
-        except errors.NoDataFound:
-            raise HTTPException(status_code=404, detail=f"Movimentação com id {id} não encontrada")
