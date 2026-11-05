@@ -12,6 +12,8 @@ class Movimentacao(BaseModel):
     data: datetime
     justificativa: Optional[str] = None
     ativo: bool
+    status: str = "aprovada"
+    solicitante_id: Optional[int] = None
 
 
 class MovimentacaoCreate(BaseModel):
@@ -20,10 +22,12 @@ class MovimentacaoCreate(BaseModel):
     setor_destino_id: int
     justificativa: Optional[str] = None
 
+
 class MovimentacaoUpdate(BaseModel):
     setor_destino_id: int
     data: datetime
     justificativa: Optional[str] = None
+
 
 class MovimentacaoDetailed(BaseModel):
     id: int
@@ -34,3 +38,4 @@ class MovimentacaoDetailed(BaseModel):
     data_movimentacao: datetime
     justificativa: Optional[str] = None
     ativo: bool
+    status: str = "aprovada"

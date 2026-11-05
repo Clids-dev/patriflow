@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from modules.bem.repository import BemRepository
 from modules.bem.schemas import BemCreate, BemUpdate
 from modules.categoria.repository import CategoriaRepository
+from modules.setor.repository import SetorRepository
 from modules.bem.queries_stats import QUERY_STATS_CATEGORIA, QUERY_STATS_STATUS
 from core.database import DataBase
 from psycopg2 import errors
@@ -40,11 +41,14 @@ class BemService:
             raise HTTPException(status_code=404, detail="Bem não encontrado")
         return bem
 
-    def create_bem(self, bem : BemCreate):
+    def create_bem(self, bem: BemCreate, usuario: dict):
         require_valid_tombo(bem.codigo_tombamento)
         bem.codigo_tombamento = bem.codigo_tombamento.upper()
+        almoxarifado = SetorRepository().get_almoxarifado()
+        if almoxarifado is None:
+            raise HTTPException(status_code=400, detail="Cadastre um almoxarifado antes de cadastrar bens.")
         repository = BemRepository()
-        return repository.save(bem)
+        return repository.save(bem, almoxarifado.id, usuario["id"])
 
     def put_bem(self, id: int, bem_atualizado: BemUpdate):
         repository = BemRepository()

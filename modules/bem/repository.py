@@ -36,13 +36,14 @@ class BemRepository(DataBase):
             predio_nome=row[20], andar_identificacao=row[21], sala_nome=row[22]
         )
 
-    def save(self, bem: BemCreate):
+    def save(self, bem: BemCreate, almoxarifado_id: int, usuario_id: int):
         valor = bem.valor if bem.valor is not None else bem.valor_aquisicao
         valor_aquisicao = bem.valor_aquisicao if bem.valor_aquisicao is not None else valor
-        result = DataBase().commit(queries.QUERY_CREATE_BEM, (
+        result = DataBase().commit(queries.QUERY_CREATE_BEM_COM_ENTRADA, (
             bem.nome, bem.tipo, bem.codigo_tombamento, valor, bem.status, bem.id_categoria,
             bem.marca, bem.modelo, bem.numero_serie, valor_aquisicao, bem.nota_fiscal,
-            bem.data_entrada, bem.estado_conservacao
+            bem.data_entrada, bem.estado_conservacao,
+            almoxarifado_id, usuario_id, usuario_id,
         ))
         return Bem(
             id=result[0], nome=bem.nome, tipo=bem.tipo, codigo_tombamento=bem.codigo_tombamento,
