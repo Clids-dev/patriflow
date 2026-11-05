@@ -29,9 +29,10 @@ As chamadas usam `{endereco}/api/v1/...` por meio de `ServerConfigStorage.apiV1U
 ## Menus por perfil
 
 - `agente_campo`: Leitura, Conferência, Movimentação, Inventário e Sincronização.
-- `responsavel_setor`: Transferências Pendentes e Acervo sob sua guarda.
-- `setor_patrimonio`: Consulta e Histórico.
+- `responsavel_setor`: Autorizações pendentes (com a solicitação de bens do almoxarifado) e Acervo sob sua guarda. Autorizar ou recusar aparece somente para o responsável do almoxarifado.
+- `auditor`: Bens, Categorias, Setores, Responsáveis e Movimentações, somente leitura.
+- `setor_patrimonio`: painel administrativo (ver abaixo).
 
 ## Área do setor de patrimônio
 
-O perfil `setor_patrimonio` abre o painel administrativo mobile, com visão geral, pesquisa e filtro de bens, cadastro/edição/baixa/reativação, detalhes e histórico, manutenção de categorias e responsáveis, gestão de setores e da hierarquia prédio/andar/sala, transferências e exportação de relatórios PDF ou Excel pelo menu de compartilhamento do aparelho. As ações usam os endpoints autenticados da API.
+O perfil `setor_patrimonio` abre o painel administrativo mobile, com visão geral, pesquisa e filtro de bens, cadastro/edição/baixa/reativação, detalhes e histórico, manutenção de categorias e responsáveis, gestão de setores e da hierarquia prédio/andar/sala, transferências, administração de usuários (aprovação de cadastros, perfil e setor) e exportação de relatórios PDF ou Excel pelo menu de compartilhamento do aparelho. As ações usam os endpoints autenticados da API.

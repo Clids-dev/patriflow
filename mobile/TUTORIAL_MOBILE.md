@@ -14,12 +14,14 @@ mobile/
 │   ├── app.dart              # Configuração global (Rotas, MaterialApp, Tema)
 │   ├── core/                 # Núcleo compartilhado
 │   │   ├── services/         # Comunicação com API (ApiClient)
-│   │   ├── storage/          # Armazenamento local (SharedPreferences)
-│   │   ├── theme/            # Cores e tema visual (AppTheme / AppColors)
-│   │   └── widgets/          # Estados reutilizáveis (Loading, Error, Empty)
+│   │   ├── storage/          # Token seguro (flutter_secure_storage) e endereço do servidor (SharedPreferences)
+│   │   ├── theme/            # Tokens (espaçamento, raios, sombras), cores e tema (AppTheme / AppColors)
+│   │   ├── widgets/          # Componentes compartilhados (AppPanel, AppListCard, AppNavDrawer...) e estados
+│   │   └── utils/            # Confirmação, formatação, validação e rótulos de perfil
 │   └── features/             # Módulos / Telas da aplicação
-│       ├── auth/             # Tela de Login
-│       ├── home/             # Tela principal com abas (Bens, Setores, etc.)
+│       ├── admin/            # Painel do setor de patrimônio (dashboard, bens, setores, usuários...)
+│       ├── auth/             # Login e cadastro
+│       ├── home/             # Tela principal dos demais perfis (abas por perfil)
 │       ├── server_config/    # Configuração do IP do servidor backend
 │       └── splash/           # Tela inicial de abertura
 ├── android/                  # Código nativo Android (Gradle, Manifest)
