@@ -7,12 +7,14 @@ import '../../core/utils/app_helpers.dart';
 import '../../core/widgets/app_components.dart';
 import '../../core/widgets/app_states.dart';
 
-/// Regras de transferência usadas por todas as telas do app. A API valida tudo;
-/// aqui só coletamos os dados obrigatórios antes de enviar.
+/// Regras de transferência do app. A API valida tudo; aqui só coletamos os dados
+/// obrigatórios e mostramos a ação certa para cada etapa.
 ///
-/// - Solicitar exige motivo.
-/// - Autorizar exige a foto do recebimento (enviada antes da decisão).
-/// - Recusar exige motivo, que fica visível para quem solicitou.
+/// Dupla confirmação (regra definida com o professor):
+/// - "liberar": o responsável do setor de ORIGEM libera (ou recusa) o bem;
+/// - "receber": o responsável do setor de DESTINO confirma o recebimento, com foto;
+/// - "intervir": o almoxarifado (ou o patrimônio) cancela com motivo, quando há algo errado.
+/// Transferências antigas (fluxo "simples") seguem a regra anterior: confirmação com foto.
 
 const _minimoMotivo = 3;
 
@@ -95,11 +97,10 @@ Future<XFile?> _capturarFoto(BuildContext context) async {
   );
 }
 
-/// Solicita a transferência de um bem do almoxarifado para o setor do usuário.
+/// Solicita o bem para o setor informado. A origem é o local atual do bem, definido pela API.
 Future<bool> solicitarTransferencia(
   BuildContext context, {
   required int bemId,
-  required int origemId,
   required int destinoId,
 }) async {
   final motivo = await pedirMotivo(
@@ -107,18 +108,17 @@ Future<bool> solicitarTransferencia(
     titulo: 'Motivo da solicitação',
     rotulo: 'Por que o seu setor precisa deste bem?',
     confirmar: 'Solicitar',
-    ajuda: 'Quem decide no almoxarifado vê este motivo.',
+    ajuda: 'O responsável do setor onde o bem está vai ver este motivo.',
   );
   if (motivo == null || !context.mounted) return false;
   try {
     await ApiClient.post('/movimentacao/', {
       'bem_id': bemId,
-      'setor_origem_id': origemId,
       'setor_destino_id': destinoId,
       'justificativa': motivo,
     });
     if (context.mounted) {
-      showAppMessage(context, 'Solicitação enviada ao almoxarifado.');
+      showAppMessage(context, 'Solicitação enviada ao responsável do setor.');
     }
     return true;
   } catch (e) {
@@ -127,24 +127,39 @@ Future<bool> solicitarTransferencia(
   }
 }
 
-/// Autoriza a transferência. Envia a foto do recebimento antes de aprovar.
+/// Libera (etapa "liberar") ou confirma o recebimento (etapa "receber", ou fluxo antigo).
+/// Só a confirmação pede foto. A API valida quem pode decidir.
 Future<bool> autorizarTransferencia(
   BuildContext context,
   Map<String, dynamic> mov,
 ) async {
+  final precisaFoto = mov['etapa'] == 'receber' || mov['fluxo'] == 'simples';
+  if (!precisaFoto) {
+    final liberar = await confirmAction(
+      context,
+      'Liberar ${mov['bem_nome'] ?? 'este bem'} para ${mov['setor_destino_nome'] ?? 'o setor solicitante'}?',
+    );
+    if (!liberar || !context.mounted) return false;
+    try {
+      await ApiClient.post('/movimentacao/${mov['id']}/aprovar', {});
+      if (context.mounted) showAppMessage(context, 'Bem liberado. Aguarda o recebimento no destino.');
+      return true;
+    } catch (e) {
+      if (context.mounted) showAppMessage(context, '$e');
+      return false;
+    }
+  }
+
   final foto = await _capturarFoto(context);
   if (foto == null || !context.mounted) {
     if (context.mounted) {
-      showAppMessage(
-        context,
-        'A foto do recebimento é obrigatória para autorizar.',
-      );
+      showAppMessage(context, 'A foto do recebimento é obrigatória para confirmar.');
     }
     return false;
   }
   final confirmado = await confirmAction(
     context,
-    'Autorizar a transferência de ${mov['bem_nome'] ?? 'este bem'}?',
+    'Confirmar o recebimento de ${mov['bem_nome'] ?? 'este bem'}?',
   );
   if (!confirmado || !context.mounted) return false;
   try {
@@ -158,9 +173,7 @@ Future<bool> autorizarTransferencia(
       filePath: foto.path,
     );
     await ApiClient.post('/movimentacao/${mov['id']}/aprovar', {});
-    if (context.mounted) {
-      showAppMessage(context, 'Transferência autorizada.');
-    }
+    if (context.mounted) showAppMessage(context, 'Recebimento confirmado.');
     return true;
   } catch (e) {
     if (context.mounted) showAppMessage(context, '$e');
@@ -168,7 +181,7 @@ Future<bool> autorizarTransferencia(
   }
 }
 
-/// Recusa a transferência. O motivo é obrigatório e fica com a solicitação.
+/// Recusa a transferência em qualquer etapa. O motivo é obrigatório e fica com a solicitação.
 Future<bool> recusarTransferencia(
   BuildContext context,
   Map<String, dynamic> mov,
@@ -182,9 +195,7 @@ Future<bool> recusarTransferencia(
   );
   if (motivo == null || !context.mounted) return false;
   try {
-    await ApiClient.post('/movimentacao/${mov['id']}/recusar', {
-      'motivo': motivo,
-    });
+    await ApiClient.post('/movimentacao/${mov['id']}/recusar', {'motivo': motivo});
     if (context.mounted) showAppMessage(context, 'Solicitação recusada.');
     return true;
   } catch (e) {
@@ -193,22 +204,47 @@ Future<bool> recusarTransferencia(
   }
 }
 
-/// Estado exibido no cartão. Escalada tem prioridade sobre pendente.
-({String label, Color color}) estadoTransferencia(Map<String, dynamic> mov) {
-  final status = '${mov['status'] ?? 'aprovada'}';
-  if (status == 'pendente') {
-    return mov['escalada'] == true
-        ? (label: 'Escalada', color: AppColors.error)
-        : (label: 'Pendente', color: AppColors.warning);
+/// Intervenção do almoxarifado: cancela a transferência aberta, com motivo.
+Future<bool> intervirTransferencia(
+  BuildContext context,
+  Map<String, dynamic> mov,
+) async {
+  final motivo = await pedirMotivo(
+    context,
+    titulo: 'Intervir na transferência',
+    rotulo: 'O que está fora dos conformes?',
+    confirmar: 'Cancelar transferência',
+    ajuda: 'Quem solicitou e os dois setores vão ver este motivo.',
+  );
+  if (motivo == null || !context.mounted) return false;
+  try {
+    await ApiClient.post('/movimentacao/${mov['id']}/intervir', {'motivo': motivo});
+    if (context.mounted) showAppMessage(context, 'Transferência cancelada.');
+    return true;
+  } catch (e) {
+    if (context.mounted) showAppMessage(context, '$e');
+    return false;
   }
-  if (status == 'recusada') {
-    return (label: 'Recusada', color: AppColors.error);
-  }
-  return (label: 'Autorizada', color: AppColors.success);
 }
 
-/// Cartão de uma transferência, com o motivo da solicitação e, quando houver,
-/// o motivo da recusa. Ações (autorizar/recusar) entram pelo parâmetro.
+/// Estado exibido no cartão. A etapa aberta vem antes do resultado.
+({String label, Color color}) estadoTransferencia(Map<String, dynamic> mov) {
+  final status = '${mov['status'] ?? 'aprovada'}';
+  return switch (status) {
+    'pendente' => mov['escalada'] == true
+        ? (label: 'Escalada', color: AppColors.error)
+        : (label: 'Aguarda liberação', color: AppColors.warning),
+    'liberada' => mov['escalada'] == true
+        ? (label: 'Escalada', color: AppColors.error)
+        : (label: 'Aguarda recebimento', color: AppColors.primary),
+    'recusada' => (label: 'Recusada', color: AppColors.error),
+    'cancelada' => (label: 'Cancelada', color: AppColors.textSecondary),
+    _ => (label: 'Concluída', color: AppColors.success),
+  };
+}
+
+/// Cartão de uma transferência, com o motivo da solicitação e o motivo da decisão.
+/// As ações (liberar, confirmar, recusar, intervir) entram pelo parâmetro.
 class TransferenciaCard extends StatelessWidget {
   const TransferenciaCard({super.key, required this.mov, this.acoes});
 
@@ -220,6 +256,7 @@ class TransferenciaCard extends StatelessWidget {
     final estado = estadoTransferencia(mov);
     final motivoDecisao = mov['motivo_decisao'];
     final decisor = mov['decisor_nome'];
+    final encerrada = mov['status'] == 'recusada' || mov['status'] == 'cancelada';
     return AppPanel(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -244,7 +281,7 @@ class TransferenciaCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '${mov['setor_origem_nome'] ?? 'Almoxarifado'} → ${mov['setor_destino_nome'] ?? ''}',
+            '${mov['setor_origem_nome'] ?? 'Sem origem'} → ${mov['setor_destino_nome'] ?? ''}',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           if ((mov['solicitante_nome'] ?? '').toString().isNotEmpty)
@@ -259,11 +296,10 @@ class TransferenciaCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
-          if (mov['status'] == 'recusada' &&
-              (motivoDecisao ?? '').toString().isNotEmpty) ...[
+          if (encerrada && (motivoDecisao ?? '').toString().isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Recusada${decisor != null ? ' por $decisor' : ''}: $motivoDecisao',
+              '${mov['status'] == 'cancelada' ? 'Cancelada' : 'Recusada'}${decisor != null ? ' por $decisor' : ''}: $motivoDecisao',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.error,
               ),
@@ -279,71 +315,90 @@ class TransferenciaCard extends StatelessWidget {
   }
 }
 
-/// Escolhe um bem do almoxarifado e envia a solicitação para o setor do usuário.
+/// Escolhe um bem (de qualquer setor) e envia a solicitação para o setor do usuário.
 Future<bool> escolherBemESolicitar(
   BuildContext context, {
-  required int almoxId,
-  required int setorId,
+  required int destinoId,
 }) async {
   final bem = await showModalBottomSheet<Map<String, dynamic>>(
     context: context,
     isScrollControlled: true,
-    builder: (ctx) => SafeArea(
+    builder: (ctx) => _EscolhaBemSheet(),
+  );
+  if (bem == null || !context.mounted) return false;
+  return solicitarTransferencia(context, bemId: bem['id'] as int, destinoId: destinoId);
+}
+
+class _EscolhaBemSheet extends StatefulWidget {
+  @override
+  State<_EscolhaBemSheet> createState() => _EscolhaBemSheetState();
+}
+
+class _EscolhaBemSheetState extends State<_EscolhaBemSheet> {
+  late final Future<List<dynamic>> _bens = ApiClient.get('/bem/');
+  String _busca = '';
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: SizedBox(
+      height: MediaQuery.sizeOf(context).height * .75,
       child: FutureBuilder<List<dynamic>>(
-        future: ApiClient.get('/bem/setor/$almoxId'),
-        builder: (ctx, snapshot) {
+        future: _bens,
+        builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(
-              height: 200,
-              child: AppLoading(label: 'Buscando bens do almoxarifado...'),
-            );
+            return const AppLoading(label: 'Buscando bens...');
           }
           if (snapshot.hasError) {
-            return SizedBox(
-              height: 240,
-              child: AppErrorState(
-                title: 'Erro ao carregar bens',
-                description: '${snapshot.error}',
-              ),
+            return AppErrorState(
+              title: 'Erro ao carregar bens',
+              description: '${snapshot.error}',
             );
           }
+          final termo = _busca.toLowerCase();
           final bens = (snapshot.data ?? [])
               .where((b) => b['ativo'] == true)
+              .where((b) => '${b['nome']} ${b['codigo_tombamento']}'.toLowerCase().contains(termo))
               .toList();
-          if (bens.isEmpty) {
-            return const SizedBox(
-              height: 240,
-              child: AppEmptyState(
-                title: 'Nenhum bem no almoxarifado',
-                description: 'Não há bens disponíveis para solicitar.',
-              ),
-            );
-          }
-          return ListView(
-            shrinkWrap: true,
-            padding: AppSpacing.screen,
+          return Column(
             children: [
-              const AppSectionHeader(title: 'Escolha o bem para o seu setor'),
-              for (final raw in bens)
-                AppListCard(
-                  leading: const AppIconBadge(
-                    icon: Icons.inventory_2_outlined,
+              Padding(
+                padding: AppSpacing.screen,
+                child: TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Buscar por nome ou tombo',
+                    prefixIcon: Icon(Icons.search),
                   ),
-                  title: '${raw['nome'] ?? ''}',
-                  subtitle: '${raw['codigo_tombamento'] ?? ''}',
-                  onTap: () => Navigator.pop(ctx, Map<String, dynamic>.from(raw)),
+                  onChanged: (v) => setState(() => _busca = v.trim()),
                 ),
+              ),
+              Expanded(
+                child: bens.isEmpty
+                    ? const AppEmptyState(
+                        title: 'Nenhum bem encontrado',
+                        description: 'Tente outro nome ou tombo.',
+                      )
+                    : ListView(
+                        padding: AppSpacing.screen,
+                        children: [
+                          for (final raw in bens)
+                            AppListCard(
+                              leading: const AppIconBadge(
+                                icon: Icons.inventory_2_outlined,
+                              ),
+                              title: '${raw['nome'] ?? ''}',
+                              subtitle: '${raw['codigo_tombamento'] ?? ''}',
+                              onTap: () => Navigator.pop(
+                                context,
+                                Map<String, dynamic>.from(raw),
+                              ),
+                            ),
+                        ],
+                      ),
+              ),
             ],
           );
         },
       ),
     ),
-  );
-  if (bem == null || !context.mounted) return false;
-  return solicitarTransferencia(
-    context,
-    bemId: bem['id'] as int,
-    origemId: almoxId,
-    destinoId: setorId,
   );
 }

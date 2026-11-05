@@ -67,12 +67,17 @@
                 <div class="card" id="cardSolicitacoes">
                     <div class="card-header">
                         <h4>Solicitações de transferência</h4>
-                        <p class="small text-muted mb-0">Toda transferência aguarda a autorização do responsável do almoxarifado. Quem pediu vê o resultado e o motivo aqui.</p>
+                        <p class="small text-muted mb-0">A origem libera o bem e o destino confirma o recebimento com foto. Quem pediu vê o resultado e o motivo aqui.</p>
                     </div>
                     <ul class="nav nav-tabs px-3 pt-2" role="tablist">
                         <li class="nav-item d-none" id="itemAbaDecidir" role="presentation">
                             <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#aba-decidir" type="button" role="tab">
                                 Para decidir <span class="badge bg-primary-subtle text-primary ms-1" id="qtdDecidir">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item d-none" id="itemAbaAcompanhamento" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#aba-acompanhamento" type="button" role="tab">
+                                Acompanhamento <span class="badge bg-secondary-subtle text-secondary ms-1" id="qtdAcompanhamento">0</span>
                             </button>
                         </li>
                         <li class="nav-item d-none" id="itemAbaEscaladas" role="presentation">
@@ -88,11 +93,20 @@
                         <div class="tab-pane fade show active" id="aba-decidir" role="tabpanel">
                             <div id="listaDecidir"></div>
                         </div>
+                        <div class="tab-pane fade" id="aba-acompanhamento" role="tabpanel">
+                            <p class="small text-muted">Todas as transferências em andamento. O almoxarifado pode intervir quando algo estiver fora dos conformes.</p>
+                            <div id="listaAcompanhamento"></div>
+                        </div>
                         <div class="tab-pane fade" id="aba-escaladas" role="tabpanel">
                             <p class="small text-muted">Transferências sem resposta do almoxarifado além do prazo. Podem ser decididas pelo setor de patrimônio.</p>
                             <div id="listaEscaladas"></div>
                         </div>
                         <div class="tab-pane fade" id="aba-minhas" role="tabpanel">
+                            <div class="d-flex justify-content-end mb-3">
+                                <button class="btn btn-primary btn-sm pill-btn d-none" id="btnSolicitarBem" data-bs-toggle="modal" data-bs-target="#modalSolicitarBem">
+                                    <i class="bi bi-plus-lg me-1"></i>Solicitar bem
+                                </button>
+                            </div>
                             <div id="listaMinhas"></div>
                         </div>
                     </div>
@@ -230,12 +244,13 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">Recusar transferência</h5>
+                <h5 class="modal-title fw-bold" id="tituloRecusa">Recusar transferência</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
                 <form id="formRecusa">
                     <input type="hidden" id="recusaId">
+                    <input type="hidden" id="recusaAcao" value="recusar">
                     <p class="small text-muted" id="recusaResumo"></p>
                     <label class="form-label" for="motivoRecusa">Motivo da recusa</label>
                     <textarea id="motivoRecusa" class="form-control" rows="3" minlength="3" maxlength="500" required
@@ -249,23 +264,50 @@
         </div>
     </div>
 </div>
+<!-- Modal: solicitar um bem de qualquer setor para o próprio setor -->
+<div class="modal fade" id="modalSolicitarBem" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Solicitar bem</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formSolicitarBem">
+                    <label class="form-label" for="solicitarCodigo">Tombo do bem</label>
+                    <input type="text" id="solicitarCodigo" class="form-control" placeholder="Ex: TMB-001-0" required>
+                    <div class="form-text mb-3" id="solicitarInfo">O bem pode estar em qualquer setor. O responsável do setor onde ele está libera.</div>
+                    <label class="form-label" for="solicitarMotivo">Motivo</label>
+                    <textarea id="solicitarMotivo" class="form-control" rows="3" minlength="3" maxlength="500" required
+                        placeholder="Por que o seu setor precisa deste bem?"></textarea>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary" id="btnConfirmarSolicitacao">Solicitar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Modal: autorizar com foto do recebimento -->
 <div class="modal fade" id="modalAutorizar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">Autorizar transferência</h5>
+                <h5 class="modal-title fw-bold" id="tituloAutorizar">Confirmar transferência</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
                 <form id="formAutorizar">
                     <input type="hidden" id="autorizarId">
+                    <input type="hidden" id="autorizarEtapa" value="receber">
                     <p class="small text-muted" id="autorizarResumo"></p>
-                    <label class="form-label" for="fotoRecebimento">Foto do bem recebido (obrigatória)</label>
-                    <input type="file" class="form-control" id="fotoRecebimento" accept="image/jpeg,image/png,image/webp" required>
-                    <div class="form-text">JPEG, PNG ou WebP, até 5 MB. A foto fica guardada junto da transferência.</div>
+                    <div id="grupoFoto">
+                        <label class="form-label" for="fotoRecebimento">Foto do bem recebido (obrigatória)</label>
+                        <input type="file" class="form-control" id="fotoRecebimento" accept="image/jpeg,image/png,image/webp">
+                        <div class="form-text">JPEG, PNG ou WebP, até 5 MB. A foto fica guardada junto da transferência.</div>
+                    </div>
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary" id="btnConfirmarAutorizacao">Enviar foto e autorizar</button>
+                        <button type="submit" class="btn btn-primary" id="btnConfirmarAutorizacao">Confirmar recebimento</button>
                     </div>
                 </form>
             </div>

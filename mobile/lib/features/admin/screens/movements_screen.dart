@@ -52,11 +52,45 @@ class _MovementsScreenState extends State<MovementsScreen> {
     });
   }
 
-  Future<void> _decidir(Map<String, dynamic> mov, {required bool aprovar}) async {
-    final ok = aprovar
-        ? await autorizarTransferencia(context, mov)
-        : await recusarTransferencia(context, mov);
+  Future<void> _executar(Future<bool> acao) async {
+    final ok = await acao;
     if (ok && mounted) _reloadData();
+  }
+
+  /// Patrimônio decide qualquer etapa e pode intervir em transferências abertas.
+  Widget _acoesDecisao(Map<String, dynamic> mov) {
+    final aberta = mov['status'] == 'pendente' || mov['status'] == 'liberada';
+    if (!aberta) return const SizedBox.shrink();
+    final liberar = mov['etapa'] == 'liberar' && mov['fluxo'] != 'simples';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => _executar(recusarTransferencia(context, mov)),
+                child: const Text('Recusar'),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: FilledButton(
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+                onPressed: () => _executar(autorizarTransferencia(context, mov)),
+                child: Text(liberar ? 'Liberar bem' : 'Confirmar com foto'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        OutlinedButton.icon(
+          onPressed: () => _executar(intervirTransferencia(context, mov)),
+          icon: const Icon(Icons.gpp_maybe_outlined),
+          label: const Text('Intervir (cancelar)'),
+        ),
+      ],
+    );
   }
 
   @override
@@ -247,32 +281,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
             for (final raw in movements)
               TransferenciaCard(
                 mov: Map<String, dynamic>.from(raw),
-                acoes: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => _decidir(
-                          Map<String, dynamic>.from(raw),
-                          aprovar: false,
-                        ),
-                        child: const Text('Recusar'),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(44),
-                        ),
-                        onPressed: () => _decidir(
-                          Map<String, dynamic>.from(raw),
-                          aprovar: true,
-                        ),
-                        child: const Text('Autorizar com foto'),
-                      ),
-                    ),
-                  ],
-                ),
+                acoes: _acoesDecisao(Map<String, dynamic>.from(raw)),
               ),
         ],
       );

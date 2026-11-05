@@ -87,7 +87,7 @@ Verificação: QR de etiquetas de exemplo lidos de volta com `zxing-cpp` (tombo 
 Migração: `database/migrations/20261105_w05_fotos.sql` (executar uma vez no banco de desenvolvimento).
 Testes: `test_fotos.py`.
 
-### W06 · Transferência com dupla confirmação — `[~]` 8/9 (API pronta; app e web a fazer)
+### W06 · Transferência com dupla confirmação — `[x]` 10/10 (API, app e web)
 Regra (decidida com o professor): origem e destino livres. Um colaborador do setor de destino solicita;
 o responsável do setor de origem libera; o responsável do setor de destino confirma o recebimento com foto;
 o almoxarifado é notificado de toda transferência e pode intervir com motivo.
@@ -101,8 +101,8 @@ o almoxarifado é notificado de toda transferência e pode intervir com motivo.
 - [x] Intervenção do almoxarifado cancela uma transferência aberta, com motivo (`POST /movimentacao/{id}/intervir`)
 - [x] Transferências sem resposta além do prazo são escaladas ao setor de patrimônio
 - [x] Transferências antigas (fluxo "simples") continuam com a regra anterior
-- [ ] Web: telas de solicitação, decisão em duas etapas e acompanhamento do almoxarifado
-- [ ] App: solicitação a partir de qualquer bem e decisão em duas etapas (ver A08 e A09)
+- [x] Web: solicitação de qualquer bem, liberação, confirmação com foto, acompanhamento e intervenção
+- [x] App: solicitação de qualquer bem (e a partir da ficha), liberação, confirmação com foto e intervenção
 
 Migração: `database/migrations/20261110_transferencia_dupla_confirmacao.sql`.
 Testes: `test_transferencia_dupla.py`, e os testes antigos ajustados para o fluxo "simples".
@@ -205,17 +205,17 @@ e `feat/app-leitura-qr-ficha` (ainda não mescladas na `main`).
 - [ ] Sincronizado, chega com foto e aparece na caixa de pendências do patrimônio
 - [ ] Continua aberto até o patrimônio tratar
 
-### A08 · Solicitar a transferência de um bem — `[~]` 4/6
+### A08 · Solicitar a transferência de um bem — `[~]` 5/6
 - [x] Solicitação exige setor de destino e motivo
-- [~] Tela deixa claro que o bem continua na origem enquanto SOLICITADA (a mensagem ainda não aparece na ficha)
+- [x] Tela deixa claro que o bem continua na origem enquanto SOLICITADA (etapa "Aguarda liberação")
 - [x] Solicitação vai à API (almoxarifado ↔ setor, ver C2)
 - [x] Agente vê a lista das transferências que solicitou, com estado e motivo da decisão
 - [ ] Solicitação sem rede entra na fila e aparece como pendente de envio (depende de A12)
-- [ ] Transferência já solicitada não pode ser solicitada de novo (não verificado na API)
+- [x] Transferência já solicitada não pode ser solicitada de novo (API recusa com 409)
 
-Obs.: a solicitação já é feita a partir de "Minhas solicitações" e do atalho "Solicitar bem do almoxarifado" no Início. Falta o atalho na ficha.
+Obs.: a solicitação é feita a partir de "Minhas solicitações", do Início e da ficha do bem.
 
-### A09 · Aceitar ou recusar a transferência, com foto — `[~]` 5/6
+### A09 · Aceitar ou recusar a transferência, com foto — `[~]` 5/6 (liberação pela origem e confirmação com foto pelo destino)
 - [x] Lista de pendentes vem da API (aba Autorizações e Movimentações > Pendentes)
 - [x] Aceite exige foto do recebimento (câmera ou galeria, enviada antes da autorização)
 - [x] Aceita, o bem passa ao destino

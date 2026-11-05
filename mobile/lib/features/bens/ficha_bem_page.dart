@@ -23,6 +23,7 @@ class _FichaBemPageState extends State<FichaBemPage> {
 
   Future<_Ficha> _carregar() async {
     final detalhes = await ApiClient.getMap('/bem/${widget.bemId}/detalhes');
+    final me = await ApiClient.getMap('/auth/me');
     final codigo = '${detalhes['codigo_tombamento']}';
     final resultados = await Future.wait([
       ApiClient.get('/movimentacao/bem/${Uri.encodeComponent(codigo)}'),
@@ -30,6 +31,8 @@ class _FichaBemPageState extends State<FichaBemPage> {
     ]);
     return _Ficha(
       detalhes: detalhes,
+      meuPerfil: '${me['perfil']}',
+      meuSetorId: me['setor_id'] as int?,
       movimentacoes: resultados[0].map((e) => Map<String, dynamic>.from(e as Map)).toList(),
       alteracoes: resultados[1].map((e) => Map<String, dynamic>.from(e as Map)).toList(),
     );
@@ -104,6 +107,22 @@ class _FichaBemPageState extends State<FichaBemPage> {
             ],
           ),
         ),
+        if (_podeSolicitar(f))
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+            child: FilledButton.icon(
+              onPressed: () async {
+                final ok = await solicitarTransferencia(
+                  context,
+                  bemId: widget.bemId,
+                  destinoId: f.meuSetorId!,
+                );
+                if (ok && mounted) _recarregar();
+              },
+              icon: const Icon(Icons.swap_horiz),
+              label: const Text('Solicitar transferência para o meu setor'),
+            ),
+          ),
         const AppSectionHeader(title: 'Dados'),
         AppPanel(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -156,6 +175,13 @@ class _FichaBemPageState extends State<FichaBemPage> {
     );
   }
 
+  /// Agentes e responsáveis pedem o bem que está em outro setor, para o próprio setor.
+  bool _podeSolicitar(_Ficha f) {
+    final ativo = f.detalhes['ativo'] == true;
+    final podePedir = f.meuPerfil == 'agente_campo' || f.meuPerfil == 'responsavel_setor';
+    return ativo && podePedir && f.meuSetorId != null && f.detalhes['id_setor_atual'] != f.meuSetorId;
+  }
+
   static String? _juntar(List<dynamic> partes, {String separador = ' '}) {
     final texto = partes
         .where((p) => p != null && '$p'.trim().isNotEmpty)
@@ -170,11 +196,15 @@ class _FichaBemPageState extends State<FichaBemPage> {
 class _Ficha {
   const _Ficha({
     required this.detalhes,
+    required this.meuPerfil,
+    required this.meuSetorId,
     required this.movimentacoes,
     required this.alteracoes,
   });
 
   final Map<String, dynamic> detalhes;
+  final String meuPerfil;
+  final int? meuSetorId;
   final List<Map<String, dynamic>> movimentacoes;
   final List<Map<String, dynamic>> alteracoes;
 }
