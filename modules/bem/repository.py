@@ -53,9 +53,11 @@ class BemRepository(DataBase):
             data_entrada=bem.data_entrada, estado_conservacao=bem.estado_conservacao
         )
 
-    def count_by_categoria(self, id_categoria: int):
-        rows = DataBase().execute(queries.QUERY_COUNT_BY_CATEGORIA, (id_categoria,))
-        return rows[0][0] if rows else 0
+    def max_sequencia_tombo(self, sigla: str) -> int:
+        """Maior número já usado pela sigla, ou 0 se nenhum tombo existe."""
+        pattern = f"^{sigla.upper()}-[0-9]+-[0-9]$"
+        row = DataBase().execute(queries.QUERY_MAX_SEQUENCIA_TOMBO, (pattern,), many=False)
+        return (row[0] or 0) if row else 0
 
     def put(self, id: int, bem_atualizado: BemUpdate):
         values = bem_atualizado.model_dump()

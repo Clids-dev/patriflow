@@ -9,6 +9,7 @@ from modules.bem import queries
 from modules.bem.repository import BemRepository
 from modules.bem.schemas import Bem, BemCreate, BemUpdate
 from modules.bem.service import BemService
+from core.tombamento import format_tombo
 
 AGENTE = {"id": 12, "perfil": "agente_campo", "setor_id": 1}
 ADMIN = {"id": 1, "perfil": "setor_patrimonio", "setor_id": None}
@@ -91,3 +92,32 @@ def test_tombo_duplicado_devolve_409_claro():
     assert exc.value.status_code == 409
     assert "EQP-008-1" in exc.value.detail
     assert "não são reaproveitados" in exc.value.detail
+
+
+def test_proximo_codigo_vai_alem_do_maior_numero_usado():
+    """Lacuna ou tombo manual não pode fazer o próximo código colidir."""
+    from core.tombamento import format_tombo, is_valid_tombo
+
+    with patch("modules.bem.service.CategoriaRepository") as cat_cls, \
+         patch("modules.bem.service.BemRepository") as repo_cls:
+        cat_cls.return_value.get_id.return_value = MagicMock(sigla="INF")
+        repo_cls.return_value.max_sequencia_tombo.return_value = 5
+        codigo = BemService().get_proximo_codigo(1)
+    repo_cls.return_value.max_sequencia_tombo.assert_called_once_with("INF")
+    assert codigo == format_tombo("INF-006")
+    assert is_valid_tombo(codigo)
+
+
+def test_proximo_codigo_sem_tombos_comeca_em_001():
+    with patch("modules.bem.service.CategoriaRepository") as cat_cls, \
+         patch("modules.bem.service.BemRepository") as repo_cls:
+        cat_cls.return_value.get_id.return_value = MagicMock(sigla="INF")
+        repo_cls.return_value.max_sequencia_tombo.return_value = 0
+        codigo = BemService().get_proximo_codigo(1)
+    assert codigo == format_tombo("INF-001")
+
+
+def test_consulta_de_sequencia_considera_bens_baixados():
+    """A consulta não pode filtrar por ativo: bem baixado ocupa o número."""
+    from modules.bem import queries as q
+    assert "ativo" not in q.QUERY_MAX_SEQUENCIA_TOMBO
