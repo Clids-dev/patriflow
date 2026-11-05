@@ -13,6 +13,7 @@ import '../admin/screens/movements_screen.dart';
 import '../admin/screens/reports_screen.dart';
 import '../auth/login_page.dart';
 import '../bens/bens_leitura_page.dart';
+import '../bens/leitura_qr_page.dart';
 import '../movimentacao/transfer_list_page.dart';
 import '../server_config/server_config_page.dart';
 import 'inicio_page.dart';
@@ -230,6 +231,10 @@ class _HomePageState extends State<HomePage> {
         perfil: perfilLabel(widget.profile['perfil']?.toString()),
         onSettings: _configurarServidor,
         onLogout: _sair,
+        onScan: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LeituraQrPage()),
+        ),
       );
     },
   );
