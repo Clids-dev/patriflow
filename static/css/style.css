@@ -1016,3 +1016,11 @@ html.auth-register, html.auth-register body { min-height: 100%; }
     .modal.fade .modal-dialog { transform: translateY(100%); }
     .modal.show .modal-dialog { transform: none; }
 }
+
+/* Campo de setor (select) na tela de criação de conta: mesmo visual dos campos com ícone */
+.auth-login .field-wrap select.form-select {
+    height: 52px;
+    padding-left: 42px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+}
