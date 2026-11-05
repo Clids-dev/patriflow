@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../core/storage/server_config_storage.dart';
-import '../../core/storage/secure_token_storage.dart';
 import '../../core/services/api_client.dart';
+import '../../core/storage/secure_token_storage.dart';
+import '../../core/storage/server_config_storage.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_components.dart';
 import '../../core/widgets/app_states.dart';
 import '../auth/login_page.dart';
-import '../server_config/server_config_page.dart';
 import '../home/home_placeholder_page.dart';
+import '../server_config/server_config_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -58,33 +59,27 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 220,
-            height: 100,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.secondary,
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.secondary.withValues(alpha: .18),
-                  blurRadius: 16,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xxl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppBrandMark(
+              width: 220,
+              height: 64,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 18),
             ),
-            child: Image.asset('assets/logo.png', fit: BoxFit.contain),
-          ),
-          const SizedBox(height: 20),
-          Text('PatriFlow', style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          const Text('Gestão patrimonial simplificada'),
-          const SizedBox(height: 36),
-          const AppLoading(label: 'Preparando o aplicativo...'),
-        ],
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              'Gestão patrimonial simplificada',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.xxxl),
+            const AppLoading(label: 'Preparando o aplicativo...'),
+          ],
+        ),
       ),
     ),
   );
