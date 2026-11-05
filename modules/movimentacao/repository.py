@@ -16,6 +16,7 @@ def _detailed(row) -> schemas.MovimentacaoDetailed:
         justificativa=row[6],
         ativo=bool(row[7]),
         status=row[8],
+        solicitante_nome=row[9] if len(row) > 9 else None,
     )
 
 
@@ -84,6 +85,7 @@ class MovimentacaoRepository:
         aprovar: bool,
         decisor_id: int,
         data_decisao: datetime,
+        motivo: Optional[str] = None,
     ) -> tuple[str, Optional[Movimentacao]]:
         """Aplica a decisão numa única transação com o bem travado (FOR UPDATE).
 
@@ -114,7 +116,7 @@ class MovimentacaoRepository:
                         conn.rollback()
                         return "local_mudou", None
 
-                cur.execute(queries.QUERY_DECIDIR_MOVIMENTACAO, (status, decisor_id, data_decisao, id))
+                cur.execute(queries.QUERY_DECIDIR_MOVIMENTACAO, (status, decisor_id, data_decisao, motivo, id))
                 result = cur.fetchone()
             conn.commit()
             return "ok", _model(result)
@@ -123,3 +125,12 @@ class MovimentacaoRepository:
             raise
         finally:
             DataBase().put_conn(conn)
+
+    def listar_minhas_solicitacoes(self, usuario_id: int) -> list[dict]:
+        rows = DataBase().execute(queries.QUERY_MINHAS_SOLICITACOES, (usuario_id,)) or []
+        return [
+            {"id": r[0], "bem_nome": r[1], "codigo_tombamento": r[2], "setor_origem_nome": r[3],
+             "setor_destino_nome": r[4], "data_movimentacao": r[5], "justificativa": r[6],
+             "status": r[7], "motivo_decisao": r[8], "decisor_nome": r[9], "data_decisao": r[10]}
+            for r in rows
+        ]

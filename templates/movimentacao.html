@@ -63,6 +63,32 @@
                     </div>
                 </div>
 
+                <!-- Solicitações de transferência (W06) -->
+                <div class="card" id="cardSolicitacoes">
+                    <div class="card-header">
+                        <h4>Solicitações de transferência</h4>
+                        <p class="small text-muted mb-0">Toda transferência aguarda a autorização do responsável do almoxarifado. Quem pediu vê o resultado e o motivo aqui.</p>
+                    </div>
+                    <ul class="nav nav-tabs px-3 pt-2" role="tablist">
+                        <li class="nav-item d-none" id="itemAbaDecidir" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#aba-decidir" type="button" role="tab">
+                                Para decidir <span class="badge bg-primary-subtle text-primary ms-1" id="qtdDecidir">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="btnAbaMinhas" data-bs-toggle="tab" data-bs-target="#aba-minhas" type="button" role="tab">Minhas solicitações</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content p-3">
+                        <div class="tab-pane fade" id="aba-decidir" role="tabpanel">
+                            <div id="listaDecidir"></div>
+                        </div>
+                        <div class="tab-pane fade" id="aba-minhas" role="tabpanel">
+                            <div id="listaMinhas"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Visualização dinâmica -->
                 <div id="container-dinamico">
                     <div id="estado-inicial" class="card">
@@ -190,8 +216,33 @@
         </div>
     </div>
 </div>
+<!-- Modal: recusar com motivo -->
+<div class="modal fade" id="modalRecusa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Recusar transferência</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formRecusa">
+                    <input type="hidden" id="recusaId">
+                    <p class="small text-muted" id="recusaResumo"></p>
+                    <label class="form-label" for="motivoRecusa">Motivo da recusa</label>
+                    <textarea id="motivoRecusa" class="form-control" rows="3" minlength="3" maxlength="500" required
+                        placeholder="Ex.: o bem está em uso no laboratório"></textarea>
+                    <div class="form-text">Quem solicitou recebe este motivo.</div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-danger" id="btnConfirmarRecusa">Confirmar recusa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script type="module" src="/static/js/movimentacao.js"></script>
+<script type="module" src="/static/js/solicitacoes.js"></script>
 {% endblock %}
