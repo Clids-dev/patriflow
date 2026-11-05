@@ -10,6 +10,7 @@ const cor = (token) => getComputedStyle(document.documentElement).getPropertyVal
 async function init() {
     console.log("Iniciando Dashboard...");
     mostrarDataDeHoje();
+    configurarChartsGlobal();
     await Promise.all([
         renderizarGraficoCategorias(),
         renderizarGraficoStatus(),
@@ -85,46 +86,71 @@ async function renderizarAtencao() {
         </li>`).join('');
 }
 
+// ----- Estilo dos gráficos: paleta e tipografia do projeto -----
+function configurarChartsGlobal() {
+    if (typeof Chart === 'undefined') return;
+    Chart.defaults.font.family = "Inter, -apple-system, BlinkMacSystemFont, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = cor('--text-secondary');
+    Chart.defaults.borderColor = cor('--border-color');
+    const tip = Chart.defaults.plugins.tooltip;
+    tip.backgroundColor = cor('--primary-dark');
+    tip.padding = 12;
+    tip.cornerRadius = 12;
+    tip.boxPadding = 6;
+    tip.titleFont = { weight: '700', size: 13 };
+}
+
+// Degradê vertical entre dois tokens, aplicado na área real do gráfico.
+function degrade(chart, de, para) {
+    const area = chart.chartArea;
+    if (!area) return cor(de);
+    const g = chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+    g.addColorStop(0, cor(de));
+    g.addColorStop(1, cor(para));
+    return g;
+}
+
 async function renderizarGraficoCategorias() {
     try {
         const stats = await api.get('/api/v1/bem/stats/categoria');
-        console.log("Stats Categorias:", stats);
-
-        if (!stats || stats.length === 0) {
-            console.warn("Nenhum dado de categoria encontrado.");
-            return;
-        }
+        if (!stats || stats.length === 0) return;
 
         const labels = stats.map(s => s[0]);
         const data = stats.map(s => s[1]);
-
         const ctx = document.getElementById('chartCategorias');
         if (!ctx) return;
 
         if (window.chartCat) window.chartCat.destroy();
-
         window.chartCat = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels,
                 datasets: [{
-                    label: 'Quantidade de Bens',
-                    data: data,
-                    backgroundColor: cor('--primary-color'),
-                    borderColor: cor('--primary-color'),
-                    borderWidth: 1,
-                    borderRadius: 8
+                    label: 'Bens',
+                    data,
+                    backgroundColor: (c) => degrade(c.chart, '--primary-accent', '--primary-color'),
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    maxBarThickness: 44,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: { duration: 700, easing: 'easeOutQuart' },
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (c) => ` ${c.parsed.y} bem(ns)` } }
                 },
                 scales: {
-                    y: { beginAtZero: true, grid: { display: false } },
-                    x: { grid: { display: false } }
+                    x: { grid: { display: false }, border: { display: false }, ticks: { font: { weight: '600' } } },
+                    y: {
+                        beginAtZero: true,
+                        border: { display: false },
+                        grid: { color: cor('--border-color'), drawTicks: false },
+                        ticks: { precision: 0, padding: 8 }
+                    }
                 }
             }
         });
@@ -136,63 +162,81 @@ async function renderizarGraficoCategorias() {
 async function renderizarGraficoStatus() {
     try {
         const stats = await api.get('/api/v1/bem/stats/status');
-        console.log("Stats Status:", stats);
-
-        if (!stats || stats.length === 0) {
-            console.warn("Nenhum dado de status encontrado.");
-            return;
-        }
+        if (!stats || stats.length === 0) return;
 
         const labels = stats.map(s => s[0]);
         const data = stats.map(s => s[1]);
-
+        const total = data.reduce((soma, v) => soma + v, 0);
         const ctx = document.getElementById('chartStatus');
         if (!ctx) return;
 
         if (window.chartStat) window.chartStat.destroy();
 
-        // Função para normalizar strings de status (remove acentos, espaços e caracteres especiais)
-        const normalizarStatus = (str) => {
-            if (!str) return '';
-            return str.toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .replace(/\s+/g, '')
-                .replace(/_/g, '');
-        };
+        const normalizarStatus = (str) => (str || '').toLowerCase()
+            .normalize("NFD").replace(/[̀-ͯ]/g, "")
+            .replace(/\s+/g, '').replace(/_/g, '');
 
-        // Mapeamento semântico de cores intuitivas
+        // Cores dos status pelos tokens do projeto.
         const colorMap = {
-            'disponivel': cor('--success'),        // Disponível
-            'emuso': cor('--primary-accent'),      // Em uso
-            'manutencao': cor('--warning'),        // Manutenção
-            'baixado': cor('--danger'),            // Baixado
-            'inativo': cor('--text-secondary')     // Inativo
+            'disponivel': '--success',
+            'emuso': '--primary-accent',
+            'manutencao': '--warning',
+            'baixado': '--danger',
+            'inativo': '--text-secondary'
         };
+        const backgroundColors = labels.map(label => cor(colorMap[normalizarStatus(label)] || '--text-secondary'));
 
-        const backgroundColors = labels.map(label => {
-            const key = normalizarStatus(label);
-            return colorMap[key] || cor('--text-secondary');
-        });
+        // Número total no centro da rosca.
+        const centroTotal = {
+            id: 'centroTotal',
+            afterDraw(chart) {
+                const { ctx: g, chartArea } = chart;
+                if (!chartArea) return;
+                const x = (chartArea.left + chartArea.right) / 2;
+                const y = (chartArea.top + chartArea.bottom) / 2;
+                g.save();
+                g.textAlign = 'center';
+                g.textBaseline = 'middle';
+                g.fillStyle = cor('--text-primary');
+                g.font = '800 28px Inter, sans-serif';
+                g.fillText(String(total), x, y - 8);
+                g.fillStyle = cor('--text-secondary');
+                g.font = '600 12px Inter, sans-serif';
+                g.fillText('itens', x, y + 18);
+                g.restore();
+            }
+        };
 
         window.chartStat = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: labels,
+                labels,
                 datasets: [{
-                    data: data,
+                    data,
                     backgroundColor: backgroundColors,
-                    hoverOffset: 4,
-                    borderWidth: 0
+                    borderColor: cor('--surface-color'),
+                    borderWidth: 4,
+                    borderRadius: 6,
+                    hoverOffset: 8,
                 }]
             },
+            plugins: [centroTotal],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '74%',
+                animation: { animateRotate: true, duration: 800 },
                 plugins: {
-                    legend: { position: 'bottom' }
-                },
-                cutout: '70%'
+                    legend: {
+                        position: 'bottom',
+                        labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 18, font: { weight: '600' } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (c) => ` ${c.label}: ${c.parsed} (${Math.round(c.parsed * 100 / total)}%)`
+                        }
+                    }
+                }
             }
         });
     } catch (error) {
