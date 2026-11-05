@@ -310,7 +310,7 @@ Cópia automática do banco e da pasta de fotos, com teste de restauração.
 - [x] Teste de restauração feito em banco separado e registrado
 
 ### REQ-EX-04 · Card de alertas no dashboard — P1
-Estado: parcial. O painel já mostra garantias vencendo e transferências para autorizar (com escaladas). Falta \"bens sem conferência há muito tempo\", que depende da conferência em campo.
+Estado: parcial. O painel já mostra garantias vencendo e transferências para autorizar (com escaladas). Falta "bens sem conferência há muito tempo", que depende da conferência em campo.
 Painel com os alertas que pedem ação: garantias vencendo, transferências paradas, bens sem conferência há muito tempo.
 - [ ] Card lista os alertas com a contagem e link para a tela correspondente
 - [ ] Dados vêm de endpoints já existentes ou novos, sem cálculo no navegador
