@@ -16,13 +16,16 @@ Estas decisões vêm das respostas do `PERGUNTAS_W04.txt` e do README, e **valem
 quando houver conflito. Ver seção 2.
 
 - Almoxarifado único (`flag_almoxarifado`). Bem novo entra sempre pelo almoxarifado.
-- Movimentação: o setor de patrimônio movimenta direto. Demais perfis só solicitam entre o
-  almoxarifado e o próprio setor. A solicitação fica `pendente`.
-- Quem autoriza: responsável do almoxarifado e setor de patrimônio.
-- O app mostra Autorizar/Recusar só para o responsável do almoxarifado.
+- Transferência (decisão do professor): pode ir de **qualquer setor para qualquer setor**; não precisa
+  passar pelo almoxarifado.
+- Dupla confirmação (decisão do professor): a transferência só se efetiva quando o **responsável do setor de
+  origem** libera o bem e o **responsável do setor de destino** confirma o recebimento, com foto.
+- Almoxarifado: é **notificado** de toda transferência e pode **intervir** (suspender ou cancelar) quando algo
+  estiver fora dos conformes. Intervenção exige motivo.
+- Setor de patrimônio movimenta direto (sem aprovação) e mantém a intervenção do almoxarifado.
 - Cadastro público cria conta **inativa** até o setor de patrimônio aprovar.
 - Não existe rota de correção de movimentação (PUT removido). Correção é nova movimentação.
-- Perfil `auditor` (somente leitura) foi criado (migração W05).
+- Perfil `auditor` (somente leitura) foi criado (migração W05) e foi aceito pelo professor.
 - Commits: um commit por mudança sensível, não um commit gigante.
 - Documentação (README e tutorial mobile) foi atualizada para os perfis e regras W04.
 
@@ -45,10 +48,10 @@ QR e W05 = fotos. Confirmar com o professor qual lista vale antes de planejar.
 
 | # | Tema | Quadro diz | Repositório decidiu | Ação sugerida |
 |---|------|-----------|---------------------|---------------|
-| C1 | Perfis | Três perfis (patrimônio, agente, responsável) | Quatro: também `auditor` | Confirmar com professor; manter se aceito |
-| C2 | Transferência (W06/A08) | Origem e destino livres | Só almoxarifado ↔ setor do usuário | Decidir qual modelo vale; afeta W06, A08, A09 |
-| C3 | Quem aceita (W06/A09) | Qualquer usuário autorizado do destino | Só responsável do almoxarifado e patrimônio | Idem C2 |
-| C4 | Aceite com foto (W06/A09) | Foto obrigatória | Sem foto | Implementar junto com W05 |
+| C1 | Perfis | Três perfis (patrimônio, agente, responsável) | Quatro: também `auditor` | **Decidido:** auditor mantido (aceito pelo professor) |
+| C2 | Transferência (W06/A08) | Origem e destino livres | Só almoxarifado ↔ setor do usuário | **Decidido:** origem e destino livres (qualquer setor); implementar na API e no app |
+| C3 | Quem aceita (W06/A09) | Qualquer usuário autorizado do destino | Só responsável do almoxarifado e patrimônio | **Decidido:** dupla confirmação (responsável da origem libera; responsável do destino recebe); almoxarifado notificado e pode intervir |
+| C4 | Aceite com foto (W06/A09) | Foto obrigatória | Foto obrigatória no aceite (implementada) | Resolvido: foto no recebimento do destino |
 | C5 | Auditor | Não citado | Perfil de leitura | Manter e documentar |
 
 ---
