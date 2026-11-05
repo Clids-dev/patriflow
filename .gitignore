@@ -168,3 +168,6 @@ tools/mazer/node_modules/
 
 # Fotos enviadas pelo app (guardadas no servidor)
 uploads/
+
+# Backups do banco e das fotos (gerados por tools/backup.sh)
+backups/
