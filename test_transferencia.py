@@ -49,7 +49,7 @@ def test_motivo_da_recusa_minimo_tres_caracteres():
 
 
 def test_recusa_grava_o_motivo_no_repositorio():
-    mov = MagicMock(status="pendente", bem_id=9, setor_origem_id=3, solicitante_id=12)
+    mov = MagicMock(status="pendente", bem_id=9, setor_origem_id=3, solicitante_id=12, fluxo="simples")
     repo = MagicMock()
     repo.get_id.return_value = mov
     repo.decidir.return_value = ("ok", MagicMock())

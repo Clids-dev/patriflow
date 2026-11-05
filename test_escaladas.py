@@ -17,7 +17,7 @@ def _item(i, escalada):
 
 def test_fila_mostra_so_as_escaladas_para_o_patrimonio():
     repo = MagicMock()
-    repo.get_pendentes.return_value = [_item(1, True), _item(2, False), _item(3, True)]
+    repo.get_em_andamento.return_value = [_item(1, True), _item(2, False), _item(3, True)]
     with patch.object(mov_service, "MovimentacaoRepository", return_value=repo):
         fila = MovimentacaoService().listar_escaladas({"id": 1, "perfil": "setor_patrimonio"})
     assert [m.id for m in fila] == [1, 3]

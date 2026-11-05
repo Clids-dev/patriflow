@@ -87,18 +87,25 @@ Verificação: QR de etiquetas de exemplo lidos de volta com `zxing-cpp` (tombo 
 Migração: `database/migrations/20261105_w05_fotos.sql` (executar uma vez no banco de desenvolvimento).
 Testes: `test_fotos.py`.
 
-### W06 · Transferência com dupla confirmação — `[x]` 7/7 (regra definida pelo cliente)
-Regra: a transferência vale se o responsável do almoxarifado (ou o setor de patrimônio) autorizar.
-Quem decide recebe o motivo da solicitação; na recusa, o motivo é obrigatório para quem pediu.
-- [x] Estados da transferência: pendente, autorizada, recusada (pendente é a aguardando decisão)
-- [x] Enquanto pendente, o bem continua na origem (checagem `local_mudou` na decisão)
-- [x] Solicitação exige destino e motivo
-- [x] Pendentes são listadas para quem decide; "Minhas solicitações" mostra o resultado e o motivo a quem pediu
-- [x] Autorizar exige a foto do recebimento (tipo `aceite_transferencia`, id da movimentação)
-- [x] Recusa exige o motivo; o motivo fica gravado (`motivo_decisao`)
-- [x] Transferência sem resposta além do prazo (`PATRIFLOW_PRAZO_TRANSFERENCIA_DIAS`, padrão 3) é escalada
-- [x] Escaladas vão para uma fila própria do setor de patrimônio (`GET /movimentacao/escaladas`)
-- [x] Nada apagado: a rota de exclusão de movimentações foi removida
+### W06 · Transferência com dupla confirmação — `[~]` 8/9 (API pronta; app e web a fazer)
+Regra (decidida com o professor): origem e destino livres. Um colaborador do setor de destino solicita;
+o responsável do setor de origem libera; o responsável do setor de destino confirma o recebimento com foto;
+o almoxarifado é notificado de toda transferência e pode intervir com motivo.
+- [x] Estados: pendente (aguarda liberação), liberada (aguarda recebimento), aprovada, recusada, cancelada
+- [x] Enquanto a transferência não é concluída, o bem continua na origem (localização só muda em "aprovada")
+- [x] Solicitação exige motivo e não pode repetir uma transferência já aberta para o mesmo bem
+- [x] Pendentes são listadas para quem decide, com a etapa ("liberar" ou "receber")
+- [x] Confirmação de recebimento exige a foto (tipo `aceite_transferencia`)
+- [x] Recusa, em qualquer etapa, exige o motivo; o motivo fica gravado (`motivo_decisao`) para quem solicitou
+- [x] Almoxarifado acompanha todas as transferências abertas (`GET /movimentacao/acompanhamento`)
+- [x] Intervenção do almoxarifado cancela uma transferência aberta, com motivo (`POST /movimentacao/{id}/intervir`)
+- [x] Transferências sem resposta além do prazo são escaladas ao setor de patrimônio
+- [x] Transferências antigas (fluxo "simples") continuam com a regra anterior
+- [ ] Web: telas de solicitação, decisão em duas etapas e acompanhamento do almoxarifado
+- [ ] App: solicitação a partir de qualquer bem e decisão em duas etapas (ver A08 e A09)
+
+Migração: `database/migrations/20261110_transferencia_dupla_confirmacao.sql`.
+Testes: `test_transferencia_dupla.py`, e os testes antigos ajustados para o fluxo "simples".
 
 ### W07 · Inventário: abertura, congelamento e fechamento — `[ ]` 0/7
 - [ ] Abertura define período e setores
