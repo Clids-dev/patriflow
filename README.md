@@ -87,6 +87,8 @@ O **PatriFlow** é um sistema web e API REST para o controle do patrimônio: cad
 └── mobile/                 # Aplicativo Flutter
 ```
 
+Convenções de idioma, nomes, migrations, testes e commits: [`docs/CONVENCOES.md`](docs/CONVENCOES.md).
+
 ---
 
 ## Instalação
