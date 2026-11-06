@@ -27,7 +27,14 @@ quando houver conflito. Ver seção 2.
 - Não existe rota de correção de movimentação (PUT removido). Correção é nova movimentação.
 - Perfil `auditor` (somente leitura) foi criado (migração W05) e foi aceito pelo professor.
 - Commits: um commit por mudança sensível, não um commit gigante.
-- Documentação (README e tutorial mobile) foi atualizada para os perfis e regras W04.
+- Documentação (README e tutorial mobile) foi atualizada para os perfis e regras W04. O tutorial mobile
+  genérico foi removido do repositório; o README segue como documento principal.
+- Bens sem localização (antes das novas regras): criar a entrada no almoxarifado usando a data de entrada
+  cadastrada em cada bem. O setor de destino de cada bem é escolhido manualmente pelo responsável.
+  **Pendente:** a planilha `ATRIBUICAO_SETORES_W04.txt` (13 bens, setores em branco) foi removida; a lista
+  pode ser gerada novamente pelo banco quando a tarefa for feita.
+- Setores duplicados no banco de desenvolvimento ("Produção" repetido e "Produçãi"): recriar os setores e
+  apagar os que têm nome errado. **Pendente:** confirmar os ids antes de executar.
 
 ## 1. Estado atual do repositório (resumo)
 
