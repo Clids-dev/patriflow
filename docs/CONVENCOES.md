@@ -30,8 +30,9 @@ Já os nomes técnicos seguem o padrão de mercado, para que qualquer pessoa da 
 - Use a data em que a migration foi criada. Ordem é dada pelo nome.
 - Não use códigos internos de requisito no nome (`w04`, `req-ex-03` etc.). Esses códigos só fazem sentido
   para quem usa o quadro da disciplina.
-- **Nunca renomeie uma migration já aplicada em algum banco.** Os nomes antigos com `w0X` permanecem por esse
-  motivo.
+- Renomear uma migration já aplicada só é seguro se o nome não for usado por nenhuma ferramenta. Hoje nenhuma
+  registra os nomes aplicados, então renomear não altera os bancos. Se um controle de migrations for criado,
+  esta regra precisa ser revista antes de qualquer renomeação.
 - Cada migration deve ser idempotente quando possível (`IF NOT EXISTS`, `CREATE OR REPLACE`).
 
 ## 4. Testes
@@ -49,6 +50,6 @@ Já os nomes técnicos seguem o padrão de mercado, para que qualquer pessoa da 
 
 ## 6. Exceções conhecidas (legado)
 
-- `modules/bem` e `tests/test_bem_regras.py` / `tests/test_business_rules.py` cobrem o mesmo assunto com nomes
-  diferentes. Não renomear sem revisar o conteúdo.
-- Migrations com `w0X` no nome, mantidas por causa da regra da seção 3.
+- Funções SQL `w03_tombo_digito` e `w03_tombo_valido` (em `database/schema.sql` e na migration
+  `20261018_assets_locations_tombo.sql`) mantêm o código de requisito no nome. Renomeá-las mexe no banco em uso,
+  então ficam como estão até haver uma migration específica para isso.
