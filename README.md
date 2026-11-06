@@ -69,8 +69,10 @@ O **PatriFlow** é um sistema web e API REST para o controle do patrimônio: cad
 ```
 ├── main.py                 # Ponto de entrada da aplicação
 ├── requirements.txt        # Dependências Python
-├── tabelasDados.sql        # Script inicial do banco
-├── database/migrations/    # Alterações do banco, em ordem cronológica
+├── pytest.ini              # Configuração dos testes
+├── database/
+│   ├── schema.sql          # Script inicial do banco
+│   └── migrations/         # Alterações do banco, em ordem cronológica
 ├── core/                   # Configuração, conexão com o banco e regras de tombamento
 ├── modules/                # Domínios: bem, categoria, setor, responsavel, localizacao,
 │                           # movimentacao, foto, etiqueta, termo, auditoria, usuario, relatorio
@@ -80,8 +82,8 @@ O **PatriFlow** é um sistema web e API REST para o controle do patrimônio: cad
 ├── templates/              # Páginas Jinja2
 ├── static/                 # CSS, JavaScript e imagens
 ├── tools/                  # Dados de desenvolvimento, backup e restauração
-├── docs/                   # Documentação de requisitos
-├── test_*.py               # Testes automatizados
+├── docs/                   # Documentação: requisitos, convenções e tutorial de ambiente
+├── tests/                  # Testes automatizados
 └── mobile/                 # Aplicativo Flutter
 ```
 
@@ -106,7 +108,7 @@ pip install -r requirements.txt
 ### 2. Banco de dados
 
 1. Crie o banco `sistema_tombamento` (ou outro nome).
-2. Execute `tabelasDados.sql` no seu cliente de banco (DBeaver, pgAdmin etc.).
+2. Execute `database/schema.sql` no seu cliente de banco (DBeaver, pgAdmin etc.).
 3. Em uma base já existente, aplique os arquivos de `database/migrations/` em ordem de nome.
 4. Ajuste as conexões em `core/config.py` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`).
 
