@@ -29,21 +29,22 @@ function mostrarDataDeHoje() {
 // "O que pede atenção": situações que exigem decisão, da mais urgente para a menos urgente.
 // Cada fonte é independente. Quem não tem permissão para uma fonte (403) só não a vê;
 // falha de verdade é sinalizada, para não parecer que "tudo está em ordem" quando não está.
-const PRIORIDADE_ATENCAO = { escalada: 0, baixa: 1, transferencia: 2, garantiaVencida: 3, garantiaAVencer: 4 };
+const PRIORIDADE_ATENCAO = { escalada: 0, emprestimoAtrasado: 1, baixa: 2, transferencia: 3, garantiaVencida: 4, garantiaAVencer: 5 };
 const LIMITE_ATENCAO = 6;
 
 async function renderizarAtencao() {
     const lista = $('#atencaoLista');
     const total = $('#atencaoTotal');
 
-    const [escaladas, baixas, pendentes, garantias] = await Promise.allSettled([
+    const [escaladas, atrasados, baixas, pendentes, garantias] = await Promise.allSettled([
         api.get('/api/v1/movimentacao/escaladas'),
+        api.get('/api/v1/emprestimos/?situacao=atrasados'),
         api.get('/api/v1/bem/baixas/pendentes'),
         api.get('/api/v1/movimentacao/pendentes'),
         api.get('/api/v1/bem/alertas/garantias?dias=60'),
     ]);
 
-    const resultados = [escaladas, baixas, pendentes, garantias];
+    const resultados = [escaladas, atrasados, baixas, pendentes, garantias];
     const falhou = resultados.some(r => r.status === 'rejected' && r.reason?.status !== 403);
     resultados.filter(r => r.status === 'rejected').forEach(r => console.warn('Fonte de atenção indisponível:', r.reason));
     const dados = r => (r.status === 'fulfilled' ? r.value : []);
@@ -61,6 +62,14 @@ async function renderizarAtencao() {
             link: `/movimentacao?aba=escaladas&busca=${encodeURIComponent(m.codigo_tombamento)}`,
         });
     });
+
+    dados(atrasados).forEach(e => itens.push({
+        prioridade: PRIORIDADE_ATENCAO.emprestimoAtrasado,
+        icone: 'bi-alarm',
+        titulo: `Empréstimo atrasado: ${e.bem_nome}`,
+        detalhe: `${e.codigo_tombamento} · com ${e.tomador} · ${e.dias_atraso} dia(s) de atraso`,
+        link: `/bens?busca=${encodeURIComponent(e.codigo_tombamento)}`,
+    }));
 
     dados(baixas).forEach(b => itens.push({
         prioridade: PRIORIDADE_ATENCAO.baixa,
