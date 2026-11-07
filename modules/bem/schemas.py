@@ -6,6 +6,17 @@ EstadoConservacao = Literal["novo", "bom", "regular", "ruim", "inservivel"]
 StatusBem = Literal["Disponível", "Em Uso", "Manutenção", "Baixado"]
 
 
+class EventoHistorico(BaseModel):
+    """Um evento da linha do tempo do bem. `fotos` traz os ids das fotos ligadas ao evento."""
+    tipo: str
+    em: datetime
+    autor: Optional[str] = None
+    titulo: str
+    detalhe: str = ""
+    referencia_id: int
+    fotos: list[int] = []
+
+
 class BemCampos(BaseModel):
     garantia_fim: Optional[date] = None
     vida_util_meses: Optional[int] = Field(default=None, gt=0)

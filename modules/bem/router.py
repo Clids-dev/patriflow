@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from api.v1.auth import current_user
 from modules.auditoria.repository import AuditoriaRepository
 from modules.bem.service import BemService
-from modules.bem.schemas import BemCreate, BemUpdate, BaixaCreate, DecisaoRecusa
+from modules.bem import historico
+from modules.bem.schemas import BemCreate, BemUpdate, BaixaCreate, DecisaoRecusa, EventoHistorico
 
 router = APIRouter(prefix="/bem", tags=["Bens"])
 
@@ -86,3 +87,9 @@ def alertas_garantias(dias: int = 60, service: BemService = Depends(get_service)
 @router.get("/{id}/auditoria")
 def historico_de_alteracoes(id: int):
     return AuditoriaRepository().listar("bem", id)
+
+
+@router.get("/{id}/historico", response_model=list[EventoHistorico])
+def linha_do_tempo(id: int, limite: int = Query(200, ge=1, le=1000)):
+    """Todos os eventos do bem, do mais recente para o mais antigo."""
+    return historico.linha_do_tempo(id, limite)
