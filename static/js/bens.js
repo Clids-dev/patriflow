@@ -16,6 +16,12 @@ async function init() {
         carregarCategorias()
     ]);
     setupListeners();
+    // Link vindo de outra tela (ex.: garantia no painel inicial): já abre filtrado pelo código.
+    const busca = new URLSearchParams(window.location.search).get('busca');
+    if (busca) {
+        $("#inputBusca").value = busca;
+        filtrarBens();
+    }
 }
 
 async function carregarBens() {
