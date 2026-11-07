@@ -9,12 +9,13 @@ router = APIRouter(prefix="/etiquetas", tags=["Etiquetas"])
 
 @router.get("/lote", response_class=HTMLResponse)
 def etiquetas_em_lote(ids: str = Query(..., description="Ids dos bens separados por vírgula"),
+                      incorporado: bool = Query(False, description="Esconde a barra própria, para exibir dentro de um modal"),
                       usuario=Depends(current_user)):
     try:
         lista = [int(parte) for parte in ids.split(",") if parte.strip()]
     except ValueError:
         raise HTTPException(status_code=400, detail="Ids inválidos. Use números separados por vírgula.")
-    return HTMLResponse(pagina_lote(lista))
+    return HTMLResponse(pagina_lote(lista, incorporado=incorporado))
 
 
 @router.get("/{bem_id}")

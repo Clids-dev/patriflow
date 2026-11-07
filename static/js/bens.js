@@ -171,10 +171,55 @@ async function enviarImportacao(simular) {
     }
 }
 
-// Abre a folha de etiquetas em nova aba (a API aceita o cookie de sessão).
+// A altura do iframe só pode ser medida com a folha carregada E o modal visível (um documento
+// escondido mede 0 px). Por isso é chamada nos dois eventos; vale a medida do que ocorrer por último.
+function ajustarAlturaEtiquetas() {
+    const frame = $("#frameEtiquetas");
+    const doc = frame.contentDocument;
+    if (frame.classList.contains('d-none') || !doc?.querySelector('.folha')) return;
+    // Mede o conteúdo (body), não a janela do iframe: scrollHeight nunca fica menor que a altura atual
+    // do iframe, então uma medida feita com o modal ainda estreito ficaria presa.
+    frame.style.height = `${Math.ceil(doc.body.getBoundingClientRect().height)}px`;
+}
+
+// Mostra as etiquetas num modal. O conteúdo é a mesma folha usada na impressão (a API aceita o
+// cookie de sessão), carregada num iframe em modo "incorporado", sem a barra própria da página.
 function abrirEtiquetas(ids) {
     if (!ids.length) return;
-    window.open(`/api/v1/etiquetas/lote?ids=${ids.map(encodeURIComponent).join(',')}`, '_blank', 'noopener');
+    const lista = ids.map(encodeURIComponent).join(',');
+    const frame = $("#frameEtiquetas");
+    const estado = $("#etiquetasEstado");
+    const imprimir = $("#btnImprimirEtiquetas");
+
+    $("#modalEtiquetasTitulo").innerHTML =
+        `<i class="bi bi-qr-code me-2"></i>${ids.length === 1 ? 'Etiqueta' : `Etiquetas (${ids.length})`}`;
+    $("#linkEtiquetasNovaAba").href = `/api/v1/etiquetas/lote?ids=${lista}`;
+    imprimir.disabled = true;
+    frame.style.height = '';
+    frame.classList.add('d-none');
+    estado.textContent = 'Gerando etiquetas…';
+    estado.classList.remove('d-none');
+
+    frame.onload = () => {
+        if (frame.src === 'about:blank') return;
+        const doc = frame.contentDocument;
+        if (!doc?.querySelector('.folha')) {
+            // A API respondeu com erro (JSON), por exemplo lote acima do limite.
+            let mensagem = 'Não foi possível gerar as etiquetas.';
+            try { mensagem = JSON.parse(doc.body.innerText).detail || mensagem; } catch (erro) { /* mantém a padrão */ }
+            estado.textContent = mensagem;
+            return;
+        }
+        estado.classList.add('d-none');
+        frame.classList.remove('d-none');
+        imprimir.disabled = false;
+        ajustarAlturaEtiquetas();
+    };
+    frame.src = `/api/v1/etiquetas/lote?ids=${lista}&incorporado=true`;
+
+    // A ficha do bem também tem o botão de etiqueta: fecha a ficha para não empilhar modais.
+    bootstrap.Modal.getInstance($("#modalDetalhesBem"))?.hide();
+    bootstrap.Modal.getOrCreateInstance($("#modalEtiquetas")).show();
 }
 
 function renderizarTabela() {
@@ -427,6 +472,10 @@ function setupListeners() {
         });
     });
     $("#btnEtiquetasLote").addEventListener('click', () => abrirEtiquetas([...selecionados]));
+    $("#btnImprimirEtiquetas").addEventListener('click', () => $("#frameEtiquetas").contentWindow.print());
+    // Ao fechar, descarrega a folha para não manter etiquetas antigas na próxima abertura.
+    $("#modalEtiquetas").addEventListener('shown.bs.modal', ajustarAlturaEtiquetas);
+    $("#modalEtiquetas").addEventListener('hidden.bs.modal', () => { $("#frameEtiquetas").src = 'about:blank'; });
 
     // Importação por planilha: simular primeiro, depois gravar.
     $("#btnSimularImportacao").addEventListener('click', () => enviarImportacao(true));

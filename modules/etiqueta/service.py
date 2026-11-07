@@ -60,7 +60,11 @@ def etiqueta_do_bem(bem_id: int) -> str:
     return etiqueta_svg(bem.codigo_tombamento, bem.nome)
 
 
-def pagina_lote(ids: list[int]) -> str:
+# Dentro de um modal, a tela que abre a página já tem título e botão de imprimir.
+_CSS_INCORPORADO = "  .barra { display: none; }\n  body { background: #fff; padding: 12px; }"
+
+
+def pagina_lote(ids: list[int], incorporado: bool = False) -> str:
     if not ids:
         raise HTTPException(status_code=400, detail="Informe ao menos um bem para gerar etiquetas.")
     if len(ids) > LIMITE_LOTE:
@@ -69,7 +73,8 @@ def pagina_lote(ids: list[int]) -> str:
     for bem_id in dict.fromkeys(ids):  # remove repetidos, mantém a ordem
         bem = _bem_ou_404(bem_id)
         etiquetas.append(f'<div class="etiqueta">{etiqueta_svg(bem.codigo_tombamento, bem.nome)}</div>')
-    return _PAGINA.replace("{{ETIQUETAS}}", "\n".join(etiquetas))
+    return (_PAGINA.replace("{{CSS_EXTRA}}", _CSS_INCORPORADO if incorporado else "")
+                   .replace("{{ETIQUETAS}}", "\n".join(etiquetas)))
 
 
 _PAGINA = """<!DOCTYPE html>
@@ -92,6 +97,7 @@ _PAGINA = """<!DOCTYPE html>
     .etiqueta { border: 0; border-radius: 0; padding: 0; break-inside: avoid; }
     @page { margin: 8mm; }
   }
+{{CSS_EXTRA}}
 </style>
 </head>
 <body>
