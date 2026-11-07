@@ -7,11 +7,12 @@ from dotenv import load_dotenv
 # foi iniciado. Variáveis exportadas pelo ambiente têm prioridade sobre .env.
 load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=False)
 
-DB_HOST = "127.0.0.1"
-DB_PORT = 5433
-DB_USER = "postgres"
-DB_PASSWORD = "postgres"
-DB_NAME = "sistema_tombamento"
+# Banco de dados. Os valores vêm do ambiente (ou do .env); a senha não fica no código.
+DB_HOST = os.getenv("PATRIFLOW_DB_HOST", "127.0.0.1")
+DB_PORT = int(os.getenv("PATRIFLOW_DB_PORT", "5433"))
+DB_USER = os.getenv("PATRIFLOW_DB_USER", "postgres")
+DB_PASSWORD = os.getenv("PATRIFLOW_DB_PASSWORD", "")
+DB_NAME = os.getenv("PATRIFLOW_DB_NAME", "sistema_tombamento")
 JWT_SECRET = os.getenv("PATRIFLOW_JWT_SECRET", "")
 JWT_EXPIRES_SECONDS = int(os.getenv("PATRIFLOW_JWT_EXPIRES_SECONDS", "3600"))
 

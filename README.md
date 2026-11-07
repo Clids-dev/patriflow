@@ -109,14 +109,16 @@ pip install -r requirements.txt
 
 ### 2. Banco de dados
 
-1. Crie o banco `sistema_tombamento` (ou outro nome).
-2. Execute `database/schema.sql` no seu cliente de banco (DBeaver, pgAdmin etc.).
-3. Em uma base já existente, aplique os arquivos de `database/migrations/` em ordem de nome.
-4. Ajuste as conexões em `core/config.py` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`).
+1. Crie o banco `sistema_tombamento` (ou outro nome) e configure a conexão no `.env` (próxima seção).
+2. Banco novo: `venv/bin/python tools/migrar.py --do-zero` executa `database/schema.sql` e todas as migrations.
+   **Atenção:** esse comando apaga as tabelas do banco indicado.
+3. Banco existente: `venv/bin/python tools/migrar.py` aplica só as migrations pendentes, em ordem.
+   `--status` mostra o que já foi aplicado e avisa se algum arquivo aplicado foi alterado depois.
+4. Banco montado antes do controle de migrations: rode `--baseline` uma vez para registrar as que já existem.
 
 ### 3. Variáveis de ambiente
 
-Crie um arquivo `.env` na raiz (ele é ignorado pelo Git) com a chave de assinatura dos tokens:
+Crie um arquivo `.env` na raiz (ele é ignorado pelo Git) com a chave de assinatura dos tokens e a senha do banco:
 
 ```bash
 python -c 'from pathlib import Path; import secrets; p=Path(".env"); p.exists() or p.write_text("PATRIFLOW_JWT_SECRET=" + secrets.token_urlsafe(48) + "\n")'
@@ -127,6 +129,10 @@ Variáveis opcionais:
 | Variável | Padrão | Função |
 |---|---|---|
 | `PATRIFLOW_JWT_SECRET` | — | Chave dos tokens. Obrigatória. Não a troque a cada reinício. |
+| `PATRIFLOW_DB_PASSWORD` | — | Senha do PostgreSQL. Obrigatória; nunca fica no código. |
+| `PATRIFLOW_DB_HOST` / `PATRIFLOW_DB_PORT` | `127.0.0.1` / `5433` | Endereço do PostgreSQL. |
+| `PATRIFLOW_DB_USER` / `PATRIFLOW_DB_NAME` | `postgres` / `sistema_tombamento` | Usuário e banco da aplicação. |
+| `PATRIFLOW_TEST_DB_NAME` | `patriflow_test` | Banco dos testes de integração (recriado a cada teste). |
 | `PATRIFLOW_JWT_EXPIRES_SECONDS` | `3600` | Validade do token de acesso. |
 | `PATRIFLOW_PRAZO_TRANSFERENCIA_DIAS` | `3` | Dias até a escalada de uma solicitação. |
 | `PATRIFLOW_ALCADA_BAIXA_VALOR` | `5000` | Valor a partir do qual a baixa exige aprovação de outro servidor. |
@@ -158,10 +164,13 @@ O script é idempotente: o que já existe pelo nome é pulado. Ele usa as mesmas
 ## Testes
 
 ```bash
-pytest
+pytest                    # tudo
+pytest -m "not integracao"  # só os unitários, sem banco
 ```
 
-Os testes de integração usam o banco configurado em `core/config.py`.
+Os testes marcados com `integracao` usam um banco separado (`PATRIFLOW_TEST_DB_NAME`, padrão `patriflow_test`),
+criado automaticamente e recriado do zero antes de cada teste. Ele nunca pode ser o banco da aplicação.
+Sem PostgreSQL acessível, esses testes são pulados.
 
 ---
 

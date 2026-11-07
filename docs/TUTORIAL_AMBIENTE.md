@@ -47,21 +47,29 @@ pip install -r requirements.txt
 ## 3. Preparar o banco de dados
 
 1. Crie um banco PostgreSQL chamado `sistema_tombamento`.
-2. Execute o arquivo `database/schema.sql` nesse banco para criar as tabelas e os dados iniciais.
-3. Confira as credenciais em `core/config.py` e ajuste-as para o seu PostgreSQL. A configuração padrão é:
-
-```python
-DB_HOST = "127.0.0.1"
-DB_PORT = 5433
-DB_USER = "postgres"
-DB_PASSWORD = "postgres"
-DB_NAME = "sistema_tombamento"
-```
-
-Exemplo de importação pelo terminal, alterando usuário, porta e banco quando necessário:
+2. Configure a conexão no arquivo `.env` da raiz (ignorado pelo Git). Só a senha é obrigatória; os demais
+   valores abaixo são os padrões:
 
 ```bash
-psql -U postgres -p 5433 -d sistema_tombamento -f database/schema.sql
+PATRIFLOW_DB_PASSWORD=sua_senha
+# PATRIFLOW_DB_HOST=127.0.0.1
+# PATRIFLOW_DB_PORT=5433
+# PATRIFLOW_DB_USER=postgres
+# PATRIFLOW_DB_NAME=sistema_tombamento
+```
+
+3. Crie as tabelas e os dados iniciais (executa `database/schema.sql` e todas as migrations).
+   **Este comando apaga as tabelas do banco indicado**: use só em banco novo.
+
+```bash
+venv/bin/python tools/migrar.py --do-zero
+```
+
+4. Depois de atualizar o código (`git pull`), aplique as migrations novas:
+
+```bash
+venv/bin/python tools/migrar.py           # aplica as pendentes
+venv/bin/python tools/migrar.py --status  # mostra o que já foi aplicado
 ```
 
 ## 4. Iniciar a aplicação
