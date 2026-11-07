@@ -58,7 +58,7 @@ async function renderizarAtencao() {
             icone: 'bi-exclamation-octagon',
             titulo: `Transferência escalada: ${m.bem_nome}`,
             detalhe: `${m.codigo_tombamento} → ${m.setor_destino_nome} · sem resposta no prazo`,
-            link: '/movimentacao',
+            link: `/movimentacao?aba=escaladas&busca=${encodeURIComponent(m.codigo_tombamento)}`,
         });
     });
 
@@ -67,7 +67,7 @@ async function renderizarAtencao() {
         icone: 'bi-box-arrow-down',
         titulo: `Baixa aguardando aprovação: ${b.bem_nome}`,
         detalhe: `${b.codigo_tombamento} · ${b.motivo} · solicitada por ${b.solicitante}`,
-        link: '/bens',
+        link: `/bens?busca=${encodeURIComponent(b.codigo_tombamento)}`,
     }));
 
     dados(pendentes).filter(m => !idsEscaladas.has(m.id)).forEach(m => itens.push({
@@ -75,7 +75,7 @@ async function renderizarAtencao() {
         icone: 'bi-arrow-left-right',
         titulo: `Transferência aguardando autorização: ${m.bem_nome}`,
         detalhe: `${m.codigo_tombamento} → ${m.setor_destino_nome}`,
-        link: '/movimentacao',
+        link: `/movimentacao?aba=decidir&busca=${encodeURIComponent(m.codigo_tombamento)}`,
     }));
 
     const listaGarantias = dados(garantias);
