@@ -62,7 +62,10 @@ async function aplicarFiltrosDaUrl() {
 async function carregarBens() {
     try {
         todosBens = await api.get("/api/v1/bem/");
-        filtrados = [...todosBens];
+        // Recarga (ex.: depois de uma ação na ficha) mantém o filtro e a página em que o usuário estava.
+        aplicarFiltros();
+        const ultimaPagina = Math.max(1, Math.ceil(filtrados.length / itensPorPagina));
+        paginaAtual = Math.min(paginaAtual || 1, ultimaPagina);
         renderizarTabela();
     } catch (error) {
         ui.showNotification("Erro ao carregar bens.", "error");
@@ -304,84 +307,209 @@ function renderizarPaginacao(totalItens) {
     container.innerHTML = html;
 }
 
+// ----- Ficha do bem: situação atual, ações (empréstimo e manutenção) e linha do tempo -----
+
+const ICONE_EVENTO = {
+    cadastro: 'bi-plus-circle', edicao: 'bi-pencil', baixa: 'bi-x-octagon', reativacao: 'bi-arrow-counterclockwise',
+    transferencia_solicitada: 'bi-send', transferencia_aprovada: 'bi-arrow-left-right',
+    transferencia_recusada: 'bi-x-circle', transferencia_cancelada: 'bi-shield-exclamation',
+    emprestimo_saida: 'bi-box-arrow-up-right', emprestimo_devolucao: 'bi-box-arrow-in-down-left',
+    manutencao_envio: 'bi-tools', manutencao_retorno: 'bi-wrench-adjustable-circle',
+    baixa_solicitada: 'bi-hourglass-split', baixa_recusada: 'bi-x-circle',
+};
+const dataBR = (valor) => new Date(`${valor}T00:00:00`).toLocaleDateString('pt-BR');
+const dataHoraBR = (valor) => new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+const hojeISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
 async function verDetalhes(id) {
     const container = $("#conteudoDetalhes");
     container.innerHTML = `<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>`;
-    
-    const myModal = bootstrap.Modal.getOrCreateInstance($("#modalDetalhesBem"));
-    myModal.show();
+    bootstrap.Modal.getOrCreateInstance($("#modalDetalhesBem")).show();
 
-    try {
-        const bem = await api.get(`/api/v1/bem/${id}/detalhes`);
-        const historico = await api.get(`/api/v1/movimentacao/bem/${encodeURIComponent(bem.codigo_tombamento)}`);
-        
-        const dataFormatada = bem.data_ultima_movimentacao ? new Date(bem.data_ultima_movimentacao).toLocaleString('pt-BR') : "Sem registro";
-        
-        container.innerHTML = `
-            <div class="mb-4">
-                <small class="text-muted text-uppercase fw-bold d-block mb-1">Informações Básicas</small>
-                <h4 class="fw-bold text-primary mb-0">${esc(bem.nome)}</h4>
-                <p class="text-muted mb-0">Código: <code>${esc(bem.codigo_tombamento)}</code> | Categoria: <span class="badge bg-secondary">${esc(bem.categoria_nome || 'N/A')}</span></p>
-                <p class="text-muted mb-0 small">Setor: <span class="text-dark">${esc(bem.setor_atual || 'Não alocado')}</span> | Responsável: <span class="text-dark">${esc(bem.responsavel_nome || '—')}</span></p>
-                <button class="btn btn-outline-primary btn-sm mt-3 btn-etiqueta-ficha" data-id="${esc(bem.id)}"><i class="bi bi-qr-code me-1"></i> Gerar etiqueta</button>
-            </div>
-            
-            <div class="row g-3 mb-4">
-                <div class="col-6">
-                    <div class="p-3 bg-light rounded-3">
-                        <small class="text-muted d-block mb-1">Setor Atual</small>
-                        <span class="fw-bold text-dark"><i class="bi bi-geo-alt-fill text-primary me-2"></i>${esc(bem.setor_atual || "Não alocado")}</span>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="p-3 bg-light rounded-3">
-                        <small class="text-muted d-block mb-1">Status</small>
-                        ${getStatusBadge(bem.status, bem.ativo)}
-                    </div>
-                </div>
-            </div>
-
-            <div class="border-top pt-3 mb-4">
-                <small class="text-muted text-uppercase fw-bold d-block mb-2">Identificação e conservação</small>
-                <div class="row g-2 small">
-                    <div class="col-6"><strong>Marca:</strong> ${esc(bem.marca || '—')}</div>
-                    <div class="col-6"><strong>Modelo:</strong> ${esc(bem.modelo || '—')}</div>
-                    <div class="col-6"><strong>Nº de série:</strong> ${esc(bem.numero_serie || '—')}</div>
-                    <div class="col-6"><strong>Conservação:</strong> ${esc(bem.estado_conservacao || '—')}</div>
-                    <div class="col-12"><strong>Localização física:</strong> ${bem.predio_nome ? `${esc(bem.predio_nome)} — ${esc(bem.andar_identificacao)} — ${esc(bem.sala_nome)}` : '—'}</div>
-                    <div class="col-6"><strong>Aquisição:</strong> R$ ${Number(bem.valor_aquisicao ?? bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
-                    <div class="col-6"><strong>Nota fiscal:</strong> ${esc(bem.nota_fiscal || '—')}</div>
-                    <div class="col-6"><strong>Entrada:</strong> ${bem.data_entrada ? new Date(`${esc(bem.data_entrada)}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</div>
-                </div>
-            </div>
-
-            <div class="border-top pt-4">
-                <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2 text-primary"></i>Linha do Tempo de Movimentações</h6>
-                ${renderizarTimeline(historico)}
-            </div>
-        `;
-    } catch (error) {
+    // As quatro consultas são independentes: rodam em paralelo.
+    const [bemR, eventosR, emprestimosR, manutencoesR] = await Promise.allSettled([
+        api.get(`/api/v1/bem/${id}/detalhes`),
+        api.get(`/api/v1/bem/${id}/historico`),
+        api.get(`/api/v1/emprestimos/?situacao=abertos&bem_id=${id}`),
+        api.get(`/api/v1/manutencoes/?situacao=abertas&bem_id=${id}`),
+    ]);
+    if (bemR.status === 'rejected') {
         container.innerHTML = `<div class="alert alert-danger">Erro ao carregar detalhes do equipamento.</div>`;
+        return;
+    }
+    const bem = bemR.value;
+    const emprestimo = emprestimosR.status === 'fulfilled' ? emprestimosR.value[0] : null;
+    const manutencao = manutencoesR.status === 'fulfilled' ? manutencoesR.value[0] : null;
+
+    container.innerHTML = `
+        <div class="mb-4">
+            <small class="text-muted text-uppercase fw-bold d-block mb-1">Informações Básicas</small>
+            <h4 class="fw-bold text-primary mb-0">${esc(bem.nome)}</h4>
+            <p class="text-muted mb-0">Código: <code>${esc(bem.codigo_tombamento)}</code> | Categoria: <span class="badge bg-secondary">${esc(bem.categoria_nome || 'N/A')}</span></p>
+            <p class="text-muted mb-0 small">Setor: <span class="text-dark">${esc(bem.setor_atual || 'Não alocado')}</span> | Responsável: <span class="text-dark">${esc(bem.responsavel_nome || '—')}</span></p>
+            <button class="btn btn-outline-primary btn-sm mt-3 btn-etiqueta-ficha" data-id="${esc(bem.id)}"><i class="bi bi-qr-code me-1"></i> Gerar etiqueta</button>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6">
+                <div class="p-3 bg-light rounded-3">
+                    <small class="text-muted d-block mb-1">Setor Atual</small>
+                    <span class="fw-bold text-dark"><i class="bi bi-geo-alt-fill text-primary me-2"></i>${esc(bem.setor_atual || "Não alocado")}</span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-3 bg-light rounded-3">
+                    <small class="text-muted d-block mb-1">Status</small>
+                    ${getStatusBadge(bem.status, bem.ativo)}
+                </div>
+            </div>
+        </div>
+
+        ${renderizarSituacao(bem, emprestimo, manutencao)}
+
+        <div class="border-top pt-3 mb-4">
+            <small class="text-muted text-uppercase fw-bold d-block mb-2">Identificação e conservação</small>
+            <div class="row g-2 small">
+                <div class="col-6"><strong>Marca:</strong> ${esc(bem.marca || '—')}</div>
+                <div class="col-6"><strong>Modelo:</strong> ${esc(bem.modelo || '—')}</div>
+                <div class="col-6"><strong>Nº de série:</strong> ${esc(bem.numero_serie || '—')}</div>
+                <div class="col-6"><strong>Conservação:</strong> ${esc(bem.estado_conservacao || '—')}</div>
+                <div class="col-12"><strong>Localização física:</strong> ${bem.predio_nome ? `${esc(bem.predio_nome)} — ${esc(bem.andar_identificacao)} — ${esc(bem.sala_nome)}` : '—'}</div>
+                <div class="col-6"><strong>Aquisição:</strong> R$ ${Number(bem.valor_aquisicao ?? bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                <div class="col-6"><strong>Nota fiscal:</strong> ${esc(bem.nota_fiscal || '—')}</div>
+                <div class="col-6"><strong>Entrada:</strong> ${bem.data_entrada ? dataBR(esc(bem.data_entrada)) : '—'}</div>
+            </div>
+        </div>
+
+        <div class="border-top pt-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2 text-primary"></i>Linha do tempo</h6>
+            ${eventosR.status === 'fulfilled'
+                ? renderizarTimeline(eventosR.value)
+                : '<p class="text-muted small">Não foi possível carregar o histórico.</p>'}
+        </div>
+    `;
+}
+
+// Situação atual e as ações possíveis. A API confere permissões e regras (guarda do setor, bem livre).
+function renderizarSituacao(bem, emprestimo, manutencao) {
+    if (!bem.ativo) return '';
+    let aviso = '';
+    let botoes = '';
+    if (emprestimo) {
+        const atraso = emprestimo.atrasado ? ` · <strong class="text-danger">${emprestimo.dias_atraso} dia(s) de atraso</strong>` : '';
+        aviso = `<i class="bi bi-box-arrow-up-right me-2"></i>Emprestado para <strong>${esc(emprestimo.tomador)}</strong>
+                 até ${dataBR(emprestimo.devolucao_prevista)}${atraso}`;
+        botoes = `<button class="btn btn-primary btn-sm btn-acao-bem" data-acao="devolver" data-id="${emprestimo.id}">
+                      <i class="bi bi-box-arrow-in-down-left me-1"></i>Registrar devolução</button>`;
+    } else if (manutencao) {
+        aviso = `<i class="bi bi-tools me-2"></i>Em manutenção em <strong>${esc(manutencao.destino)}</strong>
+                 há ${manutencao.dias_fora} dia(s) · ${esc(manutencao.descricao)}`;
+        botoes = `<button class="btn btn-primary btn-sm btn-acao-bem" data-acao="retorno" data-id="${manutencao.id}">
+                      <i class="bi bi-wrench-adjustable-circle me-1"></i>Registrar retorno</button>`;
+    } else {
+        botoes = `
+            <button class="btn btn-outline-primary btn-sm btn-acao-bem" data-acao="emprestar" data-id="${bem.id}">
+                <i class="bi bi-box-arrow-up-right me-1"></i>Emprestar</button>
+            <button class="btn btn-outline-primary btn-sm btn-acao-bem" data-acao="manutencao" data-id="${bem.id}">
+                <i class="bi bi-tools me-1"></i>Enviar para manutenção</button>`;
+    }
+    return `
+        <div class="mb-4" id="situacaoBem" data-bem="${bem.id}">
+            ${aviso ? `<div class="alert ${emprestimo?.atrasado ? 'alert-danger' : 'alert-warning'} py-2 small mb-2">${aviso}</div>` : ''}
+            <div class="d-flex flex-wrap gap-2">${botoes}</div>
+            <form id="formAcaoBem" class="d-none mt-3 p-3 bg-light rounded-3" novalidate></form>
+        </div>`;
+}
+
+const FORMULARIOS = {
+    emprestar: () => `
+        <h6 class="fw-bold mb-3">Emprestar bem</h6>
+        <div class="mb-2"><label class="form-label small fw-semibold" for="acaoTomador">Quem vai levar</label>
+            <input class="form-control" id="acaoTomador" required minlength="3" maxlength="120"></div>
+        <div class="mb-2"><label class="form-label small fw-semibold" for="acaoMotivo">Motivo</label>
+            <input class="form-control" id="acaoMotivo" required minlength="3" maxlength="500"></div>
+        <div class="mb-3"><label class="form-label small fw-semibold" for="acaoPrazo">Devolução prevista</label>
+            <input type="date" class="form-control" id="acaoPrazo" required min="${hojeISO()}"></div>`,
+    devolver: () => `
+        <h6 class="fw-bold mb-3">Registrar devolução</h6>
+        <div class="mb-3"><label class="form-label small fw-semibold" for="acaoObservacao">Observação (opcional)</label>
+            <input class="form-control" id="acaoObservacao" maxlength="500" placeholder="Ex.: voltou sem o carregador"></div>`,
+    manutencao: () => `
+        <h6 class="fw-bold mb-3">Enviar para manutenção</h6>
+        <div class="mb-2"><label class="form-label small fw-semibold" for="acaoDescricao">Problema</label>
+            <input class="form-control" id="acaoDescricao" required minlength="3" maxlength="500"></div>
+        <div class="mb-3"><label class="form-label small fw-semibold" for="acaoDestino">Para onde vai</label>
+            <input class="form-control" id="acaoDestino" required minlength="2" maxlength="160" placeholder="Assistência ou oficina"></div>`,
+    retorno: () => `
+        <h6 class="fw-bold mb-3">Registrar retorno da manutenção</h6>
+        <div class="mb-2"><label class="form-label small fw-semibold" for="acaoServico">Serviço realizado</label>
+            <input class="form-control" id="acaoServico" required minlength="3" maxlength="500"></div>
+        <div class="mb-3"><label class="form-label small fw-semibold" for="acaoEstado">Estado de conservação</label>
+            <select class="form-select" id="acaoEstado" required>
+                <option value="novo">Novo</option><option value="bom" selected>Bom</option><option value="regular">Regular</option>
+                <option value="ruim">Ruim</option><option value="inservivel">Inservível</option>
+            </select></div>`,
+};
+
+function abrirFormularioAcao(acao, id) {
+    const form = $("#formAcaoBem");
+    form.dataset.acao = acao;
+    form.dataset.id = id;
+    form.innerHTML = FORMULARIOS[acao]() + `
+        <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-light btn-sm" id="btnCancelarAcao">Cancelar</button>
+            <button type="submit" class="btn btn-primary btn-sm">Confirmar</button>
+        </div>`;
+    form.classList.remove('d-none');
+    form.querySelector('input, select')?.focus();
+}
+
+async function enviarAcaoBem(evento) {
+    evento.preventDefault();
+    const form = evento.target;
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+    const { acao, id } = form.dataset;
+    const bemId = $("#situacaoBem").dataset.bem;
+    const valor = (campo) => $(campo).value.trim();
+    const pedidos = {
+        emprestar: () => api.post('/api/v1/emprestimos/', {
+            bem_id: Number(id), tomador: valor('#acaoTomador'), motivo: valor('#acaoMotivo'), devolucao_prevista: valor('#acaoPrazo') }),
+        devolver: () => api.post(`/api/v1/emprestimos/${id}/devolver`, { observacao: valor('#acaoObservacao') || null }),
+        manutencao: () => api.post('/api/v1/manutencoes/', {
+            bem_id: Number(id), descricao: valor('#acaoDescricao'), destino: valor('#acaoDestino') }),
+        retorno: () => api.post(`/api/v1/manutencoes/${id}/retorno`, {
+            servico_realizado: valor('#acaoServico'), estado_retorno: $('#acaoEstado').value }),
+    };
+    const botao = form.querySelector('button[type="submit"]');
+    botao.disabled = true;
+    try {
+        await pedidos[acao]();
+        ui.showNotification('Registrado com sucesso.', 'success');
+        await Promise.all([verDetalhes(bemId), carregarBens()]);
+    } catch (erro) {
+        ui.showNotification(erro.message || 'Não foi possível registrar.', 'error');
+        botao.disabled = false;
     }
 }
 
-function renderizarTimeline(historico) {
-    if (!historico || historico.length === 0) {
-        return `<p class="text-muted fst-italic small">Nenhuma movimentação registrada para este bem.</p>`;
+function renderizarTimeline(eventos) {
+    if (!eventos || eventos.length === 0) {
+        return `<p class="text-muted fst-italic small">Nenhum evento registrado para este bem.</p>`;
     }
-
     return `
         <div class="timeline">
-            ${historico.map(m => `
+            ${eventos.map(e => `
                 <div class="timeline-item">
                     <div class="timeline-marker"></div>
                     <div class="timeline-content">
-                        <span class="timeline-date">${new Date(m.data_movimentacao).toLocaleString('pt-BR')}</span>
-                        <div class="fw-bold text-dark small">${esc(m.setor_destino_nome)}</div>
-                        <div class="text-muted smaller mt-1" style="font-size: 0.8rem;">
-                            <i class="bi bi-arrow-right me-1 text-primary"></i> Origem: ${esc(m.setor_origem_nome || 'Cadastro Inicial')}
-                        </div>
-                        <p class="mb-0 mt-2 text-muted fst-italic" style="font-size: 0.85rem;">"${esc(m.justificativa || 'Sem justificativa')}"</p>
+                        <span class="timeline-date">${dataHoraBR(e.em)}${e.autor ? ` · ${esc(e.autor)}` : ''}</span>
+                        <div class="fw-bold text-dark small"><i class="bi ${ICONE_EVENTO[e.tipo] || 'bi-dot'} me-1 text-primary"></i>${esc(e.titulo)}</div>
+                        ${e.detalhe ? `<div class="text-muted mt-1" style="font-size: 0.85rem;">${esc(e.detalhe)}</div>` : ''}
+                        ${e.fotos.length ? `<div class="mt-1 small">${e.fotos.map((f, i) =>
+                            `<a href="/api/v1/fotos/${f}" target="_blank" rel="noopener" class="me-2"><i class="bi bi-image me-1"></i>Foto ${i + 1}</a>`).join('')}</div>` : ''}
                     </div>
                 </div>
             `).join('')}
@@ -413,7 +541,15 @@ function normalizarString(str) {
         .replace(/_/g, '');
 }
 
+// Novo filtro digitado ou escolhido: volta para a primeira página.
 function filtrarBens() {
+    aplicarFiltros();
+    paginaAtual = 1;
+    renderizarTabela();
+}
+
+// Aplica busca, status e filtros vindos da URL sobre a lista carregada.
+function aplicarFiltros() {
     const termo = $("#inputBusca").value.toLowerCase();
     const statusFiltro = $("#filtroStatus").value.toLowerCase();
 
@@ -433,8 +569,6 @@ function filtrarBens() {
         return matchesBusca && sBemNorm === sFiltroNorm;
     });
 
-    paginaAtual = 1;
-    renderizarTabela();
 }
 
 function setupListeners() {
@@ -454,6 +588,15 @@ function setupListeners() {
         if (btn.classList.contains('btn-etiqueta')) abrirEtiquetas([id]);
     });
 
+    // Ações da ficha (empréstimo e manutenção): formulário dentro da própria ficha.
+    $("#conteudoDetalhes").addEventListener('click', (e) => {
+        const acao = e.target.closest('.btn-acao-bem');
+        if (acao) abrirFormularioAcao(acao.dataset.acao, acao.dataset.id);
+        if (e.target.closest('#btnCancelarAcao')) $("#formAcaoBem").classList.add('d-none');
+    });
+    $("#conteudoDetalhes").addEventListener('submit', (e) => {
+        if (e.target.id === 'formAcaoBem') enviarAcaoBem(e);
+    });
     $("#conteudoDetalhes").addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-etiqueta-ficha');
         if (btn) abrirEtiquetas([btn.dataset.id]);
