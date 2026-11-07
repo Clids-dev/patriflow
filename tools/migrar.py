@@ -5,8 +5,8 @@ Uso (na raiz do projeto, com o venv):
     venv/bin/python tools/migrar.py --status      lista aplicadas e pendentes
     venv/bin/python tools/migrar.py --baseline    marca todas as existentes como aplicadas, sem executar
                                                   (para um banco montado antes deste controle)
-    venv/bin/python tools/migrar.py --do-zero     executa database/schema.sql e depois todas as migrations
-                                                  (APAGA as tabelas do banco indicado; use só em banco novo)
+    venv/bin/python tools/migrar.py --do-zero     recria o esquema, executa database/schema.sql e todas as migrations
+                                                  (APAGA tudo do banco indicado; use só em banco novo)
 
 O banco vem das mesmas variáveis da aplicação (PATRIFLOW_DB_NAME etc., ver core/config.py).
 Cada migration roda com autocommit, porque os arquivos já trazem o próprio BEGIN/COMMIT.
@@ -84,9 +84,11 @@ def migrar(conn) -> list[str]:
 
 
 def do_zero(conn) -> list[str]:
+    """Recria o esquema public inteiro. schema.sql só apaga as tabelas base; sem isso, tabelas criadas
+    por migrations (fotos, baixas, auditoria...) sobreviveriam com dados antigos."""
     with conn.cursor() as cur:
+        cur.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
         cur.execute(SCHEMA.read_text(encoding="utf-8"))
-        cur.execute("DROP TABLE IF EXISTS schema_migrations")
         aplicadas(cur)  # cria a tabela de controle
         for nome in INCLUIDAS_NO_SCHEMA:
             cur.execute("INSERT INTO schema_migrations (nome, checksum) VALUES (%s, %s)",

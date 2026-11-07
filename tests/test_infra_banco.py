@@ -35,3 +35,15 @@ def test_todas_as_migrations_ficam_registradas_com_checksum(banco, sql):
     registradas = dict(sql("SELECT nome, checksum FROM schema_migrations"))
     for arquivo in migrar.arquivos():
         assert registradas[arquivo.name] == migrar._checksum(arquivo)
+
+
+def test_banco_do_zero_nao_guarda_dados_de_tabelas_criadas_por_migrations(banco, sql):
+    """Tabelas criadas por migrations (ex.: fotos) também precisam voltar vazias."""
+    sql("""INSERT INTO fotos (registro_tipo, registro_id, arquivo, content_type, tamanho_bytes, enviado_por)
+           VALUES ('conferencia', 1, 'teste-isolamento.jpg', 'image/jpeg', 10, 1)""")
+    conn = migrar.conectar()
+    try:
+        migrar.do_zero(conn)
+    finally:
+        conn.close()
+    assert sql("SELECT count(*) FROM fotos", um=True)[0] == 0
