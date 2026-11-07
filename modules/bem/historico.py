@@ -1,7 +1,7 @@
 """Linha do tempo do bem: todos os eventos, do mais recente para o mais antigo, numa única consulta.
 
-Fontes: auditoria (cadastro, edição, baixa, reativação), transferências, empréstimos, manutenções e
-pedidos de baixa. Cada fonte usa um índice por bem, então o custo cresce com o histórico do bem,
+Fontes: auditoria (cadastro, edição, baixa, reativação), transferências, empréstimos, manutenções,
+conferências de inventário e pedidos de baixa. Cada fonte usa um índice por bem, então o custo cresce com o histórico do bem,
 não com o tamanho das tabelas.
 
 Regras para não duplicar eventos:
@@ -80,6 +80,19 @@ WITH eventos AS (
     WHERE m.bem_id = %(bem)s AND m.retorno_em IS NOT NULL
 
     UNION ALL
+    -- Conferência em inventário, com as fotos da conferência
+    SELECT 'conferencia_' || it.situacao, it.conferido_em, u.nome, it.id,
+           jsonb_build_object('inventario', it.inventario_id, 'esperado', se.nome, 'encontrado', sf.nome,
+                              'estado', it.estado_encontrado,
+                              'fotos', (SELECT COALESCE(jsonb_agg(f.id ORDER BY f.id), '[]'::jsonb) FROM fotos f
+                                        WHERE f.registro_tipo = 'conferencia' AND f.registro_id = it.id))
+    FROM inventario_itens it
+    LEFT JOIN usuarios u ON u.id = it.conferido_por
+    LEFT JOIN setores se ON se.id = it.setor_esperado_id
+    LEFT JOIN setores sf ON sf.id = it.setor_encontrado_id
+    WHERE it.bem_id = %(bem)s AND it.situacao IS NOT NULL
+
+    UNION ALL
     -- Pedido de baixa que dependeu de outra pessoa (acima da alçada)
     SELECT 'baixa_solicitada', b.criada_em, u.nome, b.id,
            jsonb_build_object('motivo', b.motivo, 'justificativa', b.justificativa,
@@ -147,6 +160,16 @@ def _descrever(tipo: str, d: dict) -> tuple[str, str]:
     if tipo == "baixa_solicitada":
         situacao = {"pendente": "aguarda aprovação", "aprovada": "aprovada", "recusada": "recusada"}.get(d.get("situacao"), "")
         return "Baixa solicitada", " · ".join(filter(None, [d.get("motivo"), d.get("documento"), situacao]))
+    if tipo == "conferencia_localizado":
+        estado = d.get("estado")
+        partes = [f"Inventário #{d.get('inventario')}", f"localizado em {d.get('encontrado')}",
+                  f"estado: {_ESTADOS.get(estado, estado)}" if estado else None]
+        return "Conferido no inventário", " · ".join(filter(None, partes))
+    if tipo == "conferencia_outro_setor":
+        return "Encontrado em outro setor", (f"Inventário #{d.get('inventario')} · esperado em {d.get('esperado') or '—'}, "
+                                             f"encontrado em {d.get('encontrado')}")
+    if tipo == "conferencia_nao_localizado":
+        return "Não localizado no inventário", f"Inventário #{d.get('inventario')} · esperado em {d.get('esperado') or '—'}"
     if tipo == "baixa_recusada":
         return "Baixa recusada", d.get("motivo") or ""
     return tipo, ""
