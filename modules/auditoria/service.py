@@ -17,5 +17,6 @@ def registrar_alteracao(entidade: str, registro_id: int, usuario: dict | None,
 
 
 def registrar_acao(entidade: str, registro_id: int, acao: str, usuario: dict | None,
-                   antes: dict | None = None, depois: dict | None = None) -> None:
-    AuditoriaRepository().registrar(entidade, registro_id, acao, (usuario or {}).get("id"), antes, depois)
+                   antes: dict | None = None, depois: dict | None = None, cur=None) -> None:
+    """Registra uma ação. Passe `cur` para gravar dentro da transação da própria operação."""
+    AuditoriaRepository().registrar(entidade, registro_id, acao, (usuario or {}).get("id"), antes, depois, cur=cur)

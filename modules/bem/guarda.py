@@ -1,0 +1,75 @@
+"""Regras de guarda do bem, usadas dentro de uma transação (DataBase().transacao()).
+
+Empréstimo e manutenção não mudam a localização: o bem continua sob a guarda do setor onde está.
+Por isso só operam o bem o setor de patrimônio (qualquer bem) e os colaboradores do setor atual.
+
+Todas as funções recebem o cursor da transação em andamento. `travar_bem` usa SELECT ... FOR UPDATE:
+duas operações simultâneas sobre o mesmo bem são serializadas, e a segunda vê o resultado da primeira.
+"""
+from fastapi import HTTPException
+
+ADMIN = "setor_patrimonio"
+COLABORADORES = ("agente_campo", "responsavel_setor")
+STATUS_MANUTENCAO = "Manutenção"
+
+_SETOR_ATUAL = """
+    SELECT setor_destino_id FROM movimentacoes
+    WHERE bem_id = %s AND ativo = TRUE AND status = 'aprovada'
+    ORDER BY COALESCE(data_decisao, data_movimentacao) DESC, id DESC
+    LIMIT 1
+"""
+
+_OCUPACAO = """
+    SELECT EXISTS (SELECT 1 FROM emprestimos WHERE bem_id = %(bem)s AND devolvido_em IS NULL),
+           EXISTS (SELECT 1 FROM manutencoes WHERE bem_id = %(bem)s AND retorno_em IS NULL),
+           EXISTS (SELECT 1 FROM movimentacoes
+                   WHERE bem_id = %(bem)s AND ativo = TRUE AND status IN ('pendente', 'liberada'))
+"""
+
+
+def travar_bem(cur, bem_id: int) -> dict:
+    cur.execute(
+        "SELECT id, nome, codigo_tombamento, ativo, status, estado_conservacao FROM bens WHERE id = %s FOR UPDATE",
+        (bem_id,),
+    )
+    row = cur.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Bem com id {bem_id} não encontrado")
+    return {"id": row[0], "nome": row[1], "codigo_tombamento": row[2], "ativo": row[3],
+            "status": row[4], "estado_conservacao": row[5]}
+
+
+def setor_atual(cur, bem_id: int) -> int | None:
+    cur.execute(_SETOR_ATUAL, (bem_id,))
+    row = cur.fetchone()
+    return row[0] if row else None
+
+
+def exigir_livre(cur, bem: dict, *, aceitar_status_manutencao: bool = False) -> None:
+    """O bem precisa estar ativo e sem outra operação aberta (empréstimo, manutenção ou transferência).
+
+    `aceitar_status_manutencao`: bens marcados como "Manutenção" pela edição antiga, sem registro
+    aberto, podem ter a manutenção registrada agora.
+    """
+    if not bem["ativo"]:
+        raise HTTPException(status_code=400, detail="Este bem foi baixado e não pode mais ser movimentado.")
+    cur.execute(_OCUPACAO, {"bem": bem["id"]})
+    emprestado, em_manutencao, em_transferencia = cur.fetchone()
+    if emprestado:
+        raise HTTPException(status_code=409, detail="Este bem está emprestado. Registre a devolução antes.")
+    if em_manutencao or (bem["status"] == STATUS_MANUTENCAO and not aceitar_status_manutencao):
+        raise HTTPException(status_code=409, detail="Este bem está em manutenção. Registre o retorno antes.")
+    if em_transferencia:
+        raise HTTPException(status_code=409, detail="Este bem tem uma transferência em andamento.")
+
+
+def exigir_guarda(cur, usuario: dict, bem_id: int) -> None:
+    """Setor de patrimônio opera qualquer bem; colaboradores, só os bens do próprio setor."""
+    perfil = usuario["perfil"]
+    if perfil == ADMIN:
+        return
+    if perfil not in COLABORADORES:
+        raise HTTPException(status_code=403, detail="Seu perfil não pode registrar esta operação.")
+    setor = setor_atual(cur, bem_id)
+    if setor is None or usuario.get("setor_id") != setor:
+        raise HTTPException(status_code=403, detail="Você só registra operações de bens do seu setor.")

@@ -15,6 +15,16 @@ from modules.movimentacao import service as mov_service
 from modules.movimentacao.schemas import MovimentacaoCreate
 from modules.movimentacao.service import MovimentacaoService
 
+
+@pytest.fixture(autouse=True)
+def sem_emprestimo_aberto(monkeypatch):
+    """Teste unitário: nenhum bem emprestado, sem consultar o banco."""
+    repo = MagicMock()
+    repo.existe_aberto.return_value = False
+    monkeypatch.setattr("modules.movimentacao.service.EmprestimoRepository", lambda: repo)
+    return repo
+
+
 ALMOX = 3
 RH = 4
 TI = 1
@@ -213,3 +223,11 @@ def test_acompanhamento_e_so_do_almoxarifado_e_do_patrimonio(repos):
     assert exc.value.status_code == 403
     MovimentacaoService().acompanhamento(RESP_ALMOX)
     MovimentacaoService().acompanhamento(ADMIN)
+
+
+def test_bem_emprestado_nao_pode_ser_transferido(repos, sem_emprestimo_aberto):
+    sem_emprestimo_aberto.existe_aberto.return_value = True
+    with pytest.raises(HTTPException) as exc:
+        MovimentacaoService().add_movimentacao(_pedido(TI), AGENTE_TI)
+    assert exc.value.status_code == 409 and "emprestado" in exc.value.detail
+    repos["mov"].save.assert_not_called()

@@ -3,16 +3,25 @@ import json
 from core.database import DataBase
 
 
+_INSERIR = """INSERT INTO auditoria (entidade, registro_id, acao, usuario_id, antes, depois)
+               VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb)"""
+
+
+def _params(entidade, registro_id, acao, usuario_id, antes, depois) -> tuple:
+    return (entidade, registro_id, acao, usuario_id,
+            json.dumps(antes, default=str) if antes is not None else None,
+            json.dumps(depois, default=str) if depois is not None else None)
+
+
 class AuditoriaRepository(DataBase):
     def registrar(self, entidade: str, registro_id: int, acao: str, usuario_id: int | None,
-                  antes: dict | None, depois: dict | None) -> None:
-        self.commit(
-            """INSERT INTO auditoria (entidade, registro_id, acao, usuario_id, antes, depois)
-               VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb)""",
-            (entidade, registro_id, acao, usuario_id,
-             json.dumps(antes, default=str) if antes is not None else None,
-             json.dumps(depois, default=str) if depois is not None else None),
-        )
+                  antes: dict | None, depois: dict | None, cur=None) -> None:
+        """Grava o registro. Com `cur`, entra na transação em andamento (fica atômico com a operação)."""
+        params = _params(entidade, registro_id, acao, usuario_id, antes, depois)
+        if cur is not None:
+            cur.execute(_INSERIR, params)
+        else:
+            self.commit(_INSERIR, params)
 
     def listar(self, entidade: str, registro_id: int) -> list[dict]:
         rows = self.execute(

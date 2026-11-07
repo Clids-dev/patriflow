@@ -12,6 +12,15 @@ from modules.movimentacao.service import MovimentacaoService
 
 
 @pytest.fixture(autouse=True)
+def sem_emprestimo_aberto(monkeypatch):
+    """Teste unitário: nenhum bem emprestado, sem consultar o banco."""
+    repo = MagicMock()
+    repo.existe_aberto.return_value = False
+    monkeypatch.setattr("modules.movimentacao.service.EmprestimoRepository", lambda: repo)
+    return repo
+
+
+@pytest.fixture(autouse=True)
 def foto_do_recebimento(monkeypatch):
     # Autorização exige foto do recebimento (W06); estes testes cobrem outras regras, então a foto existe.
     repo = MagicMock()

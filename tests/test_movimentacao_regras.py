@@ -5,6 +5,16 @@ from modules.movimentacao.service import MovimentacaoService
 from modules.movimentacao.schemas import MovimentacaoCreate
 from modules.bem.schemas import Bem
 
+
+@pytest.fixture(autouse=True)
+def sem_emprestimo_aberto(monkeypatch):
+    """Teste unitário: nenhum bem emprestado, sem consultar o banco."""
+    repo = MagicMock()
+    repo.existe_aberto.return_value = False
+    monkeypatch.setattr("modules.movimentacao.service.EmprestimoRepository", lambda: repo)
+    return repo
+
+
 ADMIN = {"id": 1, "perfil": "setor_patrimonio", "setor_id": None}
 
 @pytest.fixture

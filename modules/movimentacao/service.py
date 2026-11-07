@@ -8,6 +8,7 @@ from modules.movimentacao.schemas import MovimentacaoCreate
 from core.tombamento import require_valid_tombo
 from core import config
 from modules.foto.repository import FotoRepository
+from modules.emprestimo.repository import EmprestimoRepository
 
 
 ROLE_ADMIN = "setor_patrimonio"
@@ -123,6 +124,10 @@ class MovimentacaoService:
                     status_code=400,
                     detail="Equipamentos em manutenção não podem ser movimentados sem a conclusão do reparo (informe na justificativa)."
                 )
+
+        # Emprestado, o bem continua sob a guarda da origem até a devolução.
+        if EmprestimoRepository().existe_aberto(movimentacao.bem_id):
+            raise HTTPException(status_code=409, detail="Este bem está emprestado. Registre a devolução antes de transferir.")
 
         setor_repository = SetorRepository()
         if movimentacao.setor_origem_id is not None and setor_repository.get_id(movimentacao.setor_origem_id) is None:
