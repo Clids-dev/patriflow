@@ -311,7 +311,7 @@ const ICONE_EVENTO = {
     manutencao_envio: 'bi-tools', manutencao_retorno: 'bi-wrench-adjustable-circle',
     baixa_solicitada: 'bi-hourglass-split', baixa_recusada: 'bi-x-circle',
     conferencia_localizado: 'bi-check2-square', conferencia_outro_setor: 'bi-signpost-split',
-    conferencia_nao_localizado: 'bi-question-circle',
+    conferencia_nao_localizado: 'bi-question-circle', conferencia_baixado_encontrado: 'bi-exclamation-diamond',
 };
 const dataBR = (valor) => new Date(`${valor}T00:00:00`).toLocaleDateString('pt-BR');
 const dataHoraBR = (valor) => new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });

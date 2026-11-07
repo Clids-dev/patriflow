@@ -22,6 +22,7 @@ def sem_emprestimo_aberto(monkeypatch):
     repo = MagicMock()
     repo.existe_aberto.return_value = False
     monkeypatch.setattr("modules.movimentacao.service.EmprestimoRepository", lambda: repo)
+    monkeypatch.setattr("modules.movimentacao.service.setores_em_inventario", lambda ids: [])
     return repo
 
 

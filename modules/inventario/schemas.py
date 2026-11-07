@@ -5,8 +5,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from modules.bem.schemas import EstadoConservacao
 
-SituacaoItem = Literal["localizado", "outro_setor", "nao_localizado", "nao_cadastrado"]
-FiltroItens = Literal["todos", "pendentes", "localizado", "outro_setor", "nao_localizado", "nao_cadastrado", "divergencias"]
+SituacaoItem = Literal["localizado", "outro_setor", "nao_localizado", "nao_cadastrado", "baixado_encontrado"]
+FiltroItens = Literal["todos", "pendentes", "localizado", "outro_setor", "nao_localizado", "nao_cadastrado",
+                      "baixado_encontrado", "divergencias"]
 FiltroInventarios = Literal["abertos", "fechados", "todos"]
 
 
@@ -113,6 +114,7 @@ class ResumoFechamento(BaseModel):
     nao_localizados: int
     ausencias_justificadas: int
     nao_cadastrados: int
+    baixados_encontrados: int = 0
     transferencias_abertas: int
     transferencias_ignoradas: list[TransferenciaIgnorada]
     pendencias_criadas: int

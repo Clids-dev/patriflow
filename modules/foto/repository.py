@@ -29,7 +29,8 @@ def _para_saida(row) -> dict:
 _REGISTRO_EXISTE = {
     "aceite_transferencia": "SELECT 1 FROM movimentacoes WHERE id = %s",
     "conferencia": """SELECT 1 FROM inventario_itens
-                      WHERE id = %s AND bem_id IS NOT NULL AND situacao IN ('localizado', 'outro_setor')""",
+                      WHERE id = %s AND bem_id IS NOT NULL
+                        AND situacao IN ('localizado', 'outro_setor', 'baixado_encontrado')""",
     "bem_nao_cadastrado": "SELECT 1 FROM inventario_itens WHERE id = %s AND situacao = 'nao_cadastrado'",
 }
 

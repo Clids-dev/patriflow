@@ -171,6 +171,9 @@ def _descrever(tipo: str, d: dict) -> tuple[str, str]:
     if tipo == "conferencia_outro_setor":
         return "Encontrado em outro setor", (f"Inventário #{d.get('inventario')} · esperado em {d.get('esperado') or '—'}, "
                                              f"encontrado em {d.get('encontrado')}")
+    if tipo == "conferencia_baixado_encontrado":
+        return "Bem baixado encontrado no inventário", (f"Inventário #{d.get('inventario')} · "
+                                                        f"encontrado em {d.get('encontrado')}")
     if tipo == "conferencia_nao_localizado":
         return "Não localizado no inventário", f"Inventário #{d.get('inventario')} · esperado em {d.get('esperado') or '—'}"
     if tipo == "baixa_recusada":

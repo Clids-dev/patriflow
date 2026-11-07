@@ -8,6 +8,7 @@ const SITUACAO = {
     outro_setor: ['Em outro setor', 'bg-warning-subtle text-warning-emphasis'],
     nao_localizado: ['Não localizado', 'bg-danger-subtle text-danger'],
     nao_cadastrado: ['Não cadastrado', 'bg-secondary-subtle text-secondary'],
+    baixado_encontrado: ['Baixado, encontrado', 'bg-danger-subtle text-danger'],
 };
 const JUSTIFICATIVA = { emprestado: 'emprestado', manutencao: 'em manutenção' };
 
@@ -205,10 +206,14 @@ async function conferir(evento) {
             setor_id: Number($('#confSetor').value), codigo_tombamento: codigo,
             estado_encontrado: $('#confEstado').value || null,
         });
-        retorno.className = item.situacao === 'localizado' ? 'small mt-2 text-success' : 'small mt-2 text-warning-emphasis';
-        retorno.innerHTML = item.situacao === 'localizado'
-            ? `<i class="bi bi-check-circle-fill me-1"></i>${esc(item.nome)}: localizado.`
-            : `<i class="bi bi-signpost-split me-1"></i>${esc(item.nome)}: era esperado em ${esc(item.setor_esperado || 'outro local')}.`;
+        const mensagens = {
+            localizado: ['text-success', 'bi-check-circle-fill', 'localizado.'],
+            outro_setor: ['text-warning-emphasis', 'bi-signpost-split', `era esperado em ${esc(item.setor_esperado || 'outro local')}.`],
+            baixado_encontrado: ['text-danger', 'bi-exclamation-diamond', 'este bem foi baixado. Ficou registrado para o patrimônio.'],
+        };
+        const [cor, icone, texto] = mensagens[item.situacao] || mensagens.outro_setor;
+        retorno.className = `small mt-2 ${cor}`;
+        retorno.innerHTML = `<i class="bi ${icone} me-1"></i>${esc(item.nome)}: ${texto}`;
         await recarregarInventario();
     } catch (erro) {
         retorno.className = 'small mt-2 text-danger';
@@ -280,6 +285,7 @@ async function fecharInventario() {
             <strong>Inventário fechado.</strong>
             ${r.localizados} localizados · ${r.outro_setor} em outro setor (${r.transferencias_abertas} transferências abertas)
             · ${r.nao_localizados} não localizados (${r.ausencias_justificadas} justificados) · ${r.nao_cadastrados} sem cadastro
+            · ${r.baixados_encontrados} baixado(s) encontrado(s)
             · ${r.pendencias_criadas} pendência(s) criada(s). ${ignoradas}`;
         await Promise.all([recarregarInventario(), carregarLista(), carregarIndicadores()]);
     } catch (erro) {

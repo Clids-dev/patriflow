@@ -11,8 +11,9 @@ _FILTROS_ITENS = {
     "outro_setor": " AND it.situacao = 'outro_setor'",
     "nao_localizado": " AND it.situacao = 'nao_localizado'",
     "nao_cadastrado": " AND it.situacao = 'nao_cadastrado'",
+    "baixado_encontrado": " AND it.situacao = 'baixado_encontrado'",
     # Relatório de divergências: tudo o que não foi encontrado no lugar esperado.
-    "divergencias": " AND it.situacao IN ('outro_setor', 'nao_localizado', 'nao_cadastrado')",
+    "divergencias": " AND it.situacao IN ('outro_setor', 'nao_localizado', 'nao_cadastrado', 'baixado_encontrado')",
 }
 
 

@@ -78,6 +78,29 @@ INSERIR_EXCEDENTE = """
     RETURNING id
 """
 
+# Bem baixado encontrado na contagem (D5): entra no inventário para virar pendência no fechamento.
+INSERIR_BAIXADO_ENCONTRADO = """
+    INSERT INTO inventario_itens
+        (inventario_id, bem_id, codigo_tombamento, nome, estado_esperado,
+         situacao, setor_encontrado_id, estado_encontrado, observacao, conferido_por, conferido_em)
+    SELECT %(inv)s, b.id, b.codigo_tombamento, b.nome, b.estado_conservacao,
+           'baixado_encontrado', %(setor)s, %(estado)s, %(obs)s, %(usuario)s, COALESCE(%(quando)s, NOW())
+    FROM bens b WHERE b.id = %(bem)s
+    RETURNING id
+"""
+
+ATUALIZAR_BAIXADO_ENCONTRADO = """
+    UPDATE inventario_itens
+    SET setor_encontrado_id = %(setor)s, estado_encontrado = %(estado)s, observacao = %(obs)s,
+        conferido_por = %(usuario)s, conferido_em = COALESCE(%(quando)s, NOW())
+    WHERE id = %(item)s
+"""
+
+# D7: empréstimo ainda aberto e com a devolução vencida.
+EMPRESTIMO_ATRASADO = """
+    SELECT 1 FROM emprestimos WHERE bem_id = %s AND devolvido_em IS NULL AND devolucao_prevista < CURRENT_DATE
+"""
+
 INSERIR_NAO_CADASTRADO = """
     INSERT INTO inventario_itens
         (inventario_id, codigo_tombamento, nome, situacao, setor_encontrado_id, observacao, conferido_por, conferido_em)

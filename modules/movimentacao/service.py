@@ -9,6 +9,7 @@ from core.tombamento import require_valid_tombo
 from core import config
 from modules.foto.repository import FotoRepository
 from modules.emprestimo.repository import EmprestimoRepository
+from modules.inventario.bloqueio import setores_em_inventario
 
 
 ROLE_ADMIN = "setor_patrimonio"
@@ -27,6 +28,15 @@ def _responsavel_do_setor(usuario: dict, setor_id) -> bool:
         and setor_id is not None
         and usuario.get("setor_id") == setor_id
     )
+
+
+def _exigir_fora_de_inventario(*setor_ids) -> None:
+    """D4: o bem não muda de lugar enquanto a origem ou o destino estiver em inventário aberto."""
+    em_contagem = setores_em_inventario(setor_ids)
+    if em_contagem:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Inventário aberto em {', '.join(em_contagem)}: a transferência aguarda o fechamento da contagem.")
 
 
 def _traduzir(resultado: str, decidida):
@@ -148,9 +158,11 @@ class MovimentacaoService:
                 # Bem sem localização: a única entrada permitida é no almoxarifado.
                 if movimentacao.setor_destino_id != almoxarifado.id:
                     raise HTTPException(status_code=400, detail="A entrada de um bem deve ser feita no almoxarifado.")
+                _exigir_fora_de_inventario(movimentacao.setor_destino_id)
                 return repository.save(movimentacao, None, "aprovada", usuario["id"], usuario["id"], datetime.now())
             if movimentacao.setor_origem_id is not None and movimentacao.setor_origem_id != atual:
                 raise HTTPException(status_code=400, detail="A origem informada não corresponde ao local atual do bem.")
+            _exigir_fora_de_inventario(atual, movimentacao.setor_destino_id)
             return repository.save(movimentacao, atual, "aprovada", usuario["id"], usuario["id"], datetime.now())
 
         if perfil not in ROLE_SOLICITANTE:
@@ -195,6 +207,8 @@ class MovimentacaoService:
             if not (admin or _responsavel_do_setor(usuario, mov.setor_origem_id)):
                 raise HTTPException(status_code=403, detail="Somente o responsável do setor de origem libera o bem.")
             novo_status = "liberada" if aprovar else "recusada"
+            if aprovar:
+                _exigir_fora_de_inventario(mov.setor_origem_id, mov.setor_destino_id)
             resultado, decidida = repository.transicionar(
                 id, mov.bem_id, mov.setor_origem_id, ("pendente",), novo_status,
                 usuario["id"], datetime.now(), motivo, verificar_local=False,
@@ -208,6 +222,7 @@ class MovimentacaoService:
             if FotoRepository().contar("aceite_transferencia", id) == 0:
                 raise HTTPException(status_code=400, detail="Envie a foto do recebimento do bem antes de confirmar.")
             novo_status = "aprovada"
+            _exigir_fora_de_inventario(mov.setor_origem_id, mov.setor_destino_id)
         else:
             novo_status = "recusada"
         resultado, decidida = repository.transicionar(
@@ -232,6 +247,8 @@ class MovimentacaoService:
                 status_code=403,
                 detail="Somente o responsável do almoxarifado ou o setor de patrimônio podem decidir.",
             )
+        if aprovar:
+            _exigir_fora_de_inventario(mov.setor_origem_id, mov.setor_destino_id)
         resultado, decidida = MovimentacaoRepository().decidir(
             id, mov.bem_id, mov.setor_origem_id, aprovar, usuario["id"], datetime.now(),
             (motivo or "").strip() or None,

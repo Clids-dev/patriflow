@@ -9,6 +9,13 @@ from modules.movimentacao import service as mov_service
 from modules.movimentacao.repository import _detailed
 from modules.movimentacao.service import MovimentacaoService
 
+
+@pytest.fixture(autouse=True)
+def sem_inventario_aberto(monkeypatch):
+    """Teste unitário: nenhum setor em inventário, sem consultar o banco."""
+    monkeypatch.setattr("modules.movimentacao.service.setores_em_inventario", lambda ids: [])
+
+
 ALMOX = MagicMock(id=3)
 PATRIMONIO = {"id": 1, "perfil": "setor_patrimonio", "setor_id": None}
 

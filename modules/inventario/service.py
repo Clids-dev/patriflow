@@ -98,13 +98,19 @@ class InventarioService:
                 raise HTTPException(status_code=404,
                                     detail="Tombo não cadastrado. Registre o bem como não cadastrado.")
             bem_id, ativo = bem
-            if not ativo:
-                raise HTTPException(status_code=409, detail="Este bem foi baixado. Informe o patrimônio.")
             params = {"setor": dados.setor_id, "estado": dados.estado_encontrado, "obs": dados.observacao,
                       "usuario": usuario["id"], "quando": quando}
             cur.execute(q.ITEM_DO_BEM, (inventario_id, bem_id))
             item = cur.fetchone()
-            if item is None:
+            if not ativo:
+                # D5: bem baixado encontrado fica registrado e vira pendência no fechamento.
+                if item is None:
+                    cur.execute(q.INSERIR_BAIXADO_ENCONTRADO, {**params, "inv": inventario_id, "bem": bem_id})
+                    item_id = cur.fetchone()[0]
+                else:
+                    item_id = item[0]
+                    cur.execute(q.ATUALIZAR_BAIXADO_ENCONTRADO, {**params, "item": item_id})
+            elif item is None:
                 # Bem fora da lista congelada: encontrado aqui, mas pertence a outro lugar.
                 cur.execute(q.LOCAL_DO_BEM, (bem_id,))
                 local = cur.fetchone()
@@ -161,7 +167,8 @@ class InventarioService:
     def fechar(self, inventario_id: int, usuario: dict) -> dict:
         _exigir_patrimonio(usuario, "fechar")
         resumo = {"inventario_id": inventario_id, "localizados": 0, "outro_setor": 0, "nao_localizados": 0,
-                  "ausencias_justificadas": 0, "nao_cadastrados": 0, "transferencias_abertas": 0,
+                  "ausencias_justificadas": 0, "nao_cadastrados": 0, "baixados_encontrados": 0,
+                  "transferencias_abertas": 0,
                   "transferencias_ignoradas": [], "pendencias_criadas": 0}
         with DataBase().transacao() as cur:
             _, status, _ = _travar(cur, inventario_id, "UPDATE")
@@ -186,13 +193,25 @@ class InventarioService:
                         resumo["transferencias_abertas"] += 1
                 elif situacao == "nao_localizado":
                     resumo["nao_localizados"] += 1
-                    if justificada:
+                    atrasado = False
+                    if justificada == "emprestado":
+                        cur.execute(q.EMPRESTIMO_ATRASADO, (bem_id,))
+                        atrasado = cur.fetchone() is not None
+                    if justificada and not atrasado:
                         # Emprestado ou em manutenção: o registro dessa operação já explica a ausência.
                         resumo["ausencias_justificadas"] += 1
                         continue
+                    # D7: empréstimo já atrasado no fechamento não é mais uma ausência justificada.
+                    motivo = "emprestado e com a devolução atrasada" if atrasado else "não localizado"
                     cur.execute(q.INSERIR_PENDENCIA, ("bem_nao_localizado", item_id, bem_id, esperado,
-                                                      f"{codigo} · {nome}: não localizado no inventário #{inventario_id}",
+                                                      f"{codigo} · {nome}: {motivo} no inventário #{inventario_id}",
                                                       usuario["id"]))
+                    resumo["pendencias_criadas"] += 1
+                elif situacao == "baixado_encontrado":
+                    resumo["baixados_encontrados"] += 1
+                    cur.execute(q.INSERIR_PENDENCIA, ("bem_baixado_encontrado", item_id, bem_id, encontrado,
+                                                      f"{codigo} · {nome}: bem baixado encontrado no inventário "
+                                                      f"#{inventario_id}", usuario["id"]))
                     resumo["pendencias_criadas"] += 1
                 elif situacao == "nao_cadastrado":
                     resumo["nao_cadastrados"] += 1

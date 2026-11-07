@@ -6,6 +6,8 @@ const TIPO = {
     bem_nao_localizado: ['Não localizado', 'bi-question-circle', 'bg-danger-subtle text-danger'],
     bem_nao_cadastrado: ['Sem cadastro', 'bi-box-seam', 'bg-secondary-subtle text-secondary'],
     conflito_sincronizacao: ['Conflito de sincronização', 'bi-arrow-repeat', 'bg-warning-subtle text-warning-emphasis'],
+    operacao_imprevista: ['Operação imprevista', 'bi-lightning', 'bg-warning-subtle text-warning-emphasis'],
+    bem_baixado_encontrado: ['Baixado encontrado', 'bi-exclamation-diamond', 'bg-danger-subtle text-danger'],
 };
 const dataHoraBR = (valor) => new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 

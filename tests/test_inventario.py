@@ -67,9 +67,10 @@ def test_abertura_congela_a_lista_esperada_de_cada_setor(banco):
     por_setor = {s.setor_id: s.esperados for s in inv.setores}
     assert por_setor == {TI: 2, ALMOX: 2}
 
-    # Mover o bem depois da abertura não muda o que o inventário espera.
-    MovimentacaoService().add_movimentacao(
-        MovimentacaoCreate(bem_id=1, setor_origem_id=TI, setor_destino_id=RH, justificativa="Remanejamento"), ADMIN)
+    # D4: durante a contagem o bem não muda de lugar, nem por transferência direta do patrimônio.
+    erro = _erro(MovimentacaoService().add_movimentacao,
+                 MovimentacaoCreate(bem_id=1, setor_origem_id=TI, setor_destino_id=RH, justificativa="Remanejamento"), ADMIN)
+    assert erro.status_code == 409 and "Inventário aberto" in erro.detail
     itens = InventarioService().itens(inv.id, TI, "todos")
     assert sorted(i.bem_id for i in itens) == [1, 2]
 
@@ -180,7 +181,7 @@ def test_fechamento_completo_abre_transferencias_e_cria_pendencias(banco, tombo,
     resumo = servico.fechar(inv.id, ADMIN)
     assert resumo == {
         "inventario_id": inv.id, "localizados": 1, "outro_setor": 2, "nao_localizados": 2,
-        "ausencias_justificadas": 1, "nao_cadastrados": 1, "transferencias_abertas": 2,
+        "ausencias_justificadas": 1, "nao_cadastrados": 1, "baixados_encontrados": 0, "transferencias_abertas": 2,
         "transferencias_ignoradas": [], "pendencias_criadas": 2,
     }
     transferencias = sql("""SELECT bem_id, setor_origem_id, setor_destino_id, status, fluxo FROM movimentacoes
@@ -248,3 +249,44 @@ def test_conferencia_aparece_na_linha_do_tempo_com_a_foto(banco, tombo, tmp_path
     evento = historico.linha_do_tempo(1)[0]
     assert evento["tipo"] == "conferencia_localizado" and evento["fotos"] == [foto["id"]]
     assert "estado: regular" in evento["detalhe"]
+
+
+# --- D4, D5 e D7 --------------------------------------------------------------------------------
+
+def test_pedido_de_transferencia_espera_o_fim_do_inventario(banco, sql):
+    """Pedir é livre; liberar fica bloqueado até o fechamento e funciona depois dele."""
+    resp_rh = sql("""INSERT INTO usuarios (username, senha, tipo, ativo, nome, setor_id)
+                     VALUES ('resp_rh', 'x', 'responsavel_setor', TRUE, 'Resp RH', %s) RETURNING id""", (RH,), um=True)[0]
+    inv = _abrir(setores=(TI,))
+    pedido = MovimentacaoService().add_movimentacao(
+        MovimentacaoCreate(bem_id=1, setor_destino_id=RH, justificativa="Uso no RH"),
+        {"id": resp_rh, "perfil": "responsavel_setor", "setor_id": RH})
+    assert pedido.status == "pendente"
+    erro = _erro(MovimentacaoService().decidir_movimentacao, pedido.id, ADMIN, True)
+    assert erro.status_code == 409
+    InventarioService().marcar_faltantes(inv.id, TI, ADMIN)
+    InventarioService().fechar(inv.id, ADMIN)
+    assert MovimentacaoService().decidir_movimentacao(pedido.id, ADMIN, True).status == "liberada"
+
+
+def test_bem_baixado_encontrado_vira_pendencia(banco, tombo, sql):
+    sql("UPDATE bens SET ativo = FALSE WHERE id = 4")
+    inv = _abrir(setores=(TI,))
+    item = _conferir(inv.id, tombo(4), TI)
+    assert item.situacao == "baixado_encontrado"
+    InventarioService().marcar_faltantes(inv.id, TI, ADMIN)
+    resumo = InventarioService().fechar(inv.id, ADMIN)
+    assert resumo["baixados_encontrados"] == 1
+    tipos = [p.tipo for p in PendenciaService().listar("abertas")]
+    assert "bem_baixado_encontrado" in tipos
+
+
+def test_emprestimo_atrasado_no_fechamento_vira_pendencia(banco, sql):
+    sql("""INSERT INTO emprestimos (bem_id, tomador, motivo, saida_em, devolucao_prevista, registrado_por)
+           VALUES (2, 'João Lima', 'Evento', NOW() - INTERVAL '10 days', CURRENT_DATE - 2, 1)""")
+    inv = _abrir(setores=(TI,))
+    InventarioService().marcar_faltantes(inv.id, TI, ADMIN)
+    resumo = InventarioService().fechar(inv.id, ADMIN)
+    assert resumo["ausencias_justificadas"] == 0
+    descricoes = [p.descricao for p in PendenciaService().listar("abertas")]
+    assert any("devolução atrasada" in d for d in descricoes)
