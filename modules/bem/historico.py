@@ -95,6 +95,12 @@ WITH eventos AS (
     WHERE it.bem_id = %(bem)s AND it.situacao IS NOT NULL
 
     UNION ALL
+    -- Pendência do bem resolvida pelo patrimônio, com a ação escolhida (D6)
+    SELECT 'pendencia_resolvida', p.resolvida_em, u.nome, p.id, jsonb_build_object('resolucao', p.resolucao)
+    FROM pendencias p LEFT JOIN usuarios u ON u.id = p.resolvida_por
+    WHERE p.bem_id = %(bem)s AND p.resolvida_em IS NOT NULL
+
+    UNION ALL
     -- Pedido de baixa que dependeu de outra pessoa (acima da alçada)
     SELECT 'baixa_solicitada', b.criada_em, u.nome, b.id,
            jsonb_build_object('motivo', b.motivo, 'justificativa', b.justificativa,
@@ -176,6 +182,8 @@ def _descrever(tipo: str, d: dict) -> tuple[str, str]:
                                                         f"encontrado em {d.get('encontrado')}")
     if tipo == "conferencia_nao_localizado":
         return "Não localizado no inventário", f"Inventário #{d.get('inventario')} · esperado em {d.get('esperado') or '—'}"
+    if tipo == "pendencia_resolvida":
+        return "Pendência resolvida", d.get("resolucao") or ""
     if tipo == "baixa_recusada":
         return "Baixa recusada", d.get("motivo") or ""
     return tipo, ""

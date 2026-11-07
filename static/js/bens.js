@@ -57,7 +57,15 @@ async function aplicarFiltrosDaUrl() {
         aviso.classList.remove('d-none');
     }
     filtrarBens();
+    // Vindo de uma pendência de bem sem cadastro (D6): abre o cadastro já com o nome.
+    if (params.get('novo') === '1') {
+        pendenciaParaResolver = params.get('pendencia');
+        $("#nome").value = params.get('nome') || '';
+        bootstrap.Modal.getOrCreateInstance($("#modalNovoBem")).show();
+    }
 }
+
+let pendenciaParaResolver = null;
 
 async function carregarBens() {
     try {
@@ -312,6 +320,7 @@ const ICONE_EVENTO = {
     baixa_solicitada: 'bi-hourglass-split', baixa_recusada: 'bi-x-circle',
     conferencia_localizado: 'bi-check2-square', conferencia_outro_setor: 'bi-signpost-split',
     conferencia_nao_localizado: 'bi-question-circle', conferencia_baixado_encontrado: 'bi-exclamation-diamond',
+    pendencia_resolvida: 'bi-check2-circle',
 };
 const dataBR = (valor) => new Date(`${valor}T00:00:00`).toLocaleDateString('pt-BR');
 const dataHoraBR = (valor) => new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
@@ -698,8 +707,15 @@ function setupListeners() {
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
             
-            await api.post("/api/v1/bem/", bem);
+            const criado = await api.post("/api/v1/bem/", bem);
             ui.showNotification("Equipamento cadastrado com sucesso!");
+            if (pendenciaParaResolver) {
+                await api.post(`/api/v1/pendencias/${encodeURIComponent(pendenciaParaResolver)}/resolver`, {
+                    acao: 'cadastrado', bem_id: criado.id,
+                    resolucao: `Cadastrado com o tombo ${criado.codigo_tombamento || ''}`.trim() });
+                pendenciaParaResolver = null;
+                ui.showNotification("Equipamento cadastrado e pendência resolvida.");
+            }
             
             bootstrap.Modal.getInstance($("#modalNovoBem")).hide();
             e.target.reset();

@@ -20,6 +20,7 @@ from modules.inventario.schemas import Conferencia, InventarioCreate, NaoCadastr
 from modules.inventario.service import InventarioService
 from modules.movimentacao.schemas import MovimentacaoCreate
 from modules.movimentacao.service import MovimentacaoService
+from modules.pendencia.schemas import Resolucao
 from modules.pendencia.service import PendenciaService
 
 pytestmark = pytest.mark.integracao
@@ -222,10 +223,12 @@ def test_pendencia_e_resolvida_uma_vez_e_so_pelo_patrimonio(banco, agente_ti):
     InventarioService().fechar(inv.id, ADMIN)
     pendencia = PendenciaService().listar("abertas")[0]
 
-    assert _erro(PendenciaService().resolver, pendencia.id, "Achado no depósito", agente_ti).status_code == 403
-    resolvida = PendenciaService().resolver(pendencia.id, "Achado no depósito", ADMIN)
-    assert resolvida.resolvida_em is not None and resolvida.resolucao == "Achado no depósito"
-    assert _erro(PendenciaService().resolver, pendencia.id, "De novo", ADMIN).status_code == 409
+    decisao = Resolucao(acao="aguardar", resolucao="Será procurado na próxima contagem")
+    assert _erro(PendenciaService().resolver, pendencia.id, decisao, agente_ti).status_code == 403
+    resolvida = PendenciaService().resolver(pendencia.id, decisao, ADMIN)
+    assert resolvida.resolvida_em is not None and resolvida.acao == "aguardar"
+    assert resolvida.resolucao == "Aguardar o próximo inventário: Será procurado na próxima contagem"
+    assert _erro(PendenciaService().resolver, pendencia.id, decisao, ADMIN).status_code == 409
 
 
 # --- Fotos e linha do tempo ---------------------------------------------------------------------

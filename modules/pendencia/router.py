@@ -13,6 +13,14 @@ def listar(situacao: Situacao = Query("abertas")):
     return PendenciaService().listar(situacao)
 
 
+@router.get("/acoes")
+def acoes_por_tipo():
+    """Ações guiadas disponíveis para cada tipo de pendência."""
+    from modules.pendencia.acoes import ACOES
+    return ACOES
+
+
 @router.post("/{pendencia_id}/resolver", response_model=Pendencia)
 def resolver(pendencia_id: int, dados: Resolucao, usuario=Depends(current_user)):
-    return PendenciaService().resolver(pendencia_id, dados.resolucao, usuario)
+    """Resolve com uma ação do tipo da pendência; algumas executam algo (ex.: abrir a baixa por extravio)."""
+    return PendenciaService().resolver(pendencia_id, dados, usuario)

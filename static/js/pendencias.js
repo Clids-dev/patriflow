@@ -13,11 +13,14 @@ const dataHoraBR = (valor) => new Date(valor).toLocaleString('pt-BR', { dateStyl
 
 let eu = null;
 let selecionada = null;
+let pendencias = [];
+let acoesPorTipo = {};
+let setoresAtivos = [];
 
 async function carregar() {
     const corpo = $('#listaPendencias');
     try {
-        const pendencias = await api.get(`/api/v1/pendencias/?situacao=${$('#filtroPendencias').value}`);
+        pendencias = await api.get(`/api/v1/pendencias/?situacao=${$('#filtroPendencias').value}`);
         corpo.innerHTML = pendencias.length ? pendencias.map(linha).join('')
             : '<tr><td colspan="6" class="text-center text-muted py-4">Nada pendente aqui.</td></tr>';
     } catch (erro) {
@@ -37,7 +40,7 @@ function linha(p) {
            <div class="small text-muted">${esc(p.resolucao)} · ${esc(p.resolvida_por || '')}, ${dataHoraBR(p.resolvida_em)}</div>`
         : '<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">Aberta</span>';
     const acao = !p.resolvida_em && eu.perfil === 'setor_patrimonio'
-        ? `<button class="btn btn-sm btn-outline-primary btn-resolver" data-id="${p.id}" data-resumo="${esc(p.descricao)}">Resolver</button>` : '';
+        ? `<button class="btn btn-sm btn-outline-primary btn-resolver" data-id="${p.id}">Resolver</button>` : '';
     return `
         <tr>
             <td class="ps-4"><span class="badge rounded-pill ${classe}"><i class="bi ${icone} me-1"></i>${rotulo}</span></td>
@@ -49,12 +52,47 @@ function linha(p) {
         </tr>`;
 }
 
-function abrirResolver({ id, resumo }) {
-    selecionada = id;
-    $('#resolverResumo').textContent = resumo;
+// Ações guiadas por tipo (D6): cada ação pede só o que precisa para ser executada.
+const CAMPOS_DA_ACAO = {
+    encontrado: () => `<div class="mb-3"><label class="form-label fw-semibold" for="resolverSetor">Onde foi encontrado</label>
+        <select class="form-select" id="resolverSetor" required><option value="">Escolha o setor</option>
+        ${setoresAtivos.map(s => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join('')}</select></div>`,
+    baixa_extravio: () => `<div class="mb-3"><label class="form-label fw-semibold" for="resolverDocumento">Boletim de ocorrência</label>
+        <input class="form-control" id="resolverDocumento" required minlength="3" maxlength="120" placeholder="Número do BO">
+        <div class="form-text">A baixa segue a regra da alçada: acima do valor limite, aguarda outro servidor.</div></div>`,
+    cadastrado: (p) => `<div class="alert alert-info small">Cadastre o bem na tela de Equipamentos; ao salvar, esta pendência é
+        resolvida sozinha. <a class="fw-semibold" href="/bens?novo=1&pendencia=${p.id}&nome=${encodeURIComponent(p.descricao.split(':')[0].split(' (etiqueta')[0])}">Cadastrar agora</a></div>`,
+};
+
+async function abrirResolver(id) {
+    const p = pendencias.find(x => String(x.id) === String(id));
+    if (!p) return;
+    selecionada = p;
+    $('#resolverResumo').textContent = p.descricao;
     $('#formResolver').reset();
     $('#formResolver').classList.remove('was-validated');
+    const acoes = acoesPorTipo[p.tipo] || {};
+    $('#resolverAcoes').innerHTML = Object.entries(acoes).map(([chave, rotulo], i) => `
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="resolverAcao" id="acao-${chave}" value="${chave}" ${i === 0 ? 'checked' : ''}>
+            <label class="form-check-label" for="acao-${chave}">${esc(rotulo)}</label>
+        </div>`).join('');
+    if ('encontrado' in acoes && !setoresAtivos.length) {
+        try { setoresAtivos = (await api.get('/api/v1/setores/')).filter(s => s.ativo !== false); } catch (e) { /* lista vazia */ }
+    }
+    mostrarCamposDaAcao();
     bootstrap.Modal.getOrCreateInstance($('#modalResolver')).show();
+}
+
+function acaoEscolhida() {
+    return document.querySelector('input[name="resolverAcao"]:checked')?.value;
+}
+
+function mostrarCamposDaAcao() {
+    const acao = acaoEscolhida();
+    $('#resolverExtra').innerHTML = CAMPOS_DA_ACAO[acao] ? CAMPOS_DA_ACAO[acao](selecionada) : '';
+    // "Cadastrado" se resolve ao salvar o bem: aqui não há o que enviar.
+    $('#formResolver button[type="submit"]').disabled = acao === 'cadastrado';
 }
 
 async function resolver(evento) {
@@ -64,8 +102,11 @@ async function resolver(evento) {
         form.classList.add('was-validated');
         return;
     }
+    const corpo = { acao: acaoEscolhida(), resolucao: $('#resolverTexto').value.trim() };
+    if ($('#resolverSetor')) corpo.setor_id = Number($('#resolverSetor').value);
+    if ($('#resolverDocumento')) corpo.documento = $('#resolverDocumento').value.trim();
     try {
-        await api.post(`/api/v1/pendencias/${selecionada}/resolver`, { resolucao: $('#resolverTexto').value.trim() });
+        await api.post(`/api/v1/pendencias/${selecionada.id}/resolver`, corpo);
         bootstrap.Modal.getInstance($('#modalResolver')).hide();
         ui.showNotification('Pendência resolvida.', 'success');
         await carregar();
@@ -79,8 +120,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('#filtroPendencias').addEventListener('change', carregar);
     $('#listaPendencias').addEventListener('click', (e) => {
         const botao = e.target.closest('.btn-resolver');
-        if (botao) abrirResolver(botao.dataset);
+        if (botao) abrirResolver(botao.dataset.id);
     });
     $('#formResolver').addEventListener('submit', resolver);
+    $('#resolverAcoes').addEventListener('change', mostrarCamposDaAcao);
+    try { acoesPorTipo = await api.get('/api/v1/pendencias/acoes'); } catch (erro) { /* sem ações, sem resolução */ }
     await carregar();
 });
