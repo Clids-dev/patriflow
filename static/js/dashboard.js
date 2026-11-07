@@ -29,22 +29,23 @@ function mostrarDataDeHoje() {
 // "O que pede atenção": situações que exigem decisão, da mais urgente para a menos urgente.
 // Cada fonte é independente. Quem não tem permissão para uma fonte (403) só não a vê;
 // falha de verdade é sinalizada, para não parecer que "tudo está em ordem" quando não está.
-const PRIORIDADE_ATENCAO = { escalada: 0, emprestimoAtrasado: 1, baixa: 2, transferencia: 3, garantiaVencida: 4, garantiaAVencer: 5 };
+const PRIORIDADE_ATENCAO = { escalada: 0, emprestimoAtrasado: 1, baixa: 2, pendencia: 3, transferencia: 4, garantiaVencida: 5, garantiaAVencer: 6 };
 const LIMITE_ATENCAO = 6;
 
 async function renderizarAtencao() {
     const lista = $('#atencaoLista');
     const total = $('#atencaoTotal');
 
-    const [escaladas, atrasados, baixas, pendentes, garantias] = await Promise.allSettled([
+    const [escaladas, atrasados, baixas, pendencias, pendentes, garantias] = await Promise.allSettled([
         api.get('/api/v1/movimentacao/escaladas'),
         api.get('/api/v1/emprestimos/?situacao=atrasados'),
         api.get('/api/v1/bem/baixas/pendentes'),
+        api.get('/api/v1/pendencias/?situacao=abertas'),
         api.get('/api/v1/movimentacao/pendentes'),
         api.get('/api/v1/bem/alertas/garantias?dias=60'),
     ]);
 
-    const resultados = [escaladas, atrasados, baixas, pendentes, garantias];
+    const resultados = [escaladas, atrasados, baixas, pendencias, pendentes, garantias];
     const falhou = resultados.some(r => r.status === 'rejected' && r.reason?.status !== 403);
     resultados.filter(r => r.status === 'rejected').forEach(r => console.warn('Fonte de atenção indisponível:', r.reason));
     const dados = r => (r.status === 'fulfilled' ? r.value : []);
@@ -77,6 +78,14 @@ async function renderizarAtencao() {
         titulo: `Baixa aguardando aprovação: ${b.bem_nome}`,
         detalhe: `${b.codigo_tombamento} · ${b.motivo} · solicitada por ${b.solicitante}`,
         link: `/bens?busca=${encodeURIComponent(b.codigo_tombamento)}`,
+    }));
+
+    dados(pendencias).forEach(p => itens.push({
+        prioridade: PRIORIDADE_ATENCAO.pendencia,
+        icone: p.tipo === 'bem_nao_cadastrado' ? 'bi-box-seam' : 'bi-question-circle',
+        titulo: p.tipo === 'bem_nao_cadastrado' ? 'Bem encontrado sem cadastro' : 'Bem não localizado no inventário',
+        detalhe: p.descricao,
+        link: '/pendencias',
     }));
 
     dados(pendentes).filter(m => !idsEscaladas.has(m.id)).forEach(m => itens.push({
