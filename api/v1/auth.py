@@ -47,8 +47,15 @@ def login(data: LoginRequest):
     except ContaBloqueada as exc:
         raise HTTPException(status_code=423, detail=str(exc))
     if not row:
-        if service.conta_pendente(data.username, data.senha):
-            raise HTTPException(status_code=403, detail="Conta aguardando aprovação do setor de patrimônio.")
+        # Senha certa, conta não ativa: diz o motivo (D3). Senha errada nunca revela a situação.
+        mensagens = {
+            "aguardando": "Conta aguardando aprovação do setor de patrimônio.",
+            "recusado": "Cadastro recusado pelo setor de patrimônio.",
+            "desativado": "Conta desativada. Procure o setor de patrimônio.",
+        }
+        situacao = service.situacao_da_conta(data.username, data.senha)
+        if situacao in mensagens:
+            raise HTTPException(status_code=403, detail=mensagens[situacao])
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
     user = user_payload(row)
     token = create_access_token(user, jwt_secret(), config.JWT_EXPIRES_SECONDS)

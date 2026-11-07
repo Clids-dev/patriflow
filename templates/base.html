@@ -97,6 +97,15 @@
                     </li>
                     {% endif %}
 
+                    {% if tipo in ["admin", "setor_patrimonio"] %}
+                    <li class="sidebar-item {% if active_page == 'usuarios' %}active{% endif %}">
+                        <a href="/usuarios" class="sidebar-link">
+                            <i class="bi bi-people"></i>
+                            <span>Usuários</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
                     <li class="sidebar-item {% if active_page == 'relatorios' %}active{% endif %}">
                         <a href="/relatorios" class="sidebar-link">
                             <i class="bi bi-bar-chart-line-fill"></i>

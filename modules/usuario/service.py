@@ -40,15 +40,18 @@ class UsuarioService:
         password_hash = hash_password(senha)
         return self.repo.criar(username, password_hash, nome, setor_id)
 
-    def conta_pendente(self, username, senha) -> bool:
-        """True se a senha confere, mas a conta ainda não foi aprovada."""
+    def situacao_da_conta(self, username, senha) -> str | None:
+        """Situação do cadastro (D3) quando a senha confere e a conta não está ativa; senão, None."""
         user = self.repo.buscar_por_username(username)
-        return bool(user) and verify_password(senha, user[2]) and not user[4]
+        if not user or user[4] or not verify_password(senha, user[2]):
+            return None
+        return self.repo.situacao(user[0])
 
-    def listar(self):
-        return self.repo.listar()
+    def listar(self, situacao: str | None = None):
+        return self.repo.listar(situacao)
 
-    def atualizar(self, user_id: int, admin: dict, perfil: str, setor_id, ativo: bool):
+    def atualizar(self, user_id: int, admin: dict, perfil: str, setor_id, ativo: bool | None = None,
+                  situacao: str | None = None):
         from modules.setor.repository import SetorRepository
         from fastapi import HTTPException
 
@@ -59,11 +62,19 @@ class UsuarioService:
             raise HTTPException(status_code=400, detail="Setor não encontrado ou inativo.")
         if perfil == "responsavel_setor" and setor_id is None:
             raise HTTPException(status_code=400, detail="Responsável de setor precisa de um setor vinculado.")
-        if user_id == admin["id"] and (not ativo or perfil != "setor_patrimonio"):
-            raise HTTPException(status_code=400, detail="Você não pode desativar nem rebaixar a própria conta.")
-        row = self.repo.atualizar(user_id, perfil, setor_id, ativo)
-        if row is None:
+        if admin["perfil"] != "setor_patrimonio":
+            raise HTTPException(status_code=403, detail="Somente o setor de patrimônio altera usuários.")
+        atual = self.repo.situacao(user_id)
+        if atual is None:
             raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+        if situacao is None:
+            # Cliente antigo, só com "ativo": desligar um cadastro que aguarda não o tira da fila.
+            situacao = "ativo" if ativo else ("desativado" if atual == "ativo" else atual)
+        if situacao == "recusado" and atual != "aguardando":
+            raise HTTPException(status_code=409, detail="Só um cadastro aguardando aprovação pode ser recusado.")
+        if user_id == admin["id"] and (situacao != "ativo" or perfil != "setor_patrimonio"):
+            raise HTTPException(status_code=400, detail="Você não pode desativar nem rebaixar a própria conta.")
+        row = self.repo.atualizar(user_id, perfil, setor_id, situacao, admin["id"])
         return {"id": row[0], "username": row[1], "nome": row[2], "perfil": row[3],
-                "ativo": bool(row[4]), "setor_id": row[5]}
+                "ativo": bool(row[4]), "setor_id": row[5], "situacao": row[6]}
 

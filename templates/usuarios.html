@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import painel_topo %}
+
+{% block title %}Usuários{% endblock %}
+
+{% set active_page = 'usuarios' %}
+
+{% block content %}
+{% call painel_topo("Acesso", "Usuários") %}
+    <label class="visually-hidden" for="filtroSituacao">Situação</label>
+    <select id="filtroSituacao" class="form-select w-auto">
+        <option value="">Todas as situações</option>
+        <option value="aguardando">Aguardando aprovação</option>
+        <option value="ativo">Ativos</option>
+        <option value="desativado">Desativados</option>
+        <option value="recusado">Recusados</option>
+    </select>
+{% endcall %}
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Nome</th>
+                        <th>Usuário</th>
+                        <th>Perfil</th>
+                        <th>Setor</th>
+                        <th>Situação</th>
+                        <th class="pe-4 acoes-tabela">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="listaUsuarios">
+                    <tr><td colspan="6" class="text-center text-muted py-4">Carregando…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Aprovar, editar ou reativar: perfil e setor -->
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-labelledby="tituloUsuario" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="formUsuario" novalidate>
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="tituloUsuario">Aprovar cadastro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted" id="resumoUsuario"></p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="usuarioPerfil">Perfil</label>
+                    <select class="form-select" id="usuarioPerfil" required>
+                        <option value="agente_campo">Agente de campo</option>
+                        <option value="responsavel_setor">Responsável de setor</option>
+                        <option value="auditor">Auditor</option>
+                        <option value="setor_patrimonio">Setor de patrimônio</option>
+                    </select>
+                </div>
+                <div class="mb-1">
+                    <label class="form-label fw-semibold" for="usuarioSetor">Setor</label>
+                    <select class="form-select" id="usuarioSetor"></select>
+                    <div class="form-text">Responsável de setor só pode ser ativado com setor.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="btnSalvarUsuario">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/usuarios.js"></script>
+{% endblock %}

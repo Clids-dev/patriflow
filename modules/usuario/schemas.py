@@ -1,3 +1,5 @@
+from typing import Literal, Optional
+
 from pydantic import BaseModel
 
 class UsuarioLogin(BaseModel):
@@ -14,5 +16,7 @@ class UsuarioResponse(BaseModel):
 class UsuarioAtualizacao(BaseModel):
     perfil: str
     setor_id: int | None = None
-    ativo: bool
+    # "situacao" (D3) é o jeito novo; "ativo" continua aceito para os clientes antigos.
+    situacao: Optional[Literal["ativo", "desativado", "recusado"]] = None
+    ativo: Optional[bool] = None
 

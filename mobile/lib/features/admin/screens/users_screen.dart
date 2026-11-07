@@ -87,6 +87,23 @@ class _UsersScreenState extends State<UsersScreen> {
             ],
           ),
           actions: [
+            // Cadastro aguardando pode ser recusado: o registro fica guardado (D3).
+            if (usuario['situacao'] == 'aguardando')
+              TextButton(
+                onPressed: () async {
+                  try {
+                    await ApiClient.patch('/usuarios/${usuario['id']}', {
+                      'perfil': perfil,
+                      'setor_id': setorId,
+                      'situacao': 'recusado',
+                    });
+                    if (ctx.mounted) Navigator.pop(ctx, true);
+                  } catch (e) {
+                    if (ctx.mounted) showAppMessage(ctx, '$e');
+                  }
+                },
+                child: const Text('Recusar cadastro'),
+              ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancelar'),
@@ -146,7 +163,7 @@ class _UsersScreenState extends State<UsersScreen> {
               subtitle:
                   '${perfilLabel('${raw['perfil']}')}'
                   '${raw['setor_id'] != null ? ' • ${setorNomes['${raw['setor_id']}'] ?? 'Setor ${raw['setor_id']}'}' : ''}',
-              trailing: _statusChip(raw['ativo'] == true),
+              trailing: _statusChip('${raw['situacao'] ?? (raw['ativo'] == true ? 'ativo' : 'aguardando')}'),
               onTap: () => _editar(Map<String, dynamic>.from(raw), setores),
             ),
         ],
@@ -154,7 +171,11 @@ class _UsersScreenState extends State<UsersScreen> {
     },
   );
 
-  Widget _statusChip(bool ativo) => ativo
-      ? AppStatusChip(label: 'Ativo', color: AppColors.success)
-      : AppStatusChip(label: 'Pendente', color: AppColors.warning);
+  /// Situação do cadastro (D3): aguardando aprovação, ativo, desativado ou recusado.
+  Widget _statusChip(String situacao) => switch (situacao) {
+    'ativo' => AppStatusChip(label: 'Ativo', color: AppColors.success),
+    'desativado' => AppStatusChip(label: 'Desativado', color: AppColors.textSecondary),
+    'recusado' => AppStatusChip(label: 'Recusado', color: AppColors.error),
+    _ => AppStatusChip(label: 'Aguardando', color: AppColors.warning),
+  };
 }

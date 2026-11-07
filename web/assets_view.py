@@ -121,3 +121,8 @@ def tela_inventarios(request: Request):
 @router.get("/pendencias")
 def tela_pendencias(request: Request):
     return templates.TemplateResponse("pendencias.html", _contexto(request, "pendencias"))
+
+
+@router.get("/usuarios")
+def tela_usuarios(request: Request):
+    return templates.TemplateResponse("usuarios.html", _contexto(request, "usuarios"))

@@ -29,23 +29,24 @@ function mostrarDataDeHoje() {
 // "O que pede atenção": situações que exigem decisão, da mais urgente para a menos urgente.
 // Cada fonte é independente. Quem não tem permissão para uma fonte (403) só não a vê;
 // falha de verdade é sinalizada, para não parecer que "tudo está em ordem" quando não está.
-const PRIORIDADE_ATENCAO = { escalada: 0, emprestimoAtrasado: 1, baixa: 2, pendencia: 3, transferencia: 4, garantiaVencida: 5, garantiaAVencer: 6 };
+const PRIORIDADE_ATENCAO = { escalada: 0, emprestimoAtrasado: 1, baixa: 2, pendencia: 3, cadastro: 4, transferencia: 5, garantiaVencida: 6, garantiaAVencer: 7 };
 const LIMITE_ATENCAO = 6;
 
 async function renderizarAtencao() {
     const lista = $('#atencaoLista');
     const total = $('#atencaoTotal');
 
-    const [escaladas, atrasados, baixas, pendencias, pendentes, garantias] = await Promise.allSettled([
+    const [escaladas, atrasados, baixas, pendencias, cadastros, pendentes, garantias] = await Promise.allSettled([
         api.get('/api/v1/movimentacao/escaladas'),
         api.get('/api/v1/emprestimos/?situacao=atrasados'),
         api.get('/api/v1/bem/baixas/pendentes'),
         api.get('/api/v1/pendencias/?situacao=abertas'),
+        api.get('/api/v1/usuarios/?situacao=aguardando'),
         api.get('/api/v1/movimentacao/pendentes'),
         api.get('/api/v1/bem/alertas/garantias?dias=60'),
     ]);
 
-    const resultados = [escaladas, atrasados, baixas, pendencias, pendentes, garantias];
+    const resultados = [escaladas, atrasados, baixas, pendencias, cadastros, pendentes, garantias];
     const falhou = resultados.some(r => r.status === 'rejected' && r.reason?.status !== 403);
     resultados.filter(r => r.status === 'rejected').forEach(r => console.warn('Fonte de atenção indisponível:', r.reason));
     const dados = r => (r.status === 'fulfilled' ? r.value : []);
@@ -89,6 +90,14 @@ async function renderizarAtencao() {
             || 'Bem não localizado no inventário',
         detalhe: p.descricao,
         link: '/pendencias',
+    }));
+
+    dados(cadastros).forEach(u => itens.push({
+        prioridade: PRIORIDADE_ATENCAO.cadastro,
+        icone: 'bi-person-plus',
+        titulo: `Cadastro aguardando aprovação: ${u.nome || u.username}`,
+        detalhe: `${u.username}${u.setor_nome ? ` · ${u.setor_nome}` : ''}`,
+        link: '/usuarios?situacao=aguardando',
     }));
 
     dados(pendentes).filter(m => !idsEscaladas.has(m.id)).forEach(m => itens.push({
