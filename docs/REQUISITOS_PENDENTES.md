@@ -2,6 +2,7 @@
 
 Fonte: quadro Kanban da disciplina, projeto `681c6118-c4f3-457e-b954-ee02e9911442`
 (kanban.repsys.com.br). Capturado em 05/11/2026, cruzado com o código do repositório.
+Atualizado em 07/11/2026 com as entregas de inventário, sincronização, histórico e trabalho offline.
 
 Legenda: `[x]` atendido · `[~]` parcial ou a verificar · `[ ]` pendente
 
@@ -38,12 +39,13 @@ quando houver conflito. Ver seção 2.
 
 ## 1. Estado atual do repositório (resumo)
 
-- Backend: 40 testes passando (`venv/bin/python -m pytest`).
-- Concluído nesta análise: W03 (6/6), tratamento de tombo duplicado (409), próximo tombo
-  por maior sequência (sem reaproveitar número de bem baixado).
-- Sem nenhuma implementação: W04 (etiqueta QR), W05 (fotos), W07 (inventário),
-  W08 (sincronização em lote), A03, A04, A06, A07, A10, A11, A12.
-- Parcial: W06, W09, W10, A02, A04, A05, A08, A09 (app: transferências, leitura por QR, ficha e importação).
+- Testes: 206 no backend (`venv/bin/python -m pytest`, incluindo integração num banco próprio, recriado
+  a cada teste) e 17 no aplicativo (`flutter test`).
+- Banco: migrations aplicadas por `tools/migrar.py`, que registra o que já rodou em cada banco.
+- Completos: W03, W04, W05, W06, W07, W08, W09; A02, A03, A12.
+- Parciais: W10 (faltam relatórios por responsável e por estado, e filtros/exportação), A04, A05, A08, A09, A10.
+- Sem implementação no app: A06, A07, A11. A API de cada um já existe (conferência, bem não cadastrado
+  e inventário via `/inventarios` e `/sincronizacao`); falta a tela.
 
 **Numeração (decidida):** o progresso é reportado pela numeração do quadro da disciplina (W04 = etiqueta
 QR e consulta por tombo; W05 = fotos). Os códigos internos antigos do repositório deixam de ser usados como
@@ -85,16 +87,17 @@ interno, migração `20261104_usuarios_aprovacao_auditor`). A migração `202611
 
 Verificação: QR de etiquetas de exemplo lidos de volta com `zxing-cpp` (tombo correto); `test_etiquetas.py`.
 
-### W05 · Fotos: envio, guarda e entrega — `[~]` 4/6 (API pronta)
+### W05 · Fotos: envio, guarda e entrega — `[x]` 6/6
 - [x] API recebe foto (`POST /api/v1/fotos/`) e guarda o arquivo no servidor (`FOTOS_DIR`)
 - [x] Autor e data/hora são marcados pelo servidor (`enviado_por`, `enviado_em` com `NOW()`)
-- [~] Foto fica vinculada a `conferencia`, `aceite_transferencia` ou `bem_nao_cadastrado` pelo tipo e id do registro. Os registros ainda não existem na API; a validação de existência entra junto com eles
+- [x] Foto fica vinculada a `conferencia`, `aceite_transferencia` ou `bem_nao_cadastrado` pelo tipo e id do registro,
+  e a API recusa (404) foto de registro que não existe, sem deixar arquivo órfão no disco
 - [x] Limite de tamanho (5 MB, `PATRIFLOW_FOTO_MAX_BYTES`) e formatos JPEG/PNG/WebP (checados pelo conteúdo), com mensagem clara (413/415)
-- [ ] Foto é entregue pela API (`GET /api/v1/fotos/{id}` pronto) e aparece na tela web do registro. A tela depende das telas de conferência, aceite e bem não cadastrado
+- [x] Foto é entregue pela API (`GET /api/v1/fotos/{id}`) e aparece na web: linha do tempo do bem (recebimento e
+  conferência) e caixa de pendências (bem não cadastrado)
 - [x] Foto nunca é apagada nem substituída: trigger no banco bloqueia UPDATE e DELETE
 
-Migração: `database/migrations/20261105_fotos.sql` (executar uma vez no banco de desenvolvimento).
-Testes: `test_fotos.py`.
+Migração: `database/migrations/20261105_fotos.sql`. Testes: `test_fotos.py`, `test_inventario.py`.
 
 ### W06 · Transferência com dupla confirmação — `[x]` 10/10 (API, app e web)
 Regra (decidida com o professor): origem e destino livres. Um colaborador do setor de destino solicita;
@@ -116,71 +119,81 @@ o almoxarifado é notificado de toda transferência e pode intervir com motivo.
 Migração: `database/migrations/20261110_transferencia_dupla_confirmacao.sql`.
 Testes: `test_transferencia_dupla.py`, e os testes antigos ajustados para o fluxo "simples".
 
-### W07 · Inventário: abertura, congelamento e fechamento — `[ ]` 0/7
-- [ ] Abertura define período e setores
-- [ ] Abertura congela a lista esperada por setor (não muda com movimentações depois)
-- [ ] API entrega a lista congelada ao app e recebe a conferência de volta
-- [ ] Não é possível abrir dois inventários para o mesmo setor ao mesmo tempo
-- [ ] Fechamento classifica cada bem em: localizado, localizado em outro setor, não localizado, não cadastrado
-- [ ] Inventário não fecha enquanto houver bem sem situação
-- [ ] Localizado em outro setor abre transferência; não localizado e não cadastrado viram pendência
+### W07 · Inventário: abertura, congelamento e fechamento — `[x]` 7/7
+- [x] Abertura define período e setores (`POST /inventarios`, só o setor de patrimônio)
+- [x] Abertura congela a lista esperada por setor; movimentações depois não a alteram (cópia em `inventario_itens`)
+- [x] API entrega a lista congelada (`GET /inventarios/{id}/itens`) e recebe a conferência pelo tombo
+  (`POST /inventarios/{id}/conferencias`, também por `/sincronizacao`); releitura não duplica
+- [x] Não é possível abrir dois inventários para o mesmo setor ao mesmo tempo (índice único, com teste de concorrência)
+- [x] Fechamento classifica cada bem: localizado, localizado em outro setor, não localizado, não cadastrado
+- [x] Inventário não fecha enquanto houver bem sem situação; "encerrar contagem do setor" marca os faltantes
+- [x] Localizado em outro setor abre transferência com dupla confirmação; não localizado (sem ausência justificada
+  por empréstimo ou manutenção) e não cadastrado viram pendência
 
-Obs.: o PDF "Relatório de Inventário de Bens" existe, mas é só exportação do acervo.
+Web: tela Inventários, pronta para leitor de etiquetas. Fechado, o inventário não muda mais (trigger).
+Migração: `20261112_inventario_pendencias.sql`. Testes: `test_inventario.py`.
 
-### W08 · Sincronização em lote, com conflito sinalizado — `[ ]` 0/6
-- [ ] API recebe lote de operações numa única chamada
-- [ ] Resposta diz, por operação, se foi aceita, recusada ou está em conflito
-- [ ] Cada operação tem identificador do aparelho; reenvio não grava duas vezes (idempotência)
-- [ ] Operações são aplicadas na ordem de criação
-- [ ] Conflito fica registrado e vai para o patrimônio decidir
-- [ ] Nenhuma operação é descartada em silêncio; API registra data/hora de cada sincronização
+### W08 · Sincronização em lote, com conflito sinalizado — `[x]` 6/6
+- [x] API recebe lote de operações numa única chamada (`POST /sincronizacao`, até 500)
+- [x] Resposta diz, por operação, se foi aceita, recusada (com motivo) ou está em conflito
+- [x] Cada operação tem identificador do aparelho; reenvio não grava duas vezes (inclusive envios simultâneos)
+- [x] Operações são aplicadas na ordem de criação no aparelho
+- [x] Conflito fica registrado e vai para o patrimônio decidir (caixa de pendências)
+- [x] Nenhuma operação é descartada em silêncio; cada sincronização tem data/hora e contagem (`GET /sincronizacao/ultima`)
 
-### W09 · Trilha de auditoria, baixa, empréstimo e manutenção — `[~]` parcial
-- [~] Histórico do bem é linha do tempo de eventos (hoje só movimentações: `/movimentacao/bem/{codigo}`)
-- [ ] Cadastro, conferência, transferência, empréstimo, manutenção, inventário e baixa entram na trilha
-- [ ] Nenhum evento pode ser editado ou apagado. `DELETE /movimentacao/` existe e contradiz este item
-- [ ] Empréstimo: quem levou, motivo, data de saída, devolução prevista, atraso sinalizado, guarda na origem
-- [~] Manutenção: status "Manutenção" bloqueia movimentação; falta registrar envio e retorno com serviço e novo estado
-- [~] Baixa: `POST /bem/{id}/desativar` existe, sem motivo (doação, inservível, extravio), justificativa nem documento
-- [~] API entrega histórico completo do bem (só movimentações)
+Tipos aceitos: conferência, bem não cadastrado, pedido/liberação/recebimento/recusa de transferência, empréstimo,
+devolução, envio e retorno de manutenção. Migração: `20261113_sincronizacao_lote.sql`. Testes: `test_sincronizacao.py`.
 
-### W10 · Relatórios de divergência e caixa de pendências — `[~]` parcial
+### W09 · Trilha de auditoria, baixa, empréstimo e manutenção — `[x]` 7/7
+- [x] Histórico do bem é linha do tempo de eventos (`GET /bem/{id}/historico`, ficha do bem na web)
+- [x] Cadastro, edição, conferência, transferência, empréstimo, manutenção, inventário e baixa entram na trilha
+- [x] Nenhum evento pode ser editado ou apagado: triggers impedem exclusão de transferências, baixas, empréstimos,
+  manutenções e itens de inventário, e alteração da auditoria (não existe rota de exclusão de movimentação)
+- [x] Empréstimo: quem levou, motivo, data de saída, devolução prevista, atraso sinalizado, guarda na origem
+- [x] Manutenção: envio e retorno com serviço realizado e novo estado de conservação; bloqueia transferência e empréstimo
+- [x] Baixa com motivo (lista fechada), justificativa e documento; acima da alçada, aprovação de outro servidor
+- [x] API entrega o histórico completo do bem, com as fotos de cada evento
+
+Migração: `20261111_emprestimo_manutencao_eventos_imutaveis.sql`. Testes: `test_emprestimo_manutencao.py`.
+
+### W10 · Relatórios de divergência e caixa de pendências — `[~]` 3/7
 - [ ] Relatório de bens por responsável com valor total sob a guarda
 - [ ] Relatório de bens por estado de conservação com quantidade e percentual
-- [ ] Relatório de divergências do inventário (depende de W07)
+- [x] Relatório de divergências do inventário (`GET /inventarios/{id}/itens?filtro=divergencias`, filtro na web)
 - [ ] Filtros por setor, período, categoria e estado; exportação XLSX e PDF (hoje `/relatorio/exportar` só tem categoria, setor e status)
-- [~] Caixa de pendências: hoje só movimentações pendentes (`/movimentacao/pendentes`). Falta bem não cadastrado, conflito de sincronização e bem não localizado
-- [ ] Cada pendência mostra origem, autor, data e foto, e tem ação que a encerra
-- [ ] Pendência encerrada sai da caixa e fica no histórico do bem
+- [x] Caixa de pendências com bem não localizado, bem não cadastrado e conflito de sincronização (`/pendencias`);
+  transferências pendentes e escaladas aparecem no painel "O que pede atenção"
+- [x] Cada pendência mostra origem, autor, data e foto, e tem ação que a encerra (resolução obrigatória)
+- [~] Pendência encerrada sai da caixa e fica registrada (filtro "Resolvidas"); ainda não aparece na linha do tempo do bem
 
 ---
 
 ## 4. Backlog — APP (agente de campo, responsável de setor)
 
-Estado do app (atualizado): versão **online**, com menu e barra inferior no padrão da web. Já existem
-câmera para leitura de etiqueta (`mobile_scanner`, só QR Code), busca por tombo, ficha do bem, transferências
-com motivo, foto na autorização e recusa com motivo, baixa com motivo e documento, importação CSV, etiquetas
-(individual e em lote), termo de responsabilidade e o menu do agente sem itens sem função. Ainda **não há**
-armazenamento local, fila offline nem conferência no app (A03, A06, A11, A12).
+Estado do app (atualizado em 07/11/2026): versão online com trabalho offline para o colaborador. Há banco local
+(SQLite) com o acervo do setor e a fila de sincronização, indicador de conexão e da fila em todas as telas, e as
+ações de guarda (empréstimo, devolução, envio e retorno de manutenção) funcionam sem rede. Ainda não há
+conferência nem inventário no app (A06, A11) nem registro de bem não cadastrado (A07).
 
-Branches com esse trabalho: `feat/app-regras-transferencia` (já na `main`), `feat/app-importacao-etiquetas-termo`
-e `feat/app-leitura-qr-ficha` (ainda não mescladas na `main`).
+Branches do trabalho de 07/11 (empilhadas, nesta ordem): `chore/infra-banco`, `feat/historico-emprestimo-manutencao`,
+`feat/inventario`, `feat/sincronizacao-lote`, `feat/app-offline`, `docs/requisitos-atualizados`.
 
-### A02 · Login e sessão no aplicativo — `[~]` 5/6 (card em "Fazendo")
+### A02 · Login e sessão no aplicativo — `[x]` 6/6
 - [x] Tela de login envia usuário e senha à API e recebe o token
 - [x] Token guardado no aparelho (armazenamento seguro) e enviado em toda chamada
 - [x] Credencial errada mostra mensagem sem dizer se foi usuário ou senha
 - [x] Reabrir o app com token válido não pede login (splash com `/auth/me`)
 - [x] Menu montado pelo perfil devolvido pela API
-- [~] Token vencido avisa e volta ao login, mas a fila de sincronização ainda não existe (depende de A12)
+- [x] Token vencido avisa e volta ao login sem apagar a fila offline nem o acervo do aparelho
 
-### A03 · Baixar o acervo do setor para o aparelho — `[ ]` 0/6
-- [ ] Agente escolhe o setor e o app baixa bens com ficha completa
-- [ ] Categorias, localizações e foto de referência vêm junto e ficam no banco local
-- [ ] Tela mostra data/hora do último download e quantidade de bens
-- [ ] Acervo consultável sem internet
-- [ ] Baixar de novo não apaga a fila de sincronização
-- [ ] Falha no download avisa e mantém o acervo anterior
+### A03 · Baixar o acervo do setor para o aparelho — `[x]` 6/6
+- [x] Colaborador baixa o acervo do próprio setor (o patrimônio escolhe qualquer setor), com ficha completa
+  (`GET /acervo/setor/{id}`, uma chamada)
+- [x] Categorias, setores, localizações e foto de referência vêm junto e ficam no banco local
+- [x] Tela mostra data/hora do último download e quantidade de bens
+- [x] Acervo consultável sem internet (busca por nome ou tombo e ficha do bem)
+- [x] Baixar de novo não apaga a fila de sincronização (tabelas separadas, com teste)
+- [x] Falha no download avisa e mantém o acervo anterior (dados e fotos trocam juntos)
 
 ### A04 · Leitura da etiqueta pela câmera e digitação do tombo — `[~]` 3/6
 - [x] Câmera abre na tela de leitura e decodifica o QR sem confirmação (atalho central da barra inferior)
@@ -192,11 +205,11 @@ e `feat/app-leitura-qr-ficha` (ainda não mescladas na `main`).
 
 ### A05 · Ficha do bem e histórico no aplicativo — `[~]` 4/7 completos
 - [x] Ficha mostra tombo, nome, categoria, marca, modelo, série, estado, setor, localização, responsável, garantia e depreciação/valor contábil
-- [~] Foto mais recente aparece na ficha: falta a API listar fotos por bem (hoje as fotos são por registro)
-- [ ] Ações de conferir, transferir, emprestar e enviar para manutenção partem da ficha (a ficha é somente leitura)
-- [~] Histórico vem da API em ordem, com data, autor e tipo; falta a foto em cada evento
+- [~] Foto mais recente aparece na ficha offline (foto de referência do acervo); a ficha online ainda não a mostra
+- [~] Ações de transferir, emprestar e enviar para manutenção partem da ficha (empréstimo e manutenção na ficha offline); conferir ainda não
+- [~] Histórico vem da API em ordem, com data, autor e tipo; a API já entrega as fotos de cada evento (`/bem/{id}/historico`), falta usá-la no app
 - [x] Nenhum evento pode ser editado ou apagado pelo app
-- [ ] Sem rede, ficha e histórico baixados continuam abrindo (depende de A03)
+- [~] Sem rede, a ficha baixada abre; o histórico ainda não é baixado
 
 ### A06 · Conferência do bem, com foto — `[ ]` 0/6
 - [ ] Tela mostra dados do bem e estado de conservação cadastrado
@@ -217,9 +230,9 @@ e `feat/app-leitura-qr-ficha` (ainda não mescladas na `main`).
 ### A08 · Solicitar a transferência de um bem — `[~]` 5/6
 - [x] Solicitação exige setor de destino e motivo
 - [x] Tela deixa claro que o bem continua na origem enquanto SOLICITADA (etapa "Aguarda liberação")
-- [x] Solicitação vai à API (almoxarifado ↔ setor, ver C2)
+- [x] Solicitação vai à API (origem e destino livres, ver C2)
 - [x] Agente vê a lista das transferências que solicitou, com estado e motivo da decisão
-- [ ] Solicitação sem rede entra na fila e aparece como pendente de envio (depende de A12)
+- [ ] Solicitação sem rede entra na fila: a fila e o tipo `transferencia_solicitar` já existem; falta a tela usar a fila
 - [x] Transferência já solicitada não pode ser solicitada de novo (API recusa com 409)
 
 Obs.: a solicitação é feita a partir de "Minhas solicitações", do Início e da ficha do bem.
@@ -229,19 +242,20 @@ Obs.: a solicitação é feita a partir de "Minhas solicitações", do Início e
 - [x] Aceite exige foto do recebimento (câmera ou galeria, enviada antes da autorização)
 - [x] Aceita, o bem passa ao destino
 - [x] Recusa exige motivo, que fica visível para quem solicitou
-- [ ] Aceite ou recusa sem rede entra na fila (depende de A12)
+- [ ] Aceite ou recusa sem rede entra na fila: a sincronização já trata liberação, recebimento e recusa (com a
+  etapa vista no aparelho); falta a tela usar a fila e guardar a foto até haver conexão
 - [x] Respondida, sai da lista de pendentes e aparece em "Minhas solicitações" e no histórico do bem
 
-### A10 · Empréstimo e manutenção pelo aplicativo — `[ ]` 0/7
-- [ ] Empréstimo exige quem levou, motivo, data de saída e devolução prevista
-- [ ] Devolução registra data efetiva e volta o status normal
-- [ ] Empréstimo vencido aparece destacado na lista do agente
-- [ ] Envio para manutenção exige descrição, data e destino
-- [ ] Retorno registra serviço, data e novo estado de conservação
-- [ ] Emprestado e em manutenção continuam na guarda da origem
-- [ ] Os quatro registros vão à API e aparecem no histórico
+### A10 · Empréstimo e manutenção pelo aplicativo — `[~]` 6/7
+- [x] Empréstimo exige quem levou, motivo e devolução prevista; a data de saída é a do servidor
+- [x] Devolução registra data efetiva e encerra o empréstimo
+- [~] Empréstimo aparece marcado na lista do acervo; o atraso ainda não é destacado no app (na web, sim)
+- [x] Envio para manutenção exige descrição e destino; a data é a do servidor
+- [x] Retorno registra serviço, data e novo estado de conservação; o bem volta ao status anterior
+- [x] Emprestado e em manutenção continuam na guarda da origem
+- [x] Os quatro registros vão à API (direto ou pela fila offline) e aparecem no histórico
 
-### A11 · Execução do inventário, offline — `[ ]` 0/7
+### A11 · Execução do inventário, offline — `[ ]` 0/7 (API pronta: lista congelada e conferência por `/sincronizacao`)
 - [ ] Agente escolhe o inventário aberto do setor e o app carrega a lista congelada
 - [ ] Contadores de esperados, encontrados, faltantes e excedentes atualizados a cada leitura
 - [ ] Comparação calculada no aparelho, sem rede
@@ -250,26 +264,29 @@ Obs.: a solicitação é feita a partir de "Minhas solicitações", do Início e
 - [ ] Cada bem lido é conferido com estado e foto
 - [ ] Tudo lido entra na fila e é enviado na sincronização
 
-### A12 · Fila de sincronização e status da conexão — `[ ]` 0/7
-- [ ] Status online/offline visível em todas as telas de campo
-- [ ] Quantidade de operações na fila e data da última sincronização à vista
-- [ ] Fila consultável: tipo, bem e data de cada operação
-- [ ] Sincronização envia o lote na ordem de criação
-- [ ] Resultado de cada operação mostrado: enviada, recusada com motivo, ou em conflito
-- [ ] Recusada ou em conflito permanece visível; fila só esvazia do que o servidor confirmou
-- [ ] Reenvio após interrupção não duplica registros
+### A12 · Fila de sincronização e status da conexão — `[x]` 7/7
+- [x] Status online/offline visível em todas as telas (indicador na barra superior; "online" = servidor respondeu)
+- [x] Quantidade de operações na fila e data da última sincronização à vista
+- [x] Fila consultável: tipo, bem e data de cada operação
+- [x] Sincronização envia o lote na ordem de criação (e começa sozinha quando o servidor volta)
+- [x] Resultado de cada operação mostrado: enviada, recusada com motivo, ou em conflito
+- [x] Recusada ou em conflito permanece visível; fila só esvazia do que o servidor confirmou
+- [x] Reenvio após interrupção não duplica registros (id por operação, com testes de queda de rede)
 
 ---
 
 ## 5. Ordem sugerida (dependências)
 
-1. **W05 (fotos)**: base para C4, A06, A07, A09 e W06.
-2. **W08 (sincronização em lote)** e **A03 + A12 (armazenamento local e fila)**: base para todo o trabalho offline.
-3. **W04 (etiqueta QR)** e **A04 (leitura)**: dependem do W03, que já está pronto.
-4. **W07 (inventário)** → **A11**, e **W10** (relatório de divergências).
-5. **W09** (trilha, empréstimo, manutenção, baixa) → **A10**.
-6. **W06 / A08 / A09** após decidir C2 e C3.
-7. **A05, A07** e o restante do app.
+A base offline (W08, A03, A12), o inventário (W07) e a trilha (W09) estão prontos. Próximos passos:
+
+1. **A11 (inventário no app)**: usa a lista congelada do W07 e a fila do A12; é o próximo de maior valor.
+2. **A06 (conferência com foto)** e **A07 (bem não cadastrado)**: mesmas operações do inventário, com foto guardada
+   no aparelho até a sincronização.
+3. **A04 offline**: leitura da etiqueta consultando o acervo baixado quando não há rede, e checagem do dígito
+   verificador no aparelho.
+4. **A08 e A09 offline**: pedido, liberação, recebimento e recusa pela fila (a API já aceita).
+5. **W10**: relatórios por responsável e por estado de conservação, filtros e exportação.
+6. **REQ-EX-02**: expiração de sessão por inatividade no app (a fila já é preservada).
 
 Decisões de regra (C1 a C3) já foram confirmadas com o professor, e a numeração segue o quadro (seção 1).
 
@@ -314,7 +331,7 @@ segundo usuário do setor de patrimônio.
 - [x] Aprovação e recusa entram na auditoria
 
 ### REQ-EX-02 · Segurança de acesso: senha e sessão — P1
-Estado: bloqueio e registro de acessos feitos. Pendentes: recuperação de senha por e-mail (precisa de serviço de e-mail) e expiração por inatividade no app (depende da fila offline, A12).
+Estado: bloqueio e registro de acessos feitos. Pendentes: recuperação de senha por e-mail (precisa de serviço de e-mail) e expiração por inatividade no app (a fila offline já existe e é preservada ao expirar a sessão).
 Recuperação de senha, bloqueio após tentativas erradas e expiração de sessão no login web e no app.
 - [ ] Recuperação de senha por link de uso único com validade curta
 - [x] Conta bloqueada temporariamente após N tentativas erradas, com aviso claro
@@ -335,9 +352,10 @@ Painel com os alertas que pedem ação: garantias vencendo, transferências para
 
 ### REQ-EX-05 · Ciclo de vida completo da baixa — P2
 Venda, doação, sinistro, extravio e descarte, cada um com documento próprio.
-- [ ] Motivo da baixa obrigatório, com lista fechada de destinos
-- [ ] Documento obrigatório conforme o destino (ex.: boletim de ocorrência para extravio e sinistro)
-- [ ] Bem baixado sai das listagens ativas e do inventário, mas continua no histórico
+- [x] Motivo da baixa obrigatório, com lista fechada (doação, inservível, extravio, venda, sinistro, descarte)
+- [~] Documento obrigatório em toda baixa; ainda não varia conforme o destino (ex.: boletim de ocorrência para extravio)
+- [~] Bem baixado fica fora do inventário e do acervo offline e continua no histórico; na lista de bens aparece
+  marcado como baixado (o filtro "somente ativos" o esconde)
 
 ### REQ-EX-06 · Anexos em PDF nos cadastros — P2
 Nota fiscal, laudo técnico e outros documentos anexados ao bem.
