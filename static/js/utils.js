@@ -37,7 +37,11 @@ export const api = {
                 } catch (e) {
                     errorData = { detail: `Erro HTTP ${response.status}` };
                 }
-                const erro = new Error(errorData.detail || `Erro na requisição: ${response.status}`);
+                // Validação do FastAPI (422) devolve uma lista de erros; mostra as mensagens, não "[object Object]".
+                const detalhe = Array.isArray(errorData.detail)
+                    ? errorData.detail.map(e => String(e.msg || '').replace(/^Value error, /, '')).join(' ')
+                    : errorData.detail;
+                const erro = new Error(detalhe || `Erro na requisição: ${response.status}`);
                 erro.status = response.status;
                 throw erro;
             }

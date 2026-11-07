@@ -7,7 +7,7 @@
 
 {% block content %}
 {% call painel_topo("Estrutura", "Categorias") %}
-    <button class="btn btn-primary pill-btn" data-bs-toggle="modal" data-bs-target="#modalCategoria">
+    <button type="button" class="btn btn-primary pill-btn" id="btnNovaCategoria">
         <i class="bi bi-plus-lg me-1"></i> Cadastrar categoria
     </button>
 {% endcall %}
@@ -23,12 +23,13 @@
         <div class="row g-3 align-items-center">
             <div class="col-12 col-md-8">
                 <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" id="buscaCategoria" class="form-control" placeholder="Buscar por nome ou sigla...">
+                    <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+                    <label for="buscaCategoria" class="visually-hidden">Buscar categoria por nome ou sigla</label>
+                    <input type="search" id="buscaCategoria" class="form-control" placeholder="Buscar por nome ou sigla" autocomplete="off">
                 </div>
             </div>
             <div class="col-12 col-md-4 text-md-end">
-                <span class="text-muted small" id="totalCategorias">Carregando categorias...</span>
+                <span class="text-muted small" id="totalCategorias" aria-live="polite">Carregando categorias…</span>
             </div>
         </div>
     </div>
@@ -56,7 +57,7 @@
 </div>
 
 <!-- Modal Categoria -->
-<div class="modal fade" id="modalCategoria" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalCategoria" tabindex="-1" aria-labelledby="tituloModal" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -64,16 +65,20 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
-                <form id="formCategoria">
+                <form id="formCategoria" novalidate>
                     <input type="hidden" id="categoriaId">
                     <div class="mb-3">
                         <label for="nome" class="form-label fw-semibold">Nome da categoria</label>
-                        <input type="text" class="form-control" id="nome" required placeholder="Ex: Informática, Mobiliário">
+                        <input type="text" class="form-control" id="nome" required minlength="2" maxlength="100"
+                               placeholder="Ex.: Informática, Mobiliário" autocomplete="off">
+                        <div class="invalid-feedback">Informe um nome com 2 a 100 caracteres.</div>
                     </div>
                     <div class="mb-3">
                         <label for="sigla" class="form-label fw-semibold">Sigla (3 letras)</label>
-                        <input type="text" class="form-control text-uppercase" id="sigla" maxlength="3" required placeholder="Ex: INF">
-                        <div class="form-text">Usada para gerar os códigos de patrimônio (ex: INF-001).</div>
+                        <input type="text" class="form-control text-uppercase" id="sigla" required minlength="3" maxlength="3"
+                               pattern="[A-Z]{3}" placeholder="Ex.: INF" autocomplete="off" aria-describedby="ajudaSigla">
+                        <div class="invalid-feedback">A sigla deve ter exatamente 3 letras.</div>
+                        <div class="form-text" id="ajudaSigla">Três letras, usadas como prefixo dos tombos (ex.: INF-001-0). Não pode ser alterada depois.</div>
                     </div>
                     <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-primary" id="btnSalvar">Salvar categoria</button>
