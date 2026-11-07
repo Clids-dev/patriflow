@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../core/navigation/app_shell.dart';
 import '../../core/navigation/shell_item.dart';
+import '../../core/offline/sincronizacao_controller.dart';
 import '../../core/services/api_client.dart';
 import '../../core/services/session_manager.dart';
 import '../../core/utils/app_helpers.dart';
 import '../../core/widgets/app_states.dart';
+import '../../core/widgets/status_conexao.dart';
 import '../admin/screens/assets_screen.dart';
 import '../admin/screens/categories_screen.dart';
 import '../admin/screens/responsibles_screen.dart';
@@ -18,6 +20,8 @@ import '../auth/login_page.dart';
 import '../bens/bens_leitura_page.dart';
 import '../bens/leitura_qr_page.dart';
 import '../movimentacao/transfer_list_page.dart';
+import '../offline/acervo_offline_page.dart';
+import '../offline/sincronizacao_page.dart';
 import '../server_config/server_config_page.dart';
 import 'inicio_page.dart';
 
@@ -35,6 +39,14 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final Future<int?> _almoxarifado = _carregarAlmoxarifado();
+  final _offline = SincronizacaoController.instancia;
+
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.profile['id'] as int?;
+    if (id != null) _offline.iniciar(usuarioId: id);
+  }
 
   /// Id do almoxarifado único, usado nas solicitações de bens.
   Future<int?> _carregarAlmoxarifado() async {
@@ -50,6 +62,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _sair() async {
+    // A fila e o acervo continuam no aparelho; só o acompanhamento da rede para.
+    _offline.encerrar();
     await SessionManager.logout();
     if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(LoginPage.routeName, (_) => false);
@@ -57,6 +71,30 @@ class _HomePageState extends State<HomePage> {
 
   void _configurarServidor() =>
       Navigator.pushNamed(context, ServerConfigPage.routeName);
+
+  void _abrirSincronizacao() => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Scaffold(appBar: AppBar(title: const Text('Sincronização')), body: const SincronizacaoPage()),
+        ),
+      );
+
+  /// Trabalho de campo sem rede: acervo do setor no aparelho e fila de sincronização.
+  List<ShellItem> _itensOffline({required int? setorId, required bool qualquerSetor}) => [
+        ShellItem(
+          label: 'Acervo offline',
+          icon: Icons.download_for_offline_outlined,
+          selectedIcon: Icons.download_for_offline,
+          page: AcervoOfflinePage(setorId: setorId, podeEscolherSetor: qualquerSetor),
+        ),
+        ShellItem(
+          label: 'Sincronização',
+          icon: Icons.sync_outlined,
+          selectedIcon: Icons.sync,
+          page: const SincronizacaoPage(),
+          badge: () async => _offline.aguardando,
+        ),
+      ];
 
   String get _nome =>
       widget.profile['nome']?.toString() ??
@@ -129,6 +167,7 @@ class _HomePageState extends State<HomePage> {
           selectedIcon: Icons.bar_chart,
           page: const ReportsScreen(),
         ),
+        ..._itensOffline(setorId: null, qualquerSetor: true),
       ],
       'agente_campo' => [
         ShellItem(
@@ -159,6 +198,7 @@ class _HomePageState extends State<HomePage> {
           page: const TransferListPage(modo: ModoTransferencias.todas),
           bottomBar: true,
         ),
+        ..._itensOffline(setorId: setorId, qualquerSetor: false),
       ],
       'responsavel_setor' => [
         ShellItem(
@@ -211,6 +251,7 @@ class _HomePageState extends State<HomePage> {
           page: const BensLeituraPage(),
           bottomBar: true,
         ),
+        ..._itensOffline(setorId: setorId, qualquerSetor: false),
       ],
       'auditor' => [
         ShellItem(
@@ -264,6 +305,7 @@ class _HomePageState extends State<HomePage> {
         perfil: perfilLabel(widget.profile['perfil']?.toString()),
         onSettings: _configurarServidor,
         onLogout: _sair,
+        acoesExtras: [StatusConexaoAcao(onTap: _abrirSincronizacao)],
         onScan: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const LeituraQrPage()),

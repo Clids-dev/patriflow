@@ -15,6 +15,7 @@ class AppShell extends StatefulWidget {
     required this.onSettings,
     required this.onLogout,
     required this.onScan,
+    this.acoesExtras = const [],
   });
 
   final List<ShellItem> items;
@@ -25,6 +26,9 @@ class AppShell extends StatefulWidget {
 
   /// Atalho central da barra: abre a leitura de etiqueta pela câmera.
   final VoidCallback onScan;
+
+  /// Ações antes do avatar na barra superior (ex.: status da conexão e da fila).
+  final List<Widget> acoesExtras;
 
   @override
   State<AppShell> createState() => AppShellState();
@@ -109,6 +113,7 @@ class AppShellState extends State<AppShell> {
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
+          ...widget.acoesExtras,
           _AvatarMenu(
             userName: widget.userName,
             perfil: widget.perfil,
