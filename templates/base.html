@@ -81,6 +81,22 @@
                         </a>
                     </li>
 
+                    <li class="sidebar-item {% if active_page == 'inventarios' %}active{% endif %}">
+                        <a href="/inventarios" class="sidebar-link">
+                            <i class="bi bi-clipboard-check"></i>
+                            <span>Inventários</span>
+                        </a>
+                    </li>
+
+                    {% if tipo in ["admin", "setor_patrimonio", "auditor"] %}
+                    <li class="sidebar-item {% if active_page == 'pendencias' %}active{% endif %}">
+                        <a href="/pendencias" class="sidebar-link">
+                            <i class="bi bi-inbox"></i>
+                            <span>Pendências</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
                     <li class="sidebar-item {% if active_page == 'relatorios' %}active{% endif %}">
                         <a href="/relatorios" class="sidebar-link">
                             <i class="bi bi-bar-chart-line-fill"></i>

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import painel_topo %}
+
+{% block title %}Pendências{% endblock %}
+
+{% set active_page = 'pendencias' %}
+
+{% block content %}
+{% call painel_topo("Patrimônio", "Caixa de pendências") %}
+    <label class="visually-hidden" for="filtroPendencias">Situação</label>
+    <select id="filtroPendencias" class="form-select w-auto">
+        <option value="abertas">Abertas</option>
+        <option value="resolvidas">Resolvidas</option>
+        <option value="todas">Todas</option>
+    </select>
+{% endcall %}
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Tipo</th>
+                        <th>Descrição</th>
+                        <th>Setor</th>
+                        <th>Origem</th>
+                        <th>Situação</th>
+                        <th class="text-end pe-4">Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="listaPendencias">
+                    <tr><td colspan="6" class="text-center text-muted py-4">Carregando…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalResolver" tabindex="-1" aria-labelledby="tituloResolver" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="formResolver" novalidate>
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="tituloResolver">Resolver pendência</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted" id="resolverResumo"></p>
+                <label class="form-label fw-semibold" for="resolverTexto">O que foi decidido ou feito</label>
+                <textarea class="form-control" id="resolverTexto" rows="3" required minlength="3" maxlength="500"
+                          placeholder="Ex.: bem encontrado no depósito e conferido; cadastrado com o tombo INF-010-3"></textarea>
+                <p class="small text-muted mt-2 mb-0">A resolução fica registrada e não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Resolver</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/pendencias.js"></script>
+{% endblock %}

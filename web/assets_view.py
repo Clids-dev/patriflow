@@ -111,3 +111,13 @@ def registro_responsavel(registro_id: int, request: Request):
 @router.get("/localizacoes")
 def tela_localizacoes(request: Request):
     return templates.TemplateResponse("localizacoes.html", _contexto(request, "localizacoes"))
+
+
+@router.get("/inventarios")
+def tela_inventarios(request: Request):
+    return templates.TemplateResponse("inventarios.html", _contexto(request, "inventarios"))
+
+
+@router.get("/pendencias")
+def tela_pendencias(request: Request):
+    return templates.TemplateResponse("pendencias.html", _contexto(request, "pendencias"))

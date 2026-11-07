@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import painel_topo, kpi %}
+
+{% block title %}Inventários{% endblock %}
+
+{% set active_page = 'inventarios' %}
+
+{% block content %}
+{% call painel_topo("Patrimônio", "Inventários") %}
+    {% if tipo in ["admin", "setor_patrimonio"] %}
+    <button class="btn btn-primary pill-btn" id="btnNovoInventario">
+        <i class="bi bi-plus-lg me-1"></i> Abrir inventário
+    </button>
+    {% endif %}
+{% endcall %}
+
+<section class="kpi-linha kpi-linha-3">
+    {{ kpi("Inventários abertos", "kpiAbertos", "clipboard-check", "em andamento", destaque=true) }}
+    {{ kpi("Bens a conferir", "kpiAConferir", "upc-scan", "nos inventários abertos", suave=true) }}
+    {{ kpi("Pendências abertas", "kpiPendencias", "inbox", "aguardando o patrimônio", suave=true, link="/pendencias") }}
+</section>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h4 class="mb-0">Inventários</h4>
+        <label class="visually-hidden" for="filtroInventarios">Situação</label>
+        <select id="filtroInventarios" class="form-select form-select-sm w-auto">
+            <option value="abertos">Abertos</option>
+            <option value="fechados">Fechados</option>
+            <option value="todos">Todos</option>
+        </select>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">#</th>
+                        <th>Descrição</th>
+                        <th>Período</th>
+                        <th>Andamento</th>
+                        <th>Situação</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="listaInventarios">
+                    <tr><td colspan="6" class="text-center text-muted py-4">Carregando…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: abrir inventário -->
+<div class="modal fade" id="modalNovoInventario" tabindex="-1" aria-labelledby="tituloNovoInventario" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <form class="modal-content" id="formNovoInventario" novalidate>
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="tituloNovoInventario">Abrir inventário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">Ao abrir, a lista de bens de cada setor é congelada: movimentações feitas depois
+                    não mudam o que o inventário espera encontrar.</p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="invDescricao">Descrição</label>
+                    <input class="form-control" id="invDescricao" required minlength="3" maxlength="160"
+                           placeholder="Ex.: Inventário anual 2026">
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold" for="invInicio">Início</label>
+                        <input type="date" class="form-control" id="invInicio" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold" for="invFim">Fim</label>
+                        <input type="date" class="form-control" id="invFim" required>
+                    </div>
+                </div>
+                <fieldset>
+                    <legend class="form-label fw-semibold fs-6">Setores</legend>
+                    <div id="listaSetoresInventario" class="row g-2"></div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Abrir e congelar lista</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: andamento, conferência e fechamento -->
+<div class="modal fade" id="modalInventario" tabindex="-1" aria-labelledby="tituloInventario" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="tituloInventario">Inventário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="resumoFechamento" class="d-none mb-3" role="status"></div>
+                <div id="resumoSetores" class="row g-3 mb-4"></div>
+
+                <div id="areaConferencia" class="p-3 bg-light rounded-3 mb-4 d-none">
+                    <form id="formConferencia" class="row g-2 align-items-end" novalidate>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small fw-semibold" for="confSetor">Setor onde está</label>
+                            <select class="form-select" id="confSetor" required></select>
+                        </div>
+                        <div class="col-12 col-md-5">
+                            <label class="form-label small fw-semibold" for="confTombo">Tombo</label>
+                            <input class="form-control" id="confTombo" required autocomplete="off"
+                                   placeholder="Leia a etiqueta ou digite o tombo e tecle Enter">
+                        </div>
+                        <div class="col-8 col-md-2">
+                            <label class="form-label small fw-semibold" for="confEstado">Estado</label>
+                            <select class="form-select" id="confEstado">
+                                <option value="">Não informar</option>
+                                <option value="novo">Novo</option><option value="bom">Bom</option>
+                                <option value="regular">Regular</option><option value="ruim">Ruim</option>
+                                <option value="inservivel">Inservível</option>
+                            </select>
+                        </div>
+                        <div class="col-4 col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Conferir</button>
+                        </div>
+                    </form>
+                    <div id="confRetorno" class="small mt-2" aria-live="polite"></div>
+                    <button type="button" class="btn btn-link btn-sm px-0 mt-1" id="btnMostrarNaoCadastrado">
+                        Encontrou um bem sem cadastro?
+                    </button>
+                    <form id="formNaoCadastrado" class="row g-2 align-items-end mt-1 d-none" novalidate>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold" for="ncDescricao">Descrição do bem</label>
+                            <input class="form-control" id="ncDescricao" required minlength="3" maxlength="200">
+                        </div>
+                        <div class="col-8 col-md-3">
+                            <label class="form-label small fw-semibold" for="ncCodigo">Etiqueta (se houver)</label>
+                            <input class="form-control" id="ncCodigo" maxlength="30">
+                        </div>
+                        <div class="col-4 col-md-3">
+                            <button type="submit" class="btn btn-outline-primary w-100">Registrar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <h6 class="fw-bold mb-0">Itens</h6>
+                    <label class="visually-hidden" for="filtroItens">Filtrar itens</label>
+                    <select id="filtroItens" class="form-select form-select-sm w-auto">
+                        <option value="todos">Todos</option>
+                        <option value="pendentes">A conferir</option>
+                        <option value="divergencias">Divergências</option>
+                        <option value="localizado">Localizados</option>
+                        <option value="outro_setor">Em outro setor</option>
+                        <option value="nao_localizado">Não localizados</option>
+                        <option value="nao_cadastrado">Não cadastrados</option>
+                    </select>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Tombo</th><th>Bem</th><th>Esperado em</th><th>Situação</th><th>Conferência</th>
+                                <th class="text-end">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaItens"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fechar janela</button>
+                {% if tipo in ["admin", "setor_patrimonio"] %}
+                <button type="button" class="btn btn-danger d-none" id="btnFecharInventario">
+                    <i class="bi bi-lock me-1"></i> Fechar inventário
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/inventarios.js"></script>
+{% endblock %}
