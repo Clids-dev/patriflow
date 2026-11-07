@@ -1,7 +1,10 @@
+import logging
+from contextlib import contextmanager
+
 import psycopg2
 from psycopg2 import pool
+
 from core import config
-import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,6 +36,26 @@ class DataBase:
 
     def put_conn(self, conn):
         DataBase._pool.putconn(conn)
+
+    @contextmanager
+    def transacao(self):
+        """Cursor de uma transação única: confirma ao sair do bloco e desfaz se houver exceção.
+
+        Uso:
+            with DataBase().transacao() as cur:
+                cur.execute("SELECT ... FOR UPDATE", (...))
+                cur.execute("INSERT ...", (...))
+        """
+        conn = self.get_conn()
+        try:
+            with conn.cursor() as cursor:
+                yield cursor
+            conn.commit()
+        except BaseException:
+            conn.rollback()
+            raise
+        finally:
+            self.put_conn(conn)
 
     def execute(self, sql, params=None, many=True):
         conn = self.get_conn()
