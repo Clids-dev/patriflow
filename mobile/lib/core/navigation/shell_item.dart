@@ -10,6 +10,7 @@ class ShellItem {
     required this.page,
     this.bottomBar = false,
     this.badge,
+    this.subitens = const [],
   });
 
   /// Nome exibido no menu e na barra inferior (igual à web).
@@ -27,4 +28,8 @@ class ShellItem {
 
   /// Contagem exibida como bolinha no ícone (ex.: transferências pendentes).
   final Future<int> Function()? badge;
+
+  /// Atalhos que aparecem ao expandir o item no menu lateral (ex.: categorias,
+  /// setores e responsáveis dentro de "Estrutura"). Abrem a tela direto.
+  final List<ShellItem> subitens;
 }

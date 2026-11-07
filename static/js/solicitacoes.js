@@ -128,6 +128,26 @@ async function atualizar() {
     if (!$('#itemAbaAcompanhamento').classList.contains('d-none')) tarefas.push(carregarAcompanhamento());
     if (!$('#itemAbaEscaladas').classList.contains('d-none')) tarefas.push(carregarEscaladas());
     await Promise.allSettled(tarefas);
+    aplicarFiltroDaUrl();
+}
+
+// Links do painel inicial: ?aba=decidir|escaladas abre a aba; ?busca=<código> mostra só o bem pedido.
+function parametrosDaUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return { aba: params.get('aba'), busca: (params.get('busca') || '').trim().toUpperCase() };
+}
+
+function aplicarFiltroDaUrl() {
+    const { busca } = parametrosDaUrl();
+    document.querySelectorAll('#listaDecidir .solicitacao, #listaEscaladas .solicitacao, #listaAcompanhamento .solicitacao')
+        .forEach(cartao => cartao.classList.toggle('d-none', !!busca && !cartao.textContent.toUpperCase().includes(busca)));
+    const aviso = $('#contextoFiltro');
+    if (busca) {
+        aviso.innerHTML = `<i class="bi bi-funnel me-2"></i>Filtro do painel: bem ${esc(busca)} <a href="/movimentacao" class="ms-2 fw-semibold">Limpar</a>`;
+        aviso.classList.remove('d-none');
+    } else {
+        aviso.classList.add('d-none');
+    }
 }
 
 // Abre o mesmo modal para liberar (sem foto) ou confirmar recebimento (com foto).
@@ -247,6 +267,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         $('#itemAbaEscaladas').classList.toggle('d-none', !souPatrimonio());
         $('#btnSolicitarBem').classList.toggle('d-none', !(eu.setor_id && !souPatrimonio()));
         if (!decide) $('#btnAbaMinhas').click();
+        const { aba } = parametrosDaUrl();
+        const botaoAba = aba ? document.querySelector(`[data-bs-target="#aba-${aba}"]`) : null;
+        if (botaoAba && !botaoAba.parentElement.classList.contains('d-none')) {
+            bootstrap.Tab.getOrCreateInstance(botaoAba).show();
+        }
 
         $('#cardSolicitacoes').addEventListener('click', (e) => {
             const liberar = e.target.closest('.btn-liberar');

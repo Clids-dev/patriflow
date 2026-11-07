@@ -156,9 +156,26 @@ body {
     font-size: 0.8rem;
 }
 
-/* Ajustes de alinhamento dos ícones (o Mazer aplica vertical-align: sub) */
+/* Alinhamento dos ícones Bootstrap Icons: o Mazer aplica "vertical-align: sub" no ::before,
+   o que desce o ícone abaixo da linha do texto. Usa o valor padrão do Bootstrap Icons. */
+body .bi::before,
+body [class^="bi-"]::before,
+body [class*=" bi-"]::before { vertical-align: -0.125em; }
+/* Botões de ação nas tabelas: sem quebra de linha e sem fundo cinza, com os ícones centralizados. */
+td .btn-light.btn-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border-color: transparent;
+    white-space: nowrap;
+    line-height: 1;
+}
+td .btn-light.btn-sm:hover { background: var(--bs-light-bg-subtle, #f1f3f8); }
+td:has(> .btn-light.btn-sm) { white-space: nowrap; }
+.input-group-text { display: flex; align-items: center; justify-content: center; }
 .input-group-text .bi,
-.input-group-text i { vertical-align: middle; }
+.input-group-text i { vertical-align: middle; line-height: 1; }
 .burger-btn .bi { font-size: 1.6rem; color: var(--primary-color); }
 
 /* ===== TIMELINE ===== */

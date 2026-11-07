@@ -26,54 +26,87 @@ function mostrarDataDeHoje() {
     el.textContent = texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-// "O que pede atenção": transferências aguardando aceite e garantias vencidas ou a vencer.
-// Cada consulta é independente: quem não tem permissão para uma delas só não vê aquele item.
+// "O que pede atenção": situações que exigem decisão, da mais urgente para a menos urgente.
+// Cada fonte é independente. Quem não tem permissão para uma fonte (403) só não a vê;
+// falha de verdade é sinalizada, para não parecer que "tudo está em ordem" quando não está.
+const PRIORIDADE_ATENCAO = { escalada: 0, baixa: 1, transferencia: 2, garantiaVencida: 3, garantiaAVencer: 4 };
+const LIMITE_ATENCAO = 6;
+
 async function renderizarAtencao() {
     const lista = $('#atencaoLista');
     const total = $('#atencaoTotal');
+
+    const [escaladas, baixas, pendentes, garantias] = await Promise.allSettled([
+        api.get('/api/v1/movimentacao/escaladas'),
+        api.get('/api/v1/bem/baixas/pendentes'),
+        api.get('/api/v1/movimentacao/pendentes'),
+        api.get('/api/v1/bem/alertas/garantias?dias=60'),
+    ]);
+
+    const resultados = [escaladas, baixas, pendentes, garantias];
+    const falhou = resultados.some(r => r.status === 'rejected' && r.reason?.status !== 403);
+    resultados.filter(r => r.status === 'rejected').forEach(r => console.warn('Fonte de atenção indisponível:', r.reason));
+    const dados = r => (r.status === 'fulfilled' ? r.value : []);
+
     const itens = [];
+    const idsEscaladas = new Set();
 
-    let garantias = [];
-    try {
-        garantias = await api.get('/api/v1/bem/alertas/garantias?dias=60');
-        const kpi = $('#kpiGarantias');
-        if (kpi) kpi.textContent = garantias.length;
-        garantias.filter(g => g.vencida).forEach(g => itens.push({
-            icone: 'bi-shield-exclamation',
-            titulo: `Garantia vencida: ${g.nome}`,
-            detalhe: `${g.codigo_tombamento} · venceu em ${new Date(g.garantia_fim + 'T00:00:00').toLocaleDateString('pt-BR')}`,
-            link: '/bens'
-        }));
-        garantias.filter(g => !g.vencida).forEach(g => itens.push({
-            icone: 'bi-shield-check',
-            titulo: `Garantia a vencer: ${g.nome}`,
-            detalhe: `${g.codigo_tombamento} · vence em ${new Date(g.garantia_fim + 'T00:00:00').toLocaleDateString('pt-BR')}`,
-            link: '/bens'
-        }));
-    } catch (erro) {
-        console.warn("Garantias indisponíveis:", erro);
-        const kpi = $('#kpiGarantias');
-        if (kpi) kpi.textContent = '--';
-    }
+    dados(escaladas).forEach(m => {
+        idsEscaladas.add(m.id);
+        itens.push({
+            prioridade: PRIORIDADE_ATENCAO.escalada,
+            icone: 'bi-exclamation-octagon',
+            titulo: `Transferência escalada: ${m.bem_nome}`,
+            detalhe: `${m.codigo_tombamento} → ${m.setor_destino_nome} · sem resposta no prazo`,
+            link: `/movimentacao?aba=escaladas&busca=${encodeURIComponent(m.codigo_tombamento)}`,
+        });
+    });
 
-    try {
-        const pendentes = await api.get('/api/v1/movimentacao/pendentes');
-        pendentes.forEach(m => itens.push({
-            icone: 'bi-arrow-left-right',
-            titulo: `${m.escalada ? 'Escalada: ' : ''}Transferência aguardando autorização: ${m.bem_nome}`,
-            detalhe: `${m.codigo_tombamento} → ${m.setor_destino_nome}`,
-            link: '/movimentacao'
-        }));
-    } catch (erro) {
-        console.warn("Pendências indisponíveis:", erro);
-    }
+    dados(baixas).forEach(b => itens.push({
+        prioridade: PRIORIDADE_ATENCAO.baixa,
+        icone: 'bi-box-arrow-down',
+        titulo: `Baixa aguardando aprovação: ${b.bem_nome}`,
+        detalhe: `${b.codigo_tombamento} · ${b.motivo} · solicitada por ${b.solicitante}`,
+        link: `/bens?busca=${encodeURIComponent(b.codigo_tombamento)}`,
+    }));
 
+    dados(pendentes).filter(m => !idsEscaladas.has(m.id)).forEach(m => itens.push({
+        prioridade: PRIORIDADE_ATENCAO.transferencia,
+        icone: 'bi-arrow-left-right',
+        titulo: `Transferência aguardando autorização: ${m.bem_nome}`,
+        detalhe: `${m.codigo_tombamento} → ${m.setor_destino_nome}`,
+        link: `/movimentacao?aba=decidir&busca=${encodeURIComponent(m.codigo_tombamento)}`,
+    }));
+
+    const listaGarantias = dados(garantias);
+    listaGarantias.forEach(g => {
+        const data = new Date(g.garantia_fim + 'T00:00:00').toLocaleDateString('pt-BR');
+        const link = `/bens?busca=${encodeURIComponent(g.codigo_tombamento)}`;
+        if (g.vencida) {
+            itens.push({ prioridade: PRIORIDADE_ATENCAO.garantiaVencida, icone: 'bi-shield-exclamation',
+                titulo: `Garantia vencida: ${g.nome}`, detalhe: `${g.codigo_tombamento} · venceu em ${data}`, link });
+        } else {
+            itens.push({ prioridade: PRIORIDADE_ATENCAO.garantiaAVencer, icone: 'bi-shield-check',
+                titulo: `Garantia a vencer: ${g.nome}`, detalhe: `${g.codigo_tombamento} · vence em ${data}`, link });
+        }
+    });
+
+    const kpi = $('#kpiGarantias');
+    if (kpi) kpi.textContent = garantias.status === 'fulfilled' ? listaGarantias.length : '--';
+
+    itens.sort((a, b) => a.prioridade - b.prioridade);
     total.textContent = `${itens.length} ${itens.length === 1 ? 'ponto' : 'pontos'}`;
+
     if (itens.length === 0) {
-        lista.innerHTML = '<li class="atencao-vazio">Nada pendente agora. Tudo em ordem.</li>';
+        lista.innerHTML = falhou
+            ? '<li class="atencao-vazio">Não foi possível carregar esta seção agora. Atualize a página.</li>'
+            : '<li class="atencao-vazio">Nada pendente agora. Tudo em ordem.</li>';
         return;
     }
-    lista.innerHTML = itens.slice(0, 6).map(item => `
+
+    const visiveis = itens.slice(0, LIMITE_ATENCAO);
+    const ocultos = itens.length - visiveis.length;
+    const html = visiveis.map(item => `
         <li>
             <a href="${esc(item.link)}" class="atencao-item">
                 <span class="atencao-icone"><i class="bi ${esc(item.icone)}"></i></span>
@@ -84,6 +117,10 @@ async function renderizarAtencao() {
                 <i class="bi bi-chevron-right atencao-seta"></i>
             </a>
         </li>`).join('');
+    const rodape = ocultos > 0
+        ? `<li class="atencao-vazio"><small>+ ${ocultos} ${ocultos === 1 ? 'item' : 'itens'} não exibido${ocultos === 1 ? "" : "s"}</small></li>`
+        : '';
+    lista.innerHTML = html + rodape;
 }
 
 // ----- Estilo dos gráficos: paleta e tipografia do projeto -----

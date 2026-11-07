@@ -13,6 +13,7 @@ class AppNavDrawer extends StatelessWidget {
     required this.onSelect,
     required this.onSettings,
     required this.onLogout,
+    required this.onOpenSub,
   });
 
   final List<ShellItem> items;
@@ -20,6 +21,9 @@ class AppNavDrawer extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final VoidCallback onSettings;
   final VoidCallback onLogout;
+
+  /// Abre um subitem (ex.: Categorias) direto, sem passar pela tela do item pai.
+  final ValueChanged<ShellItem> onOpenSub;
 
   @override
   Widget build(BuildContext context) => Drawer(
@@ -73,6 +77,10 @@ class AppNavDrawer extends StatelessWidget {
                       Navigator.pop(context);
                       onSelect(i);
                     },
+                    onOpenSub: (sub) {
+                      Navigator.pop(context);
+                      onOpenSub(sub);
+                    },
                   ),
               ],
             ),
@@ -103,53 +111,124 @@ class AppNavDrawer extends StatelessWidget {
   );
 }
 
-class _NavTile extends StatelessWidget {
+class _NavTile extends StatefulWidget {
   const _NavTile({
     required this.item,
     required this.selected,
     required this.onTap,
+    required this.onOpenSub,
   });
 
   final ShellItem item;
   final bool selected;
   final VoidCallback onTap;
+  final ValueChanged<ShellItem> onOpenSub;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-    child: Material(
-      color: selected ? AppColors.primary : Colors.transparent,
-      borderRadius: AppRadius.controlBorder,
-      child: InkWell(
-        borderRadius: AppRadius.controlBorder,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                selected ? item.selectedIcon : item.icon,
-                color: selected ? Colors.white : AppColors.navMuted,
-                size: 22,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Text(
-                item.label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? Colors.white : AppColors.navMuted,
+  State<_NavTile> createState() => _NavTileState();
+}
+
+class _NavTileState extends State<_NavTile> {
+  bool _expandido = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final selected = widget.selected;
+    final temSubitens = item.subitens.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+          child: Material(
+            color: selected ? AppColors.primary : Colors.transparent,
+            borderRadius: AppRadius.controlBorder,
+            child: InkWell(
+              borderRadius: AppRadius.controlBorder,
+              onTap: widget.onTap,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.lg,
+                  right: AppSpacing.xs,
+                  top: AppSpacing.md,
+                  bottom: AppSpacing.md,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      selected ? item.selectedIcon : item.icon,
+                      color: selected ? Colors.white : AppColors.navMuted,
+                      size: 22,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        item.label,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                          color: selected ? Colors.white : AppColors.navMuted,
+                        ),
+                      ),
+                    ),
+                    if (temSubitens)
+                      IconButton(
+                        tooltip: _expandido ? 'Recolher' : 'Expandir',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => setState(() => _expandido = !_expandido),
+                        icon: AnimatedRotation(
+                          turns: _expandido ? .5 : 0,
+                          duration: AppMotion.fast,
+                          child: Icon(
+                            Icons.expand_more,
+                            color: selected ? Colors.white : AppColors.navMuted,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
-      ),
-    ),
-  );
+        if (temSubitens && _expandido)
+          for (final sub in item.subitens)
+            Padding(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.xxl,
+                bottom: AppSpacing.xs,
+              ),
+              child: InkWell(
+                borderRadius: AppRadius.controlBorder,
+                onTap: () => widget.onOpenSub(sub),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(sub.icon, color: AppColors.navMuted, size: 18),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          sub.label,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.navMuted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+      ],
+    );
+  }
 }
 
 class _ActionTile extends StatelessWidget {

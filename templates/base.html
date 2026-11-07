@@ -4,14 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PatriFlow - {% block title %}{% endblock %}</title>
-    <link rel="shortcut icon" href="/static/logo.png" type="image/png">
+    <!-- Ícone da aba: letra "P" da marca sobre fundo roxo (ver static/icons) -->
+    <link rel="icon" href="/static/icons/favicon.ico?v=2" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png?v=2">
 
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Mazer (CSS compilado com a paleta do PatriFlow; ver tools/mazer) -->
     <link rel="stylesheet" href="/static/vendor/mazer/mazer.min.css">
     <!-- Ajustes do PatriFlow sobre o Mazer -->
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=icones2">
     {% block styles %}{% endblock %}
 </head>
 
@@ -48,13 +52,26 @@
                         </a>
                     </li>
 
-                    <li class="sidebar-item {% if active_page in ['estrutura', 'categoria', 'setores', 'responsaveis', 'localizacoes'] %}active{% endif %}">
-                        <a href="/estrutura" class="sidebar-link">
+                    <li class="sidebar-item has-sub {% if active_page in ['categoria', 'setores', 'responsaveis', 'localizacoes'] %}active{% endif %}">
+                        <a href="#" class="sidebar-link">
                             <i class="bi bi-folder2-open"></i>
                             <span>Estrutura</span>
                         </a>
+                        <ul class="submenu {% if active_page in ['categoria', 'setores', 'responsaveis', 'localizacoes'] %}submenu-open{% else %}submenu-closed{% endif %}">
+                            <li class="submenu-item {% if active_page == 'categoria' %}active{% endif %}">
+                                <a href="/categoria" class="submenu-link">Categorias</a>
+                            </li>
+                            <li class="submenu-item {% if active_page == 'setores' %}active{% endif %}">
+                                <a href="/setores" class="submenu-link">Setores</a>
+                            </li>
+                            <li class="submenu-item {% if active_page == 'responsaveis' %}active{% endif %}">
+                                <a href="/responsaveis" class="submenu-link">Responsáveis</a>
+                            </li>
+                            <li class="submenu-item {% if active_page == 'localizacoes' %}active{% endif %}">
+                                <a href="/localizacoes" class="submenu-link">Localizações</a>
+                            </li>
+                        </ul>
                     </li>
-
                     {% endif %}
 
                     <li class="sidebar-item {% if active_page == 'movimentacao' %}active{% endif %}">
@@ -119,7 +136,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script src="/static/vendor/mazer/perfect-scrollbar.min.js"></script>
-<script type="module" src="/static/js/layout.js"></script>
+<script type="module" src="/static/js/layout.js?v=estrutura2"></script>
 
 {% block scripts %}{% endblock %}
 </body>

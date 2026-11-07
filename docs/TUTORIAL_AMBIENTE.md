@@ -47,7 +47,7 @@ pip install -r requirements.txt
 ## 3. Preparar o banco de dados
 
 1. Crie um banco PostgreSQL chamado `sistema_tombamento`.
-2. Execute o arquivo `tabelasDados.sql` nesse banco para criar as tabelas e os dados iniciais.
+2. Execute o arquivo `database/schema.sql` nesse banco para criar as tabelas e os dados iniciais.
 3. Confira as credenciais em `core/config.py` e ajuste-as para o seu PostgreSQL. A configuração padrão é:
 
 ```python
@@ -61,7 +61,7 @@ DB_NAME = "sistema_tombamento"
 Exemplo de importação pelo terminal, alterando usuário, porta e banco quando necessário:
 
 ```bash
-psql -U postgres -p 5433 -d sistema_tombamento -f tabelasDados.sql
+psql -U postgres -p 5433 -d sistema_tombamento -f database/schema.sql
 ```
 
 ## 4. Iniciar a aplicação

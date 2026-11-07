@@ -22,7 +22,7 @@
     <div class="kpi kpi-destaque">
         <div class="kpi-topo">
             <span class="kpi-chip"><i class="bi bi-graph-up-arrow"></i></span>
-            <a href="/bens" class="kpi-seta" aria-label="Ver equipamentos"><i class="bi bi-arrow-up-right"></i></a>
+            <a href="/bens?situacao=ativos" class="kpi-seta" aria-label="Ver equipamentos ativos"><i class="bi bi-arrow-up-right"></i></a>
         </div>
         <span class="kpi-rotulo">Patrimônio ativo</span>
         <span class="kpi-valor" id="statAtivos">{{bens_ativos}}</span>
@@ -32,7 +32,7 @@
     <div class="kpi">
         <div class="kpi-topo">
             <span class="kpi-chip"><i class="bi bi-boxes"></i></span>
-            <a href="/bens" class="kpi-seta" aria-label="Ver equipamentos"><i class="bi bi-arrow-up-right"></i></a>
+            <a href="/bens" class="kpi-seta" aria-label="Ver todos os equipamentos"><i class="bi bi-arrow-up-right"></i></a>
         </div>
         <span class="kpi-rotulo">Total de itens</span>
         <span class="kpi-valor" id="statTotal">{{bens_total}}</span>
@@ -42,7 +42,7 @@
     <div class="kpi">
         <div class="kpi-topo">
             <span class="kpi-chip"><i class="bi bi-x-circle"></i></span>
-            <a href="/bens" class="kpi-seta" aria-label="Ver baixados"><i class="bi bi-arrow-up-right"></i></a>
+            <a href="/bens?status=baixado" class="kpi-seta" aria-label="Ver baixados"><i class="bi bi-arrow-up-right"></i></a>
         </div>
         <span class="kpi-rotulo">Itens baixados</span>
         <span class="kpi-valor" id="statInativos">{{bens_inativos}}</span>
@@ -52,7 +52,7 @@
     <div class="kpi">
         <div class="kpi-topo">
             <span class="kpi-chip"><i class="bi bi-shield-check"></i></span>
-            <a href="/bens" class="kpi-seta" aria-label="Ver garantias"><i class="bi bi-arrow-up-right"></i></a>
+            <a href="/bens?garantia=alerta" class="kpi-seta" aria-label="Ver garantias a vencer"><i class="bi bi-arrow-up-right"></i></a>
         </div>
         <span class="kpi-rotulo">Garantias a vencer</span>
         <span class="kpi-valor" id="kpiGarantias">--</span>
@@ -135,5 +135,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script type="module" src="/static/js/dashboard.js?v=1.4"></script>
+<script type="module" src="/static/js/dashboard.js?v=1.5"></script>
 {% endblock %}

@@ -49,6 +49,18 @@ def test_lote_gera_uma_etiqueta_por_bem_sem_repetir(monkeypatch):
     assert "window.print()" in html and "@media print" in html
 
 
+def test_lote_incorporado_esconde_a_barra_e_mantem_a_impressao(monkeypatch):
+    repo = MagicMock()
+    repo.get_detalhes.side_effect = lambda i: _bem(i)
+    monkeypatch.setattr(etq, "BemRepository", lambda: repo)
+    normal = pagina_lote([1])
+    incorporada = pagina_lote([1], incorporado=True)
+    assert etq._CSS_INCORPORADO not in normal
+    assert etq._CSS_INCORPORADO in incorporada
+    assert "@media print" in incorporada and incorporada.count('class="etiqueta"') == 1
+    assert "{{" not in normal and "{{" not in incorporada
+
+
 def test_lote_rejeita_vazio_e_excesso(monkeypatch):
     with pytest.raises(HTTPException) as exc:
         pagina_lote([])

@@ -11,6 +11,7 @@
 
     <section class="section">
         <!-- Filtros -->
+        <div id="contextoFiltro" class="alert alert-info py-2 small d-none mb-3" role="status"></div>
         <div class="card">
             <div class="card-header">
                 <h4><i class="bi bi-funnel me-2 text-primary"></i>Filtros</h4>
@@ -169,6 +170,30 @@
 </div>
 
 <!-- Modal Importar planilha -->
+<!-- Modal: pré-visualização e impressão de etiquetas (mesma folha da impressão) -->
+<div class="modal fade" id="modalEtiquetas" tabindex="-1" aria-labelledby="modalEtiquetasTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalEtiquetasTitulo"><i class="bi bi-qr-code me-2"></i>Etiquetas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="etiquetasEstado" class="text-center text-muted py-5" role="status">Gerando etiquetas…</div>
+                <iframe id="frameEtiquetas" title="Pré-visualização das etiquetas" class="w-100 border-0 d-none"></iframe>
+            </div>
+            <div class="modal-footer">
+                <a id="linkEtiquetasNovaAba" class="btn btn-outline-primary" target="_blank" rel="noopener">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Abrir em nova aba
+                </a>
+                <button type="button" class="btn btn-primary" id="btnImprimirEtiquetas" disabled>
+                    <i class="bi bi-printer me-1"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalImportar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -272,5 +297,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script type="module" src="/static/js/bens.js?v=3"></script>
+<script type="module" src="/static/js/bens.js?v=4"></script>
 {% endblock %}

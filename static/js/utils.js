@@ -37,7 +37,9 @@ export const api = {
                 } catch (e) {
                     errorData = { detail: `Erro HTTP ${response.status}` };
                 }
-                throw new Error(errorData.detail || `Erro na requisição: ${response.status}`);
+                const erro = new Error(errorData.detail || `Erro na requisição: ${response.status}`);
+                erro.status = response.status;
+                throw erro;
             }
 
             return await response.json();

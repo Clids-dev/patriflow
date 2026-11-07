@@ -16,6 +16,47 @@ async function init() {
         carregarCategorias()
     ]);
     setupListeners();
+    await aplicarFiltrosDaUrl();
+}
+
+// Filtros vindos de links do painel inicial. Cada parâmetro corresponde ao cartão de origem:
+//   ?busca=<código>          item específico (painel de atenção)
+//   ?status=baixado          KPI "Itens baixados"
+//   ?situacao=ativos         KPI "Patrimônio ativo"
+//   ?garantia=alerta         KPI "Garantias a vencer" (mesma regra da API: 60 dias e vencidas)
+let apenasAtivos = false;
+let codigosGarantia = null; // null = filtro não usado
+
+async function aplicarFiltrosDaUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const busca = params.get('busca');
+    const status = params.get('status');
+    apenasAtivos = params.get('situacao') === 'ativos';
+    const porGarantia = params.get('garantia') === 'alerta';
+
+    if (porGarantia) {
+        try {
+            const alertas = await api.get('/api/v1/bem/alertas/garantias?dias=60');
+            codigosGarantia = new Set(alertas.map(a => a.codigo_tombamento));
+        } catch (erro) {
+            codigosGarantia = new Set();
+        }
+    }
+
+    if (busca) $("#inputBusca").value = busca;
+    if (status) $("#filtroStatus").value = status;
+
+    const descricoes = [];
+    if (busca) descricoes.push(`código ${busca}`);
+    if (status) descricoes.push(`status: ${$("#filtroStatus").selectedOptions[0]?.text ?? status}`);
+    if (apenasAtivos) descricoes.push('somente ativos');
+    if (porGarantia) descricoes.push('garantias vencidas ou a vencer em 60 dias');
+    if (descricoes.length) {
+        const aviso = $("#contextoFiltro");
+        aviso.innerHTML = `<i class="bi bi-funnel me-2"></i>Filtro do painel: ${esc(descricoes.join(' · '))} <a href="/bens" class="ms-2 fw-semibold">Limpar</a>`;
+        aviso.classList.remove('d-none');
+    }
+    filtrarBens();
 }
 
 async function carregarBens() {
@@ -130,10 +171,55 @@ async function enviarImportacao(simular) {
     }
 }
 
-// Abre a folha de etiquetas em nova aba (a API aceita o cookie de sessão).
+// A altura do iframe só pode ser medida com a folha carregada E o modal visível (um documento
+// escondido mede 0 px). Por isso é chamada nos dois eventos; vale a medida do que ocorrer por último.
+function ajustarAlturaEtiquetas() {
+    const frame = $("#frameEtiquetas");
+    const doc = frame.contentDocument;
+    if (frame.classList.contains('d-none') || !doc?.querySelector('.folha')) return;
+    // Mede o conteúdo (body), não a janela do iframe: scrollHeight nunca fica menor que a altura atual
+    // do iframe, então uma medida feita com o modal ainda estreito ficaria presa.
+    frame.style.height = `${Math.ceil(doc.body.getBoundingClientRect().height)}px`;
+}
+
+// Mostra as etiquetas num modal. O conteúdo é a mesma folha usada na impressão (a API aceita o
+// cookie de sessão), carregada num iframe em modo "incorporado", sem a barra própria da página.
 function abrirEtiquetas(ids) {
     if (!ids.length) return;
-    window.open(`/api/v1/etiquetas/lote?ids=${ids.map(encodeURIComponent).join(',')}`, '_blank', 'noopener');
+    const lista = ids.map(encodeURIComponent).join(',');
+    const frame = $("#frameEtiquetas");
+    const estado = $("#etiquetasEstado");
+    const imprimir = $("#btnImprimirEtiquetas");
+
+    $("#modalEtiquetasTitulo").innerHTML =
+        `<i class="bi bi-qr-code me-2"></i>${ids.length === 1 ? 'Etiqueta' : `Etiquetas (${ids.length})`}`;
+    $("#linkEtiquetasNovaAba").href = `/api/v1/etiquetas/lote?ids=${lista}`;
+    imprimir.disabled = true;
+    frame.style.height = '';
+    frame.classList.add('d-none');
+    estado.textContent = 'Gerando etiquetas…';
+    estado.classList.remove('d-none');
+
+    frame.onload = () => {
+        if (frame.src === 'about:blank') return;
+        const doc = frame.contentDocument;
+        if (!doc?.querySelector('.folha')) {
+            // A API respondeu com erro (JSON), por exemplo lote acima do limite.
+            let mensagem = 'Não foi possível gerar as etiquetas.';
+            try { mensagem = JSON.parse(doc.body.innerText).detail || mensagem; } catch (erro) { /* mantém a padrão */ }
+            estado.textContent = mensagem;
+            return;
+        }
+        estado.classList.add('d-none');
+        frame.classList.remove('d-none');
+        imprimir.disabled = false;
+        ajustarAlturaEtiquetas();
+    };
+    frame.src = `/api/v1/etiquetas/lote?ids=${lista}&incorporado=true`;
+
+    // A ficha do bem também tem o botão de etiqueta: fecha a ficha para não empilhar modais.
+    bootstrap.Modal.getInstance($("#modalDetalhesBem"))?.hide();
+    bootstrap.Modal.getOrCreateInstance($("#modalEtiquetas")).show();
 }
 
 function renderizarTabela() {
@@ -332,6 +418,8 @@ function filtrarBens() {
     const statusFiltro = $("#filtroStatus").value.toLowerCase();
 
     filtrados = todosBens.filter(bem => {
+        if (apenasAtivos && !bem.ativo) return false;
+        if (codigosGarantia && !codigosGarantia.has(bem.codigo_tombamento)) return false;
         const matchesBusca = bem.nome.toLowerCase().includes(termo) || 
                              bem.codigo_tombamento.toLowerCase().includes(termo);
         
@@ -384,6 +472,10 @@ function setupListeners() {
         });
     });
     $("#btnEtiquetasLote").addEventListener('click', () => abrirEtiquetas([...selecionados]));
+    $("#btnImprimirEtiquetas").addEventListener('click', () => $("#frameEtiquetas").contentWindow.print());
+    // Ao fechar, descarrega a folha para não manter etiquetas antigas na próxima abertura.
+    $("#modalEtiquetas").addEventListener('shown.bs.modal', ajustarAlturaEtiquetas);
+    $("#modalEtiquetas").addEventListener('hidden.bs.modal', () => { $("#frameEtiquetas").src = 'about:blank'; });
 
     // Importação por planilha: simular primeiro, depois gravar.
     $("#btnSimularImportacao").addEventListener('click', () => enviarImportacao(true));
@@ -529,6 +621,9 @@ async function reativar(id) {
 const limparFiltros = () => {
     $("#inputBusca").value = "";
     $("#filtroStatus").value = "";
+    apenasAtivos = false;
+    codigosGarantia = null;
+    $("#contextoFiltro").classList.add('d-none');
     filtrarBens();
 };
 

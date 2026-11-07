@@ -9,8 +9,24 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
+class StaticSemCacheVelho(StaticFiles):
+    """Arquivos estáticos que o navegador sempre revalida antes de usar.
+
+    Sem Cache-Control, o navegador reaproveita JS e CSS antigos por conta própria, inclusive módulos
+    importados (como utils.js), que não recebem "?v=" no HTML. Com "no-cache" o arquivo continua
+    guardado, mas a cada carregamento o navegador pergunta ao servidor; se nada mudou, a resposta é
+    um 304 vazio (via ETag), então o custo é pequeno.
+    """
+
+    def file_response(self, *args, **kwargs):
+        resposta = super().file_response(*args, **kwargs)
+        resposta.headers["Cache-Control"] = "no-cache"
+        return resposta
+
+
 # Arquivos Estáticos
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticSemCacheVelho(directory="static"), name="static")
 
 # Rotas Web (Templates)
 app.include_router(web_router)

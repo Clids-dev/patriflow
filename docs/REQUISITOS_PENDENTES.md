@@ -27,7 +27,14 @@ quando houver conflito. Ver seção 2.
 - Não existe rota de correção de movimentação (PUT removido). Correção é nova movimentação.
 - Perfil `auditor` (somente leitura) foi criado (migração W05) e foi aceito pelo professor.
 - Commits: um commit por mudança sensível, não um commit gigante.
-- Documentação (README e tutorial mobile) foi atualizada para os perfis e regras W04.
+- Documentação (README e tutorial mobile) foi atualizada para os perfis e regras W04. O tutorial mobile
+  genérico foi removido do repositório; o README segue como documento principal.
+- Bens sem localização (antes das novas regras): criar a entrada no almoxarifado usando a data de entrada
+  cadastrada em cada bem. O setor de destino de cada bem é escolhido manualmente pelo responsável.
+  **Pendente:** a planilha `ATRIBUICAO_SETORES_W04.txt` (13 bens, setores em branco) foi removida; a lista
+  pode ser gerada novamente pelo banco quando a tarefa for feita.
+- Setores duplicados no banco de desenvolvimento ("Produção" repetido e "Produçãi"): recriar os setores e
+  apagar os que têm nome errado. **Pendente:** confirmar os ids antes de executar.
 
 ## 1. Estado atual do repositório (resumo)
 
@@ -41,8 +48,8 @@ quando houver conflito. Ver seção 2.
 **Numeração (decidida):** o progresso é reportado pela numeração do quadro da disciplina (W04 = etiqueta
 QR e consulta por tombo; W05 = fotos). Os códigos internos antigos do repositório deixam de ser usados como
 número de requisito e passam a ser descritos por nome: "autorização de movimentações" (antigo W04 interno,
-migração `20261104_w04_almoxarifado_autorizacao`) e "aprovação de cadastros e perfil auditor" (antigo W05
-interno, migração `20261104_w05_usuarios_aprovacao_auditor`). A migração `20261105_w05_fotos` é o W05 do quadro.
+migração `20261104_almoxarifado_autorizacao`) e "aprovação de cadastros e perfil auditor" (antigo W05
+interno, migração `20261104_usuarios_aprovacao_auditor`). A migração `20261105_fotos` é o W05 do quadro.
 
 ---
 
@@ -86,7 +93,7 @@ Verificação: QR de etiquetas de exemplo lidos de volta com `zxing-cpp` (tombo 
 - [ ] Foto é entregue pela API (`GET /api/v1/fotos/{id}` pronto) e aparece na tela web do registro. A tela depende das telas de conferência, aceite e bem não cadastrado
 - [x] Foto nunca é apagada nem substituída: trigger no banco bloqueia UPDATE e DELETE
 
-Migração: `database/migrations/20261105_w05_fotos.sql` (executar uma vez no banco de desenvolvimento).
+Migração: `database/migrations/20261105_fotos.sql` (executar uma vez no banco de desenvolvimento).
 Testes: `test_fotos.py`.
 
 ### W06 · Transferência com dupla confirmação — `[x]` 10/10 (API, app e web)
