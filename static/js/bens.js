@@ -16,12 +16,47 @@ async function init() {
         carregarCategorias()
     ]);
     setupListeners();
-    // Link vindo de outra tela (ex.: garantia no painel inicial): já abre filtrado pelo código.
-    const busca = new URLSearchParams(window.location.search).get('busca');
-    if (busca) {
-        $("#inputBusca").value = busca;
-        filtrarBens();
+    await aplicarFiltrosDaUrl();
+}
+
+// Filtros vindos de links do painel inicial. Cada parâmetro corresponde ao cartão de origem:
+//   ?busca=<código>          item específico (painel de atenção)
+//   ?status=baixado          KPI "Itens baixados"
+//   ?situacao=ativos         KPI "Patrimônio ativo"
+//   ?garantia=alerta         KPI "Garantias a vencer" (mesma regra da API: 60 dias e vencidas)
+let apenasAtivos = false;
+let codigosGarantia = null; // null = filtro não usado
+
+async function aplicarFiltrosDaUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const busca = params.get('busca');
+    const status = params.get('status');
+    apenasAtivos = params.get('situacao') === 'ativos';
+    const porGarantia = params.get('garantia') === 'alerta';
+
+    if (porGarantia) {
+        try {
+            const alertas = await api.get('/api/v1/bem/alertas/garantias?dias=60');
+            codigosGarantia = new Set(alertas.map(a => a.codigo_tombamento));
+        } catch (erro) {
+            codigosGarantia = new Set();
+        }
     }
+
+    if (busca) $("#inputBusca").value = busca;
+    if (status) $("#filtroStatus").value = status;
+
+    const descricoes = [];
+    if (busca) descricoes.push(`código ${busca}`);
+    if (status) descricoes.push(`status: ${$("#filtroStatus").selectedOptions[0]?.text ?? status}`);
+    if (apenasAtivos) descricoes.push('somente ativos');
+    if (porGarantia) descricoes.push('garantias vencidas ou a vencer em 60 dias');
+    if (descricoes.length) {
+        const aviso = $("#contextoFiltro");
+        aviso.innerHTML = `<i class="bi bi-funnel me-2"></i>Filtro do painel: ${esc(descricoes.join(' · '))} <a href="/bens" class="ms-2 fw-semibold">Limpar</a>`;
+        aviso.classList.remove('d-none');
+    }
+    filtrarBens();
 }
 
 async function carregarBens() {
@@ -338,6 +373,8 @@ function filtrarBens() {
     const statusFiltro = $("#filtroStatus").value.toLowerCase();
 
     filtrados = todosBens.filter(bem => {
+        if (apenasAtivos && !bem.ativo) return false;
+        if (codigosGarantia && !codigosGarantia.has(bem.codigo_tombamento)) return false;
         const matchesBusca = bem.nome.toLowerCase().includes(termo) || 
                              bem.codigo_tombamento.toLowerCase().includes(termo);
         
@@ -535,6 +572,9 @@ async function reativar(id) {
 const limparFiltros = () => {
     $("#inputBusca").value = "";
     $("#filtroStatus").value = "";
+    apenasAtivos = false;
+    codigosGarantia = null;
+    $("#contextoFiltro").classList.add('d-none');
     filtrarBens();
 };
 
