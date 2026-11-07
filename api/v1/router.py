@@ -15,6 +15,7 @@ from modules.emprestimo.router import router as emprestimo_router
 from modules.manutencao.router import router as manutencao_router
 from modules.inventario.router import router as inventario_router
 from modules.pendencia.router import router as pendencia_router
+from modules.sincronizacao.router import router as sincronizacao_router
 
 api_router = APIRouter(dependencies=[Depends(require_api_access)])
 api_router.include_router(auth_router)
@@ -34,3 +35,4 @@ api_router.include_router(emprestimo_router)
 api_router.include_router(manutencao_router)
 api_router.include_router(inventario_router)
 api_router.include_router(pendencia_router)
+api_router.include_router(sincronizacao_router)

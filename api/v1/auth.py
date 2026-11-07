@@ -95,10 +95,10 @@ def me(user=Depends(current_user)):
 
 
 ROLE_PERMISSIONS = {
-    "setor_patrimonio": {"bem:read", "bem:create", "bem:update", "bem:delete", "categoria:*", "setores:*", "localizacao:*", "relatorio:read", "responsavel:*", "movimentacao:*", "usuarios:*", "fotos:*", "etiquetas:*", "termos:*", "emprestimos:*", "manutencoes:*", "inventarios:*", "pendencias:*"},
-    "agente_campo": {"bem:read", "bem:update", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:update", "fotos:read", "fotos:create", "etiquetas:read", "emprestimos:read", "emprestimos:create", "manutencoes:read", "manutencoes:create", "inventarios:read", "inventarios:create"},
-    "responsavel_setor": {"bem:read", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:accept", "fotos:read", "fotos:create", "etiquetas:read", "termos:read", "emprestimos:read", "emprestimos:create", "manutencoes:read", "manutencoes:create", "inventarios:read", "inventarios:create"},
-    "auditor": {"bem:read", "categoria:read", "setores:read", "responsavel:read", "localizacao:read", "movimentacao:read", "relatorio:read", "fotos:read", "etiquetas:read", "termos:read", "emprestimos:read", "manutencoes:read", "inventarios:read", "pendencias:read"},
+    "setor_patrimonio": {"bem:read", "bem:create", "bem:update", "bem:delete", "categoria:*", "setores:*", "localizacao:*", "relatorio:read", "responsavel:*", "movimentacao:*", "usuarios:*", "fotos:*", "etiquetas:*", "termos:*", "emprestimos:*", "manutencoes:*", "inventarios:*", "pendencias:*", "sincronizacao:*"},
+    "agente_campo": {"bem:read", "bem:update", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:update", "fotos:read", "fotos:create", "etiquetas:read", "emprestimos:read", "emprestimos:create", "manutencoes:read", "manutencoes:create", "inventarios:read", "inventarios:create", "sincronizacao:read", "sincronizacao:create"},
+    "responsavel_setor": {"bem:read", "localizacao:read", "movimentacao:read", "movimentacao:create", "movimentacao:accept", "fotos:read", "fotos:create", "etiquetas:read", "termos:read", "emprestimos:read", "emprestimos:create", "manutencoes:read", "manutencoes:create", "inventarios:read", "inventarios:create", "sincronizacao:read", "sincronizacao:create"},
+    "auditor": {"bem:read", "categoria:read", "setores:read", "responsavel:read", "localizacao:read", "movimentacao:read", "relatorio:read", "fotos:read", "etiquetas:read", "termos:read", "emprestimos:read", "manutencoes:read", "inventarios:read", "pendencias:read", "sincronizacao:read"},
 }
 
 
