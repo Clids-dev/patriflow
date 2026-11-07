@@ -211,4 +211,30 @@ class ApiClient {
 
   static Future<http.Response> getResponse(String endpoint) =>
       _getResponse(endpoint);
+
+  /// O servidor responde? Qualquer resposta HTTP abaixo de 500 conta como acessível
+  /// (inclusive 401, que só indica sessão expirada). Usa tempo curto para não travar a tela.
+  static Future<bool> servidorAcessivel() async {
+    try {
+      final apiUrl = await _getApiBaseUrl();
+      if (apiUrl == null) return false;
+      final response = await http
+          .get(Uri.parse('$apiUrl/sincronizacao/tipos'), headers: await _headers())
+          .timeout(const Duration(seconds: 5));
+      return response.statusCode < 500;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Bytes da foto. Devolve null se a foto não existe mais no servidor (404);
+  /// lança exceção em falha de rede, para quem chama decidir se continua.
+  static Future<Uint8List?> baixarFoto(int fotoId) async {
+    final response = await _getResponse('/fotos/$fotoId');
+    if (response.statusCode == 404) return null;
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Falha ao baixar a foto $fotoId (${response.statusCode}).');
+    }
+    return response.bodyBytes;
+  }
 }
