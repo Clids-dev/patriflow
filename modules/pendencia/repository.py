@@ -4,7 +4,7 @@ from modules.pendencia.schemas import Pendencia
 # Fotos do registro de origem: conferência (bem não localizado não tem foto) ou bem não cadastrado.
 _SELECT = """
     SELECT p.id, p.tipo, p.descricao, p.bem_id, b.codigo_tombamento, p.setor_id, s.nome, it.inventario_id,
-           p.inventario_item_id, uc.nome, p.criada_em, ur.nome, p.resolvida_em, p.resolucao,
+           p.inventario_item_id, uc.nome, p.criada_em, ur.nome, p.resolvida_em, p.resolucao, p.sync_operacao_id,
            (SELECT COALESCE(array_agg(f.id ORDER BY f.id), '{}') FROM fotos f
             WHERE f.registro_tipo IN ('conferencia', 'bem_nao_cadastrado') AND f.registro_id = p.inventario_item_id)
     FROM pendencias p
@@ -21,7 +21,8 @@ _FILTROS = {"abertas": "p.resolvida_em IS NULL", "resolvidas": "p.resolvida_em I
 def _modelo(r) -> Pendencia:
     return Pendencia(id=r[0], tipo=r[1], descricao=r[2], bem_id=r[3], codigo_tombamento=r[4], setor_id=r[5],
                      setor_nome=r[6], inventario_id=r[7], inventario_item_id=r[8], criada_por=r[9], criada_em=r[10],
-                     resolvida_por=r[11], resolvida_em=r[12], resolucao=r[13], fotos=list(r[14] or []))
+                     resolvida_por=r[11], resolvida_em=r[12], resolucao=r[13], sync_operacao_id=r[14],
+                     fotos=list(r[15] or []))
 
 
 class PendenciaRepository:

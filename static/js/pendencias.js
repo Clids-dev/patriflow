@@ -5,6 +5,7 @@ import { $, api, ui, esc } from '/static/js/utils.js';
 const TIPO = {
     bem_nao_localizado: ['Não localizado', 'bi-question-circle', 'bg-danger-subtle text-danger'],
     bem_nao_cadastrado: ['Sem cadastro', 'bi-box-seam', 'bg-secondary-subtle text-secondary'],
+    conflito_sincronizacao: ['Conflito de sincronização', 'bi-arrow-repeat', 'bg-warning-subtle text-warning-emphasis'],
 };
 const dataHoraBR = (valor) => new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -22,6 +23,9 @@ async function carregar() {
     }
 }
 
+const origem = (p) => p.inventario_id ? `Inventário #${p.inventario_id}`
+    : p.sync_operacao_id ? 'Sincronização do aplicativo' : '—';
+
 function linha(p) {
     const [rotulo, icone, classe] = TIPO[p.tipo] || [p.tipo, 'bi-dot', 'bg-light text-dark'];
     const fotos = p.fotos.map((id, i) =>
@@ -37,7 +41,7 @@ function linha(p) {
             <td class="ps-4"><span class="badge rounded-pill ${classe}"><i class="bi ${icone} me-1"></i>${rotulo}</span></td>
             <td>${esc(p.descricao)}${fotos ? `<div>${fotos}</div>` : ''}</td>
             <td class="small">${esc(p.setor_nome || '—')}</td>
-            <td class="small">${p.inventario_id ? `Inventário #${p.inventario_id}` : '—'}<div class="text-muted">${dataHoraBR(p.criada_em)}</div></td>
+            <td class="small">${origem(p)}<div class="text-muted">${esc(p.criada_por || '')} · ${dataHoraBR(p.criada_em)}</div></td>
             <td>${situacao}</td>
             <td class="text-end pe-4">${acao}</td>
         </tr>`;

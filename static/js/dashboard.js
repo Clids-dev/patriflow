@@ -82,8 +82,9 @@ async function renderizarAtencao() {
 
     dados(pendencias).forEach(p => itens.push({
         prioridade: PRIORIDADE_ATENCAO.pendencia,
-        icone: p.tipo === 'bem_nao_cadastrado' ? 'bi-box-seam' : 'bi-question-circle',
-        titulo: p.tipo === 'bem_nao_cadastrado' ? 'Bem encontrado sem cadastro' : 'Bem não localizado no inventário',
+        icone: { bem_nao_cadastrado: 'bi-box-seam', conflito_sincronizacao: 'bi-arrow-repeat' }[p.tipo] || 'bi-question-circle',
+        titulo: { bem_nao_cadastrado: 'Bem encontrado sem cadastro', conflito_sincronizacao: 'Conflito de sincronização' }[p.tipo]
+            || 'Bem não localizado no inventário',
         detalhe: p.descricao,
         link: '/pendencias',
     }));

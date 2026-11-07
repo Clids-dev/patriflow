@@ -22,6 +22,7 @@ class Pendencia(BaseModel):
     setor_nome: Optional[str] = None
     inventario_id: Optional[int] = None
     inventario_item_id: Optional[int] = None
+    sync_operacao_id: Optional[int] = None
     criada_por: Optional[str] = None
     criada_em: datetime
     resolvida_por: Optional[str] = None

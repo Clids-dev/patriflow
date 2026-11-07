@@ -1,7 +1,8 @@
 """Caixa de pendências do setor de patrimônio: o que precisa de decisão humana.
 
-Hoje nasce do fechamento do inventário (bem não localizado, bem não cadastrado). Resolver exige
-dizer o que foi feito, e a resolução fica registrada; a pendência não pode ser reaberta nem apagada.
+Nasce do fechamento do inventário (bem não localizado, bem não cadastrado) e dos conflitos da
+sincronização do aplicativo. Resolver exige dizer o que foi feito, e a resolução fica registrada;
+a pendência não pode ser reaberta nem apagada.
 """
 from fastapi import HTTPException
 
