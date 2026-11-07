@@ -44,6 +44,9 @@ class FotoService:
                 detail="Formato não suportado. Envie uma foto em JPEG, PNG ou WebP.",
             )
 
+        if not self.repository.registro_existe(registro_tipo, registro_id):
+            raise HTTPException(status_code=404, detail="O registro desta foto não existe. Confira o tipo e o id.")
+
         nome = f"{uuid.uuid4().hex}{FORMATOS[formato]}"
         destino = _pasta() / nome
         destino.parent.mkdir(parents=True, exist_ok=True)

@@ -25,7 +25,19 @@ def _para_saida(row) -> dict:
     }
 
 
+# Cada tipo de foto pertence a um registro que precisa existir (e estar na situação certa).
+_REGISTRO_EXISTE = {
+    "aceite_transferencia": "SELECT 1 FROM movimentacoes WHERE id = %s",
+    "conferencia": """SELECT 1 FROM inventario_itens
+                      WHERE id = %s AND bem_id IS NOT NULL AND situacao IN ('localizado', 'outro_setor')""",
+    "bem_nao_cadastrado": "SELECT 1 FROM inventario_itens WHERE id = %s AND situacao = 'nao_cadastrado'",
+}
+
+
 class FotoRepository(DataBase):
+    def registro_existe(self, registro_tipo: str, registro_id: int) -> bool:
+        return self.execute(_REGISTRO_EXISTE[registro_tipo], (registro_id,), many=False) is not None
+
     def contar(self, registro_tipo, registro_id) -> int:
         rows = self.execute('SELECT count(*) FROM fotos WHERE registro_tipo = %s AND registro_id = %s', (registro_tipo, registro_id)) or [(0,)]
         return rows[0][0]
