@@ -1,8 +1,7 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends
-from modules.categoria.schemas import Categoria
-from modules.categoria.schemas import CategoriaCreate
+from fastapi import APIRouter, Depends, Query
+from modules.categoria.schemas import Categoria, CategoriaCreate
 from modules.categoria.service import CategoriaService
 
 router = APIRouter(prefix="/categoria", tags=["Categoria"])
@@ -11,8 +10,10 @@ def get_service() -> CategoriaService:
     return CategoriaService()
 
 @router.get("/", response_model=list[Categoria])
-def list_categorias(service: CategoriaService = Depends(get_service)):
-    return service.get_categorias()
+def list_categorias(incluir_inativas: bool = Query(False, description="Inclui as inativas (tela de gestão)"),
+                    service: CategoriaService = Depends(get_service)):
+    """Categorias ativas por nome. Com `incluir_inativas=true`, todas, ativas primeiro."""
+    return service.get_categorias(incluir_inativas)
 
 
 @router.get("/{id}/", response_model=Optional[Categoria])
@@ -21,22 +22,26 @@ def get_categoria_by_id(id: int):
     return service.get_categoria_id(id)
 
 
-@router.post("/", response_model=CategoriaCreate)
+@router.post("/", response_model=Categoria)
 def add_categoria(categoria: CategoriaCreate):
-    service = CategoriaService()
-    return service.create_categoria(categoria)
+    return CategoriaService().create_categoria(categoria)
 
 
-@router.put("/", response_model=CategoriaCreate)
+@router.put("/", response_model=Categoria)
 def update_categoria(id: int, novo_nome: str):
-    service = CategoriaService()
-    return service.put_categoria(id, novo_nome)
+    """Renomeia a categoria. A sigla não muda: ela é o prefixo dos tombos já emitidos."""
+    return CategoriaService().renomear(id, novo_nome)
 
 
 @router.delete("/", response_model=Categoria)
 def delete_categoria(id: int):
-    service = CategoriaService()
-    return service.delete_categoria(id)
+    """Inativa a categoria (nada é apagado)."""
+    return CategoriaService().delete_categoria(id)
+
+
+@router.post("/{id}/reativar", response_model=Categoria)
+def reativar_categoria(id: int):
+    return CategoriaService().reativar(id)
 
 
 @router.get("/{id}/bens")
