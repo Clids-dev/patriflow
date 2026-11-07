@@ -114,3 +114,26 @@ export const format = {
         } catch (e) { return '--'; }
     }
 };
+
+// Botões de ação das tabelas: a mesma ação tem o mesmo ícone, cor e descrição em todas as telas.
+// `classe` mantém o gancho que cada tela usa para tratar o clique (ex.: 'btn-edit').
+const ACOES = {
+    ver: { icone: 'bi-eye', titulo: 'Ver detalhes', tom: 'neutro' },
+    etiqueta: { icone: 'bi-qr-code', titulo: 'Gerar etiqueta', tom: 'neutro' },
+    termo: { icone: 'bi-file-earmark-text', titulo: 'Termo de responsabilidade', tom: 'neutro' },
+    abrir: { icone: 'bi-arrow-right', titulo: 'Abrir', tom: 'neutro' },
+    editar: { icone: 'bi-pencil-square', titulo: 'Editar', tom: 'primario' },
+    inativar: { icone: 'bi-slash-circle', titulo: 'Inativar', tom: 'perigo' },
+    baixa: { icone: 'bi-box-arrow-down', titulo: 'Dar baixa', tom: 'perigo' },
+    reativar: { icone: 'bi-arrow-counterclockwise', titulo: 'Reativar', tom: 'sucesso' },
+};
+
+export function botaoAcao(acao, { id = '', classe = '', titulo, href } = {}) {
+    const a = ACOES[acao];
+    const rotulo = esc(titulo || a.titulo);
+    const conteudo = `<i class="bi ${a.icone}" aria-hidden="true"></i>`;
+    const classes = `btn-acao btn-acao--${a.tom} ${classe}`.trim();
+    return href
+        ? `<a href="${esc(href)}" class="${classes}" title="${rotulo}" aria-label="${rotulo}">${conteudo}</a>`
+        : `<button type="button" class="${classes}" data-id="${esc(id)}" title="${rotulo}" aria-label="${rotulo}">${conteudo}</button>`;
+}

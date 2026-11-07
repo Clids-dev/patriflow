@@ -53,7 +53,7 @@ function linhaInventario(inv) {
                 <small class="text-muted">${conferidos} de ${inv.total_itens} conferidos</small>
             </td>
             <td>${badge}</td>
-            <td class="text-end pe-4">
+            <td class="pe-4 acoes-tabela">
                 <button class="btn btn-sm btn-outline-primary btn-abrir-inventario" data-id="${inv.id}">
                     ${inv.status === 'aberto' ? 'Conferir' : 'Ver resultado'}
                 </button>
@@ -188,8 +188,8 @@ async function carregarItens() {
                 <td class="small">${esc(item.setor_esperado || '—')}</td>
                 <td><span class="badge rounded-pill ${classe}">${rotulo}</span><span class="small">${onde}</span></td>
                 <td class="small text-muted">${item.conferido_em ? `${dataHoraBR(item.conferido_em)} · ${esc(item.conferido_por || '')}` : '—'}</td>
-                <td class="text-end">${podeMarcar
-                    ? `<button class="btn btn-sm btn-light btn-nao-localizado" data-id="${item.id}">Não localizado</button>` : ''}</td>
+                <td class="acoes-tabela">${podeMarcar
+                    ? `<button class="btn btn-sm btn-outline-secondary btn-nao-localizado" data-id="${item.id}">Não localizado</button>` : ''}</td>
             </tr>`;
     }).join('') : '<tr><td colspan="6" class="text-center text-muted py-3">Nenhum item neste filtro.</td></tr>';
 }

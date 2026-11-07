@@ -1,4 +1,4 @@
-import { $, $$, api, ui, esc } from './utils.js';
+import { $, $$, api, ui, esc, botaoAcao } from './utils.js';
 
 let todosResponsaveis = [];
 
@@ -47,10 +47,8 @@ function renderizarResponsaveis(responsaveis) {
                     ${esc(resp.ativo ? 'Ativo' : 'Inativo')}
                 </span>
             </td>
-            <td class="px-4 text-end">
-                <button class="btn btn-sm btn-light btn-termo me-1" data-id="${esc(resp.id)}" title="Termo de responsabilidade"><i class="bi bi-file-earmark-text text-dark"></i></button>
-                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(resp.id)}"><i class="bi bi-pencil-square text-primary"></i></button>
-                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(resp.id)}"><i class="bi bi-trash text-danger"></i></button>
+            <td class="px-4 acoes-tabela">
+                ${botaoAcao('termo', { id: resp.id, classe: 'btn-termo' })}${botaoAcao('editar', { id: resp.id, classe: 'btn-edit' })}${botaoAcao('inativar', { id: resp.id, classe: 'btn-delete' })}
             </td>
         </tr>
     `).join('');

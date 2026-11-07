@@ -1,4 +1,4 @@
-import { $, api, esc } from '/static/js/utils.js';
+import { $, api, esc, botaoAcao } from '/static/js/utils.js';
 
 /**
  * Dashboard.js - Lógica da página inicial com visualização de dados
@@ -321,8 +321,8 @@ async function renderizarUltimosRegistros() {
                 <td class="ps-4"><span class="text-muted">#${esc(bem.id)}</span></td>
                 <td><span class="fw-bold text-dark">${esc(bem.nome || 'Sem nome')}</span></td>
                 <td><span class="badge ${esc(bem.ativo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')} rounded-pill px-3">${esc(bem.ativo ? 'Ativo' : 'Inativo')}</span></td>
-                <td class="text-end pe-4">
-                    <a href="/bens" class="btn btn-sm btn-light"><i class="bi bi-arrow-right"></i></a>
+                <td class="pe-4 acoes-tabela">
+                    ${botaoAcao('abrir', { href: `/bens?busca=${encodeURIComponent(bem.codigo_tombamento || '')}`, titulo: 'Abrir na lista de equipamentos' })}
                 </td>
             </tr>
         `).join('');

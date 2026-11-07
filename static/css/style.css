@@ -161,18 +161,66 @@ body {
 body .bi::before,
 body [class^="bi-"]::before,
 body [class*=" bi-"]::before { vertical-align: -0.125em; }
-/* Botões de ação nas tabelas: sem quebra de linha e sem fundo cinza, com os ícones centralizados. */
-td .btn-light.btn-sm {
+/* Ações das tabelas: botão quadrado de 32 px, só o ícone, cor pela natureza da ação
+   (gerado por botaoAcao em utils.js). O fundo aparece ao passar o mouse e no foco do teclado. */
+.btn-acao {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
     background: transparent;
-    border-color: transparent;
-    white-space: nowrap;
+    font-size: 1rem;
     line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color .15s ease;
 }
-td .btn-light.btn-sm:hover { background: var(--bs-light-bg-subtle, #f1f3f8); }
-td:has(> .btn-light.btn-sm) { white-space: nowrap; }
+.btn-acao + .btn-acao { margin-left: 2px; }
+.btn-acao:hover { background: var(--primary-light); }
+.btn-acao:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+.btn-acao--neutro { color: var(--text-secondary); }
+.btn-acao--primario { color: var(--primary-color); }
+.btn-acao--perigo { color: var(--danger); }
+.btn-acao--perigo:hover { background: var(--danger-bg); }
+.btn-acao--sucesso { color: var(--success-text); }
+.btn-acao--sucesso:hover { background: var(--success-bg); }
+.btn-acao:hover, .btn-acao:focus-visible { color: var(--primary-color); }
+.btn-acao--perigo:hover, .btn-acao--perigo:focus-visible { color: var(--danger-text); }
+.btn-acao--sucesso:hover, .btn-acao--sucesso:focus-visible { color: var(--success-text); }
+
+/* Coluna de ações sempre visível: em telas estreitas a tabela rola por baixo dela.
+   A sombra fica num pseudo-elemento porque o Bootstrap pinta o destaque da linha com box-shadow. */
+.acoes-tabela { white-space: nowrap; text-align: end; }
+.table-responsive .acoes-tabela {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background-color: var(--surface-color);
+}
+.table-responsive thead .acoes-tabela { background-color: var(--table-head); }
+.table-responsive .acoes-tabela::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -12px;
+    width: 12px;
+    pointer-events: none;
+    background: linear-gradient(to left, rgba(28, 28, 30, 0.08), transparent);
+    opacity: 0;
+}
+@media (max-width: 991.98px) {
+    .table-responsive .acoes-tabela::before { opacity: 1; }
+}
+/* No celular, a coluna fixa ocupa menos largura: menos espaço lateral, botões no mesmo tamanho (32 px). */
+@media (max-width: 575.98px) {
+    .table-responsive .acoes-tabela { padding-left: 4px !important; padding-right: 8px !important; }
+    .btn-acao + .btn-acao { margin-left: 0; }
+}
 .input-group-text { display: flex; align-items: center; justify-content: center; }
 .input-group-text .bi,
 .input-group-text i { vertical-align: middle; line-height: 1; }

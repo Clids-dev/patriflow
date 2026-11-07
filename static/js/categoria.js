@@ -1,4 +1,4 @@
-import { $, $$, api, ui, esc } from './utils.js';
+import { $, $$, api, ui, esc, botaoAcao } from './utils.js';
 
 let todasCategorias = [];
 
@@ -70,13 +70,8 @@ function renderizarCategorias(categorias) {
                     ${esc(cat.ativo ? 'Ativo' : 'Inativo')}
                 </span>
             </td>
-            <td class="px-4 text-end">
-                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(cat.id)}" title="Editar">
-                    <i class="bi bi-pencil-square text-primary"></i>
-                </button>
-                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(cat.id)}" title="Inativar">
-                    <i class="bi bi-trash text-danger"></i>
-                </button>
+            <td class="px-4 acoes-tabela">
+                ${botaoAcao('editar', { id: cat.id, classe: 'btn-edit' })}${botaoAcao('inativar', { id: cat.id, classe: 'btn-delete' })}
             </td>
         </tr>
     `).join('');

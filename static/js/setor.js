@@ -1,4 +1,4 @@
-import { $, $$, api, ui, esc } from './utils.js';
+import { $, $$, api, ui, esc, botaoAcao } from './utils.js';
 
 let todosSetores = [];
 let todosResponsaveis = [];
@@ -80,9 +80,8 @@ function renderizarSetores(setores) {
                     ${esc(setor.ativo ? 'Ativo' : 'Inativo')}
                 </span>
             </td>
-            <td class="px-4 text-end">
-                <button class="btn btn-sm btn-light btn-edit me-1" data-id="${esc(setor.id)}"><i class="bi bi-pencil-square text-primary"></i></button>
-                <button class="btn btn-sm btn-light btn-delete" data-id="${esc(setor.id)}"><i class="bi bi-trash text-danger"></i></button>
+            <td class="px-4 acoes-tabela">
+                ${botaoAcao('editar', { id: setor.id, classe: 'btn-edit' })}${botaoAcao('inativar', { id: setor.id, classe: 'btn-delete' })}
             </td>
         </tr>
     `).join('');

@@ -1,4 +1,4 @@
-import { $, api, ui, esc } from '/static/js/utils.js';
+import { $, api, ui, esc, botaoAcao } from '/static/js/utils.js';
 
 /**
  * Bens.js - Gerenciamento de Equipamentos
@@ -251,16 +251,10 @@ function renderizarTabela() {
             <td><code>${esc(bem.codigo_tombamento)}</code></td>
             <td>R$ ${parseFloat(bem.valor_aquisicao ?? bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
             <td>${getStatusBadge(bem.status, bem.ativo)}</td>
-            <td class="text-end pe-4">
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-light text-primary btn-detalhes" data-id="${esc(bem.id)}" title="Ver Detalhes"><i class="bi bi-eye"></i></button>
-                    <button class="btn btn-sm btn-light text-dark btn-etiqueta" data-id="${esc(bem.id)}" title="Gerar etiqueta"><i class="bi bi-qr-code"></i></button>
-                    ${bem.ativo ? `<button class="btn btn-sm btn-light text-warning btn-editar" data-id="${esc(bem.id)}" title="Editar"><i class="bi bi-pencil-square"></i></button>` : ''}
-                    ${bem.ativo ? 
-                        `<button class="btn btn-sm btn-light text-danger btn-deletar" data-id="${esc(bem.id)}" title="Desativar"><i class="bi bi-trash"></i></button>` :
-                        `<button class="btn btn-sm btn-light text-success btn-reativar" data-id="${esc(bem.id)}" title="Reativar"><i class="bi bi-arrow-counterclockwise"></i></button>`
-                    }
-                </div>
+            <td class="pe-4 acoes-tabela">
+                ${botaoAcao('ver', { id: bem.id, classe: 'btn-detalhes' })}${botaoAcao('etiqueta', { id: bem.id, classe: 'btn-etiqueta' })}${bem.ativo
+                    ? botaoAcao('editar', { id: bem.id, classe: 'btn-editar' }) + botaoAcao('baixa', { id: bem.id, classe: 'btn-deletar' })
+                    : botaoAcao('reativar', { id: bem.id, classe: 'btn-reativar' })}
             </td>
         </tr>
     `).join('');

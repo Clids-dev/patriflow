@@ -43,7 +43,7 @@ function linha(p) {
             <td class="small">${esc(p.setor_nome || '—')}</td>
             <td class="small">${origem(p)}<div class="text-muted">${esc(p.criada_por || '')} · ${dataHoraBR(p.criada_em)}</div></td>
             <td>${situacao}</td>
-            <td class="text-end pe-4">${acao}</td>
+            <td class="pe-4 acoes-tabela">${acao}</td>
         </tr>`;
 }
 
