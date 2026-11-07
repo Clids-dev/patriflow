@@ -81,7 +81,7 @@ function renderizarSetores(setores) {
                 </span>
             </td>
             <td class="px-4 acoes-tabela">
-                ${botaoAcao('editar', { id: setor.id, classe: 'btn-edit' })}${botaoAcao('inativar', { id: setor.id, classe: 'btn-delete' })}
+                ${setor.ativo ? botaoAcao('agentes', { id: setor.id, classe: 'btn-agentes' }) : ''}${botaoAcao('editar', { id: setor.id, classe: 'btn-edit' })}${botaoAcao('inativar', { id: setor.id, classe: 'btn-delete' })}
             </td>
         </tr>
     `).join('');
@@ -132,6 +132,7 @@ async function salvarSetor() {
 }
 
 function vincularAcoesTabela() {
+    $$('.btn-agentes').forEach(btn => btn.addEventListener('click', () => abrirAgentes(btn.dataset.id)));
     $$('.btn-edit').forEach(btn => {
         btn.addEventListener('click', () => {
             const setor = todosSetores.find(s => s.id == btn.dataset.id);
@@ -160,3 +161,40 @@ function vincularAcoesTabela() {
         });
     });
 }
+
+// Agentes de campo designados ao setor (D1): atuam nele como no próprio setor.
+let setorDosAgentes = null;
+
+async function abrirAgentes(setorId) {
+    setorDosAgentes = setorId;
+    const lista = $('#listaAgentesSetor');
+    lista.innerHTML = '<p class="text-muted small mb-0">Carregando agentes…</p>';
+    bootstrap.Modal.getOrCreateInstance($('#modalAgentes')).show();
+    try {
+        const agentes = await api.get(`/api/v1/setores/${encodeURIComponent(setorId)}/agentes`);
+        lista.innerHTML = agentes.length ? agentes.map(a => `
+            <div class="form-check">
+                <input class="form-check-input agente-designado" type="checkbox" value="${esc(a.id)}" id="agente${esc(a.id)}"
+                       ${a.designado ? 'checked' : ''}>
+                <label class="form-check-label" for="agente${esc(a.id)}">${esc(a.nome)}
+                    <span class="text-muted small">· ${esc(a.setor_proprio || 'sem setor próprio')}</span></label>
+            </div>`).join('')
+            : '<p class="text-muted small mb-0">Não há agentes de campo ativos.</p>';
+    } catch (erro) {
+        lista.innerHTML = `<p class="text-danger small mb-0">${esc(erro.message)}</p>`;
+    }
+}
+
+async function salvarAgentes(evento) {
+    evento.preventDefault();
+    const ids = [...document.querySelectorAll('.agente-designado:checked')].map(c => Number(c.value));
+    try {
+        await api.put(`/api/v1/setores/${encodeURIComponent(setorDosAgentes)}/agentes`, { usuario_ids: ids });
+        bootstrap.Modal.getInstance($('#modalAgentes')).hide();
+        ui.showNotification('Agentes designados atualizados.');
+    } catch (erro) {
+        ui.showNotification(erro.message, 'error');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => $('#formAgentes').addEventListener('submit', salvarAgentes));

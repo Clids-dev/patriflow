@@ -7,9 +7,11 @@ _SELECT = """
            e.devolucao_prevista, ur.nome, e.devolvido_em, ud.nome, e.observacao_devolucao,
            (e.devolvido_em IS NULL AND e.devolucao_prevista < CURRENT_DATE) AS atrasado,
            CASE WHEN e.devolvido_em IS NULL AND e.devolucao_prevista < CURRENT_DATE
-                THEN CURRENT_DATE - e.devolucao_prevista ELSE 0 END AS dias_atraso
+                THEN CURRENT_DATE - e.devolucao_prevista ELSE 0 END AS dias_atraso,
+           e.matricula, e.setor_destino_id, sd.nome
     FROM emprestimos e
     JOIN bens b ON b.id = e.bem_id
+    LEFT JOIN setores sd ON sd.id = e.setor_destino_id
     LEFT JOIN usuarios ur ON ur.id = e.registrado_por
     LEFT JOIN usuarios ud ON ud.id = e.recebido_por
 """
@@ -25,7 +27,8 @@ _FILTROS = {
 def _modelo(r) -> Emprestimo:
     return Emprestimo(id=r[0], bem_id=r[1], bem_nome=r[2], codigo_tombamento=r[3], tomador=r[4], motivo=r[5],
                       saida_em=r[6], devolucao_prevista=r[7], registrado_por=r[8], devolvido_em=r[9],
-                      recebido_por=r[10], observacao_devolucao=r[11], atrasado=r[12], dias_atraso=r[13])
+                      recebido_por=r[10], observacao_devolucao=r[11], atrasado=r[12], dias_atraso=r[13],
+                      matricula=r[14], setor_destino_id=r[15], setor_destino=r[16])
 
 
 class EmprestimoRepository:
@@ -47,9 +50,11 @@ class EmprestimoRepository:
     @staticmethod
     def inserir(cur, dados, usuario_id: int, quando=None) -> int:
         cur.execute(
-            """INSERT INTO emprestimos (bem_id, tomador, motivo, devolucao_prevista, registrado_por, saida_em)
-               VALUES (%s, %s, %s, %s, %s, COALESCE(%s, NOW())) RETURNING id""",
-            (dados.bem_id, dados.tomador, dados.motivo, dados.devolucao_prevista, usuario_id, quando),
+            """INSERT INTO emprestimos (bem_id, tomador, matricula, setor_destino_id, motivo, devolucao_prevista,
+                                        registrado_por, saida_em)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, COALESCE(%s, NOW())) RETURNING id""",
+            (dados.bem_id, dados.tomador, dados.matricula, dados.setor_destino_id, dados.motivo,
+             dados.devolucao_prevista, usuario_id, quando),
         )
         return cur.fetchone()[0]
 

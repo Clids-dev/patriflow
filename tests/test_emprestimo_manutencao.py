@@ -37,7 +37,7 @@ def pessoas(sql):
 
 
 def _emprestimo(bem_id=1, prazo=AMANHA):
-    return EmprestimoCreate(bem_id=bem_id, tomador="Maria Souza", motivo="Apresentação externa", devolucao_prevista=prazo)
+    return EmprestimoCreate(bem_id=bem_id, tomador="Maria Souza", matricula="M-1001", setor_destino_id=2, motivo="Apresentação externa", devolucao_prevista=prazo)
 
 
 def _erro(funcao, *args):

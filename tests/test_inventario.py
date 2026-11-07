@@ -167,7 +167,7 @@ def test_nao_fecha_com_bem_sem_situacao(banco):
 
 def test_fechamento_completo_abre_transferencias_e_cria_pendencias(banco, tombo, sql):
     # Bem 3 emprestado antes da abertura: ausência justificada, sem pendência.
-    EmprestimoService().registrar(EmprestimoCreate(bem_id=3, tomador="Ana Lima", motivo="Evento",
+    EmprestimoService().registrar(EmprestimoCreate(bem_id=3, tomador="Ana Lima", matricula="M-1001", setor_destino_id=2, motivo="Evento",
                                                    devolucao_prevista=HOJE + timedelta(days=3)), ADMIN)
     inv = _abrir()
     servico = InventarioService()

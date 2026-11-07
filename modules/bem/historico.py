@@ -56,8 +56,10 @@ WITH eventos AS (
 
     UNION ALL
     SELECT 'emprestimo_saida', e.saida_em, u.nome, e.id,
-           jsonb_build_object('tomador', e.tomador, 'motivo', e.motivo, 'devolucao_prevista', e.devolucao_prevista)
+           jsonb_build_object('tomador', e.tomador, 'motivo', e.motivo, 'devolucao_prevista', e.devolucao_prevista,
+                              'destino', sd.nome)
     FROM emprestimos e LEFT JOIN usuarios u ON u.id = e.registrado_por
+    LEFT JOIN setores sd ON sd.id = e.setor_destino_id
     WHERE e.bem_id = %(bem)s
 
     UNION ALL
@@ -147,7 +149,8 @@ def _descrever(tipo: str, d: dict) -> tuple[str, str]:
         return "Transferência cancelada pelo almoxarifado", " · ".join(
             filter(None, [f"{origem or '—'} → {destino}", d.get("motivo")]))
     if tipo == "emprestimo_saida":
-        return "Emprestado", f"Para {d.get('tomador')} · {d.get('motivo')} · devolução prevista {_data(d.get('devolucao_prevista'))}"
+        para = f"Para {d.get('tomador')}" + (f" ({d.get('destino')})" if d.get('destino') else "")
+        return "Emprestado", f"{para} · {d.get('motivo')} · devolução prevista {_data(d.get('devolucao_prevista'))}"
     if tipo == "emprestimo_devolucao":
         atraso = d.get("dias_atraso") or 0
         partes = [f"Devolvido por {d.get('tomador')}", f"{atraso} dia(s) de atraso" if atraso else "no prazo",

@@ -38,7 +38,9 @@ void main() {
           },
         ],
         'categorias': [],
-        'setores': [],
+        'setores': [
+          {'id': 2, 'nome': 'Financeiro'},
+        ],
         'localizacoes': {'predios': [], 'andares': [], 'salas': []},
       },
       baixarFoto: (_) async => Uint8List(0),
@@ -129,7 +131,7 @@ void main() {
       await acervo.baixar(1);
     });
     final bem = await tester.runAsync(() => acervo.repository.porId(2));
-    await tester.pumpWidget(MaterialApp(home: FichaOfflinePage(bem: bem!, setorUsuario: 1)));
+    await tester.pumpWidget(MaterialApp(home: FichaOfflinePage(bem: bem!)));
     await esperarBanco(tester);
 
     expect(find.text('Emprestado para Maria Souza até 10/11/2026.'), findsOneWidget);
@@ -137,18 +139,21 @@ void main() {
     expect(find.text('Emprestar'), findsNothing);
   });
 
-  testWidgets('colaborador de outro setor não vê ações de guarda', (tester) async {
+  testWidgets('empréstimo pede matrícula e setor de destino (o bem não sai da instituição)', (tester) async {
     await telaDeCelular(tester);
     await tester.runAsync(() async {
       await controller.configurarParaTeste(usuarioId: 1, fila: fila, acervo: acervo);
       await acervo.baixar(1);
     });
     final bem = await tester.runAsync(() => acervo.repository.porId(1));
-    await tester.pumpWidget(MaterialApp(home: FichaOfflinePage(bem: bem!, setorUsuario: 99)));
+    await tester.pumpWidget(MaterialApp(home: FichaOfflinePage(bem: bem!)));
     await esperarBanco(tester);
 
-    expect(find.text('Garantia até'), findsOneWidget); // a ficha inteira foi construída
-    expect(find.text('Emprestar'), findsNothing);
-    expect(find.text('Enviar para manutenção'), findsNothing);
+    await tester.tap(find.text('Emprestar'));
+    await esperarBanco(tester);
+    await tester.pumpAndSettle();
+    expect(find.text('Matrícula'), findsOneWidget);
+    expect(find.text('Setor de destino'), findsOneWidget);
+    expect(find.text('Devolução prevista (até 30 dias)'), findsOneWidget);
   });
 }

@@ -26,11 +26,13 @@ class ManutencaoService:
         quando = momento_da_operacao(ocorrido_em)
         with DataBase().transacao() as cur:
             bem = guarda.travar_bem(cur, dados.bem_id)
-            guarda.exigir_guarda(cur, usuario, bem["id"])
+            imprevisto = guarda.exigir_guarda(cur, usuario, bem["id"], dados.imprevisto)
             # Bens marcados como "Manutenção" pela edição antiga, sem registro aberto, podem ser registrados.
             guarda.exigir_livre(cur, bem, aceitar_status_manutencao=True)
             anterior = bem["status"] if bem["status"] != guarda.STATUS_MANUTENCAO else STATUS_PADRAO
             manutencao_id = self.repo.inserir(cur, dados, anterior, usuario["id"], quando)
+            if imprevisto:
+                guarda.registrar_imprevisto(cur, usuario, bem, "Envio para manutenção", dados.imprevisto)
             self.repo.atualizar_bem(cur, bem["id"], guarda.STATUS_MANUTENCAO)
             registrar_acao("bem", bem["id"], "enviar_manutencao", usuario, {"status": bem["status"]},
                            {"status": guarda.STATUS_MANUTENCAO, "manutencao_id": manutencao_id}, cur=cur)
@@ -48,7 +50,8 @@ class ManutencaoService:
             if quando is not None and quando < enviado_em:
                 raise HTTPException(status_code=409, detail="O retorno não pode ser anterior ao envio para manutenção.")
             bem = guarda.travar_bem(cur, bem_id)
-            guarda.exigir_guarda(cur, usuario, bem_id)
+            if guarda.exigir_guarda(cur, usuario, bem_id, dados.imprevisto):
+                guarda.registrar_imprevisto(cur, usuario, bem, "Retorno de manutenção", dados.imprevisto)
             self.repo.encerrar(cur, manutencao_id, usuario["id"], dados, quando)
             self.repo.atualizar_bem(cur, bem_id, status_anterior, dados.estado_retorno)
             registrar_acao("bem", bem_id, "retorno_manutencao", usuario,

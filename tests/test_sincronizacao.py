@@ -59,7 +59,7 @@ def status(resposta):
 
 
 def _emprestimo(bem_id=1, tomador="Maria Souza"):
-    return {"bem_id": bem_id, "tomador": tomador, "motivo": "Evento externo",
+    return {"bem_id": bem_id, "tomador": tomador, "matricula": "M-1001", "setor_destino_id": 2, "motivo": "Evento externo",
             "devolucao_prevista": (date.today() + timedelta(days=3)).isoformat()}
 
 

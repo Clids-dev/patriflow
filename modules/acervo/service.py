@@ -11,6 +11,7 @@ from datetime import datetime
 from fastapi import HTTPException
 
 from core.database import DataBase
+from modules.bem import guarda
 
 ADMIN = "setor_patrimonio"
 
@@ -60,11 +61,13 @@ _CAMPOS_BEM = ("id", "codigo_tombamento", "nome", "status", "categoria_id", "cat
 
 
 def _exigir_acesso(usuario: dict, setor_id: int) -> None:
-    """Patrimônio e auditor baixam qualquer setor; colaboradores, só o próprio."""
+    """Patrimônio e auditor baixam qualquer setor; colaboradores, o próprio e os designados (D1)."""
     if usuario["perfil"] in (ADMIN, "auditor"):
         return
-    if usuario.get("setor_id") != setor_id:
-        raise HTTPException(status_code=403, detail="Você só baixa o acervo do seu setor.")
+    with DataBase().transacao() as cur:
+        permitidos = guarda.setores_do_colaborador(cur, usuario)
+    if setor_id not in permitidos:
+        raise HTTPException(status_code=403, detail="Você só baixa o acervo do seu setor e dos setores designados a você.")
 
 
 def acervo_do_setor(setor_id: int, usuario: dict) -> dict:
@@ -96,3 +99,14 @@ def acervo_do_setor(setor_id: int, usuario: dict) -> dict:
         "setores": setores,
         "localizacoes": {"predios": predios, "andares": andares, "salas": salas},
     }
+
+
+def setores_permitidos(usuario: dict) -> list[dict]:
+    """Setores cujo acervo o usuário pode baixar: todos (patrimônio e auditor) ou o próprio e os designados."""
+    with DataBase().transacao() as cur:
+        cur.execute("SELECT id, nome FROM setores WHERE ativo = TRUE ORDER BY nome")
+        todos = [{"id": r[0], "nome": r[1]} for r in cur.fetchall()]
+        if usuario["perfil"] in (ADMIN, "auditor"):
+            return todos
+        permitidos = guarda.setores_do_colaborador(cur, usuario)
+    return [s for s in todos if s["id"] in permitidos]

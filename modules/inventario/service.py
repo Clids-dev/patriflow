@@ -12,6 +12,7 @@ from psycopg2 import errors
 from core.database import DataBase
 from core.tempo import momento_da_operacao
 from core.tombamento import require_valid_tombo
+from modules.bem import guarda
 from modules.inventario import queries as q
 from modules.inventario.repository import InventarioRepository
 from modules.inventario.schemas import Conferencia, InventarioCreate, NaoCadastrado
@@ -26,11 +27,15 @@ def _exigir_patrimonio(usuario: dict, acao: str) -> None:
 
 
 def _exigir_conferente(usuario: dict, setor_id: int) -> None:
-    """Patrimônio confere em qualquer setor; colaboradores, só no próprio setor."""
+    """Patrimônio confere em qualquer setor; colaboradores, no próprio e nos designados (D1)."""
     if usuario["perfil"] == ADMIN:
         return
-    if usuario["perfil"] not in COLABORADORES or usuario.get("setor_id") != setor_id:
-        raise HTTPException(status_code=403, detail="Você só confere bens no seu setor.")
+    if usuario["perfil"] not in COLABORADORES:
+        raise HTTPException(status_code=403, detail="Seu perfil não confere bens.")
+    with DataBase().transacao() as cur:
+        permitidos = guarda.setores_do_colaborador(cur, usuario)
+    if setor_id not in permitidos:
+        raise HTTPException(status_code=403, detail="Você só confere bens no seu setor e nos setores designados a você.")
 
 
 def _travar(cur, inventario_id: int, modo: str) -> tuple:

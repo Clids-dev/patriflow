@@ -198,7 +198,8 @@ class _HomePageState extends State<HomePage> {
           page: const TransferListPage(modo: ModoTransferencias.todas),
           bottomBar: true,
         ),
-        ..._itensOffline(setorId: setorId, qualquerSetor: false),
+        // O agente circula: escolhe entre o próprio setor e os designados a ele (D1).
+        ..._itensOffline(setorId: setorId, qualquerSetor: true),
       ],
       'responsavel_setor' => [
         ShellItem(

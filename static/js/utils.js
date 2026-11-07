@@ -126,6 +126,7 @@ const ACOES = {
     etiqueta: { icone: 'bi-qr-code', titulo: 'Gerar etiqueta', tom: 'neutro' },
     termo: { icone: 'bi-file-earmark-text', titulo: 'Termo de responsabilidade', tom: 'neutro' },
     abrir: { icone: 'bi-arrow-right', titulo: 'Abrir', tom: 'neutro' },
+    agentes: { icone: 'bi-person-badge', titulo: 'Agentes designados', tom: 'neutro' },
     editar: { icone: 'bi-pencil-square', titulo: 'Editar', tom: 'primario' },
     inativar: { icone: 'bi-slash-circle', titulo: 'Inativar', tom: 'perigo' },
     baixa: { icone: 'bi-box-arrow-down', titulo: 'Dar baixa', tom: 'perigo' },

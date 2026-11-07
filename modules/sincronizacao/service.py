@@ -93,7 +93,8 @@ def _emprestar(d: EmprestimoCreate, usuario, quando):
 
 
 def _devolver(d: s.EmprestimoDevolucao, usuario, quando):
-    return {"emprestimo_id": EmprestimoService().devolver(d.emprestimo_id, d.observacao, usuario, quando).id}
+    return {"emprestimo_id": EmprestimoService().devolver(d.emprestimo_id, d.observacao, usuario, quando,
+                                                          d.imprevisto).id}
 
 
 def _enviar_manutencao(d: ManutencaoCreate, usuario, quando):
@@ -101,7 +102,7 @@ def _enviar_manutencao(d: ManutencaoCreate, usuario, quando):
 
 
 def _retorno_manutencao(d: s.ManutencaoRetorno, usuario, quando):
-    retorno = Retorno(servico_realizado=d.servico_realizado, estado_retorno=d.estado_retorno)
+    retorno = Retorno(servico_realizado=d.servico_realizado, estado_retorno=d.estado_retorno, imprevisto=d.imprevisto)
     return {"manutencao_id": ManutencaoService().registrar_retorno(d.manutencao_id, retorno, usuario, quando).id}
 
 

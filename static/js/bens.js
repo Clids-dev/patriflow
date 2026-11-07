@@ -315,7 +315,9 @@ const ICONE_EVENTO = {
 };
 const dataBR = (valor) => new Date(`${valor}T00:00:00`).toLocaleDateString('pt-BR');
 const dataHoraBR = (valor) => new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-const hojeISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const hojeISO = (dias = 0) => new Date(Date.now() + dias * 864e5 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const PRAZO_MAXIMO_EMPRESTIMO = 30; // dias (D9); a API confere o mesmo limite
+let setoresAtivos = []; // destino dos empréstimos: o bem não sai da instituição
 
 async function verDetalhes(id) {
     const container = $("#conteudoDetalhes");
@@ -420,12 +422,22 @@ function renderizarSituacao(bem, emprestimo, manutencao) {
 const FORMULARIOS = {
     emprestar: () => `
         <h6 class="fw-bold mb-3">Emprestar bem</h6>
-        <div class="mb-2"><label class="form-label small fw-semibold" for="acaoTomador">Quem vai levar</label>
-            <input class="form-control" id="acaoTomador" required minlength="3" maxlength="120"></div>
+        <p class="small text-muted mb-2">O bem não sai da instituição: informe quem leva e para qual setor.</p>
+        <div class="row g-2 mb-2">
+            <div class="col-12 col-md-7"><label class="form-label small fw-semibold" for="acaoTomador">Quem vai levar</label>
+                <input class="form-control" id="acaoTomador" required minlength="3" maxlength="120"></div>
+            <div class="col-12 col-md-5"><label class="form-label small fw-semibold" for="acaoMatricula">Matrícula</label>
+                <input class="form-control" id="acaoMatricula" required minlength="2" maxlength="30"></div>
+        </div>
+        <div class="mb-2"><label class="form-label small fw-semibold" for="acaoDestino">Setor de destino</label>
+            <select class="form-select" id="acaoDestino" required>
+                <option value="">Escolha o setor</option>
+                ${setoresAtivos.map(s => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join('')}
+            </select></div>
         <div class="mb-2"><label class="form-label small fw-semibold" for="acaoMotivo">Motivo</label>
             <input class="form-control" id="acaoMotivo" required minlength="3" maxlength="500"></div>
-        <div class="mb-3"><label class="form-label small fw-semibold" for="acaoPrazo">Devolução prevista</label>
-            <input type="date" class="form-control" id="acaoPrazo" required min="${hojeISO()}"></div>`,
+        <div class="mb-3"><label class="form-label small fw-semibold" for="acaoPrazo">Devolução prevista (até ${PRAZO_MAXIMO_EMPRESTIMO} dias)</label>
+            <input type="date" class="form-control" id="acaoPrazo" required min="${hojeISO()}" max="${hojeISO(PRAZO_MAXIMO_EMPRESTIMO)}"></div>`,
     devolver: () => `
         <h6 class="fw-bold mb-3">Registrar devolução</h6>
         <div class="mb-3"><label class="form-label small fw-semibold" for="acaoObservacao">Observação (opcional)</label>
@@ -447,7 +459,15 @@ const FORMULARIOS = {
             </select></div>`,
 };
 
-function abrirFormularioAcao(acao, id) {
+async function abrirFormularioAcao(acao, id) {
+    if (acao === 'emprestar' && !setoresAtivos.length) {
+        try {
+            setoresAtivos = (await api.get('/api/v1/setores/')).filter(s => s.ativo !== false);
+        } catch (erro) {
+            ui.showNotification('Não foi possível carregar os setores de destino.', 'error');
+            return;
+        }
+    }
     const form = $("#formAcaoBem");
     form.dataset.acao = acao;
     form.dataset.id = id;
@@ -472,7 +492,8 @@ async function enviarAcaoBem(evento) {
     const valor = (campo) => $(campo).value.trim();
     const pedidos = {
         emprestar: () => api.post('/api/v1/emprestimos/', {
-            bem_id: Number(id), tomador: valor('#acaoTomador'), motivo: valor('#acaoMotivo'), devolucao_prevista: valor('#acaoPrazo') }),
+            bem_id: Number(id), tomador: valor('#acaoTomador'), matricula: valor('#acaoMatricula'),
+            setor_destino_id: Number(valor('#acaoDestino')), motivo: valor('#acaoMotivo'), devolucao_prevista: valor('#acaoPrazo') }),
         devolver: () => api.post(`/api/v1/emprestimos/${id}/devolver`, { observacao: valor('#acaoObservacao') || null }),
         manutencao: () => api.post('/api/v1/manutencoes/', {
             bem_id: Number(id), descricao: valor('#acaoDescricao'), destino: valor('#acaoDestino') }),

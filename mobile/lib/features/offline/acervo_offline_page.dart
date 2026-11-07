@@ -26,7 +26,7 @@ class AcervoOfflinePage extends StatefulWidget {
   /// Setor do usuário. Colaboradores só baixam o próprio setor.
   final int? setorId;
 
-  /// O setor de patrimônio escolhe qualquer setor.
+  /// Patrimônio escolhe qualquer setor; o agente, entre o próprio e os designados a ele.
   final bool podeEscolherSetor;
 
   @override
@@ -64,7 +64,8 @@ class _AcervoOfflinePageState extends State<AcervoOfflinePage> {
     final bens = await _repo.buscar(_busca.text);
     if (widget.podeEscolherSetor && _setores.isEmpty) {
       try {
-        _setores = (await ApiClient.get('/setores/')).cast<Map>().map(Map<String, dynamic>.from).toList();
+        // Setores que este usuário pode baixar: todos (patrimônio) ou o próprio e os designados (agente).
+        _setores = (await ApiClient.get('/acervo/setores')).cast<Map>().map(Map<String, dynamic>.from).toList();
         _setorEscolhido ??= meta?.setorId ?? (_setores.isEmpty ? null : _setores.first['id'] as int);
       } catch (_) {
         // Sem rede: escolhe pelo acervo já baixado.
@@ -205,7 +206,7 @@ class _AcervoOfflinePageState extends State<AcervoOfflinePage> {
       subtitle: '${bem.codigoTombamento} · ${bem.ficha['status'] ?? ''}',
       trailing: situacao,
       onTap: () async {
-        await Navigator.push(context, MaterialPageRoute(builder: (_) => FichaOfflinePage(bem: bem, setorUsuario: widget.setorId)));
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => FichaOfflinePage(bem: bem)));
         await _carregar();
       },
     );
@@ -214,10 +215,9 @@ class _AcervoOfflinePageState extends State<AcervoOfflinePage> {
 
 /// Ficha do bem a partir do acervo do aparelho, com as ações de guarda que entram na fila.
 class FichaOfflinePage extends StatefulWidget {
-  const FichaOfflinePage({super.key, required this.bem, required this.setorUsuario});
+  const FichaOfflinePage({super.key, required this.bem});
 
   final BemOffline bem;
-  final int? setorUsuario;
 
   @override
   State<FichaOfflinePage> createState() => _FichaOfflinePageState();
@@ -245,9 +245,6 @@ class _FichaOfflinePageState extends State<FichaOfflinePage> {
     final ops = await _controller.fila.aguardandoDoBem(_bem.id, usuario);
     if (mounted) setState(() => _naFila = ops);
   }
-
-  /// O setor de patrimônio opera qualquer bem; colaboradores, os do próprio setor (a API confere).
-  bool get _temGuarda => widget.setorUsuario == null || widget.setorUsuario == _bem.setorId;
 
   Future<void> _registrar(String tipo, Map<String, dynamic> dados) async {
     await _controller.registrar(
@@ -312,7 +309,8 @@ class _FichaOfflinePageState extends State<FichaOfflinePage> {
             _aviso('Emprestado para ${_f['emprestado_para']} até ${_data(_f['devolucao_prevista'] as String?)}.'),
           if (_bem.manutencaoAbertaId != null) _aviso('Em manutenção.'),
           for (final op in _naFila) _aviso('Na fila: ${nomeDaOperacao(op.tipo)} (aguardando envio).'),
-          if (_temGuarda) ..._acoes(),
+          // O acervo só tem bens de setores que o usuário pode operar; a API confere de novo no envio.
+          ..._acoes(),
         ],
       ),
     );
@@ -346,13 +344,26 @@ class _FichaOfflinePageState extends State<FichaOfflinePage> {
     ];
   }
 
+  /// O bem não sai da instituição (D9): quem leva tem matrícula e o empréstimo diz o setor de destino.
   Future<void> _emprestar() async {
+    final setores = await _controller.acervo.repository.referencias('setores');
+    if (!mounted) return;
     final valores = await _formulario('Emprestar', [
       const _Campo('tomador', 'Quem vai levar', minimo: 3, maximo: 120),
+      const _Campo('matricula', 'Matrícula', minimo: 2, maximo: 30),
+      _Campo('setor_destino_id', 'Setor de destino', opcoes: {
+        for (final s in setores) '${s['id']}': '${s['nome']}',
+      }),
       const _Campo('motivo', 'Motivo', minimo: 3, maximo: 500),
-      const _Campo('devolucao_prevista', 'Devolução prevista', data: true),
+      const _Campo('devolucao_prevista', 'Devolução prevista (até 30 dias)', data: true),
     ]);
-    if (valores != null) await _registrar('emprestimo_registrar', {'bem_id': _bem.id, ...valores});
+    if (valores != null) {
+      await _registrar('emprestimo_registrar', {
+        'bem_id': _bem.id,
+        ...valores,
+        'setor_destino_id': int.parse(valores['setor_destino_id'] as String),
+      });
+    }
   }
 
   Future<void> _devolver() async {
@@ -454,7 +465,7 @@ class _FormularioAcaoState extends State<_FormularioAcao> {
               final data = await showDatePicker(
                 context: context,
                 firstDate: DateTime(hoje.year, hoje.month, hoje.day),
-                lastDate: hoje.add(const Duration(days: 365)),
+                lastDate: hoje.add(const Duration(days: 30)), // prazo máximo do empréstimo (D9)
               );
               if (data != null) setState(() => _outros[c.chave] = data);
             },

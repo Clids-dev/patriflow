@@ -27,4 +27,5 @@ def registrar(dados: EmprestimoCreate, usuario=Depends(current_user)):
 
 @router.post("/{emprestimo_id}/devolver", response_model=Emprestimo)
 def devolver(emprestimo_id: int, dados: Optional[Devolucao] = None, usuario=Depends(current_user)):
-    return EmprestimoService().devolver(emprestimo_id, dados.observacao if dados else None, usuario)
+    return EmprestimoService().devolver(emprestimo_id, dados.observacao if dados else None, usuario,
+                                        imprevisto=dados.imprevisto if dados else None)

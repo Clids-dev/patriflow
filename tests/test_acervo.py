@@ -50,7 +50,7 @@ def test_setor_inexistente_responde_404(banco):
 
 def test_situacao_e_foto_de_referencia_vem_no_acervo(banco, tmp_path, monkeypatch):
     monkeypatch.setattr(config, "FOTOS_DIR", str(tmp_path))
-    emprestimo = EmprestimoService().registrar(EmprestimoCreate(bem_id=2, tomador="Maria Souza", motivo="Evento",
+    emprestimo = EmprestimoService().registrar(EmprestimoCreate(bem_id=2, tomador="Maria Souza", matricula="M-1001", setor_destino_id=2, motivo="Evento",
                                                                 devolucao_prevista=date.today() + timedelta(days=2)), ADMIN)
     inv = InventarioService().abrir(InventarioCreate(descricao="Inventário", inicio=date.today(), fim=date.today(),
                                                      setor_ids=[TI]), ADMIN)

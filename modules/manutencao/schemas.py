@@ -14,6 +14,8 @@ class ManutencaoCreate(BaseModel):
     bem_id: int = Field(gt=0)
     descricao: str = Field(min_length=3, max_length=500, description="Problema ou serviço solicitado")
     destino: str = Field(min_length=2, max_length=160, description="Assistência ou oficina")
+    imprevisto: Optional[str] = Field(default=None, max_length=500,
+                                      description="Agente fora dos setores designados: motivo do imprevisto")
 
 
 class Retorno(BaseModel):
@@ -21,6 +23,7 @@ class Retorno(BaseModel):
 
     servico_realizado: str = Field(min_length=3, max_length=500)
     estado_retorno: EstadoConservacao
+    imprevisto: Optional[str] = Field(default=None, max_length=500)
 
 
 class Manutencao(BaseModel):

@@ -74,6 +74,26 @@
         </div>
     </div>
 </div>
+<!-- Modal: agentes de campo designados ao setor (D1) -->
+<div class="modal fade" id="modalAgentes" tabindex="-1" aria-labelledby="tituloAgentes" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="formAgentes">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="tituloAgentes">Agentes designados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">Agentes marcados baixam o acervo, conferem e emprestam bens deste setor como se
+                    fosse o seu. Fora dos setores designados, só num imprevisto, com motivo, e o patrimônio é avisado.</p>
+                <fieldset id="listaAgentesSetor" class="d-grid gap-2"></fieldset>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

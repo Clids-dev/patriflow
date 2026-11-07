@@ -78,6 +78,7 @@ class EmprestimoDevolucao(BaseModel):
 
     emprestimo_id: int = Field(gt=0)
     observacao: Optional[str] = Field(default=None, max_length=500)
+    imprevisto: Optional[str] = Field(default=None, max_length=500)
 
 
 class ManutencaoRetorno(BaseModel):
@@ -86,3 +87,4 @@ class ManutencaoRetorno(BaseModel):
     manutencao_id: int = Field(gt=0)
     servico_realizado: str = Field(min_length=3, max_length=500)
     estado_retorno: EstadoConservacao
+    imprevisto: Optional[str] = Field(default=None, max_length=500)

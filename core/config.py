@@ -26,5 +26,8 @@ PRAZO_TRANSFERENCIA_DIAS = int(os.getenv("PATRIFLOW_PRAZO_TRANSFERENCIA_DIAS", "
 # Baixas de bens com valor igual ou acima deste limite exigem aprovação de outro servidor do patrimônio.
 ALCADA_BAIXA_VALOR = float(os.getenv("PATRIFLOW_ALCADA_BAIXA_VALOR", "5000"))
 
+# Empréstimo: prazo máximo de devolução, em dias (D9).
+EMPRESTIMO_PRAZO_MAX_DIAS = int(os.getenv("PATRIFLOW_EMPRESTIMO_PRAZO_MAX_DIAS", "30"))
+
 # Operações feitas sem rede: até quantos dias depois ainda podem ser enviadas.
 OFFLINE_LIMITE_DIAS = int(os.getenv("PATRIFLOW_OFFLINE_LIMITE_DIAS", "7"))
