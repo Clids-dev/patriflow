@@ -25,7 +25,8 @@ pytestmark = pytest.mark.integracao
 TI, ALMOX, RH = 1, 3, 4
 ADMIN = {"id": 1, "perfil": "setor_patrimonio", "setor_id": None}
 APARELHO = "aparelho-teste-0001"
-AGORA = datetime(2026, 11, 7, 9, 0, 0)
+# Relativa ao momento do teste: o servidor recusa operações do aparelho com mais de 7 dias (D8).
+AGORA = (datetime.now() - timedelta(hours=2)).replace(microsecond=0)
 
 
 @pytest.fixture
@@ -156,7 +157,7 @@ def test_liberacao_feita_offline_vira_conflito_se_a_transferencia_ja_avancou(ban
 def test_erro_inesperado_e_registrado_e_pode_ser_reenviado(banco, sql):
     lote = [op("op-com-erro-1", "emprestimo_registrar", _emprestimo())]
     original = sync_service.OPERACOES["emprestimo_registrar"]
-    with patch.dict(sync_service.OPERACOES, {"emprestimo_registrar": (original[0], lambda d, u: 1 / 0)}):
+    with patch.dict(sync_service.OPERACOES, {"emprestimo_registrar": (original[0], lambda d, u, q: 1 / 0)}):
         falha = sincronizar(lote)
     assert falha["resultados"][0].status == "erro"
     assert sql("SELECT status FROM sync_operacoes WHERE operacao_id = 'op-com-erro-1'", um=True)[0] == "erro"
@@ -210,3 +211,34 @@ def test_api_exige_identificadores_validos_e_limita_o_lote(banco):
     ok = cliente.post("/api/v1/sincronizacao/", headers=cabecalho,
                       json={"dispositivo_id": APARELHO, "operacoes": [op("op-api-0001", "emprestimo_registrar", _emprestimo())]})
     assert ok.status_code == 200 and ok.json()["resultados"][0]["status"] == "aceita"
+
+
+# --- Data do aparelho (D8) -----------------------------------------------------------------------
+
+def test_emprestimo_feito_sem_rede_usa_a_data_do_aparelho(banco, sql):
+    """Feito ontem com devolução prevista hoje: válido quando foi feito, então é aceito hoje."""
+    ontem = datetime.now() - timedelta(days=1)
+    dados = {**_emprestimo(), "devolucao_prevista": date.today().isoformat()}
+    resposta = sincronizar([{"id": "op-ontem-0001", "tipo": "emprestimo_registrar",
+                             "criada_em": ontem.isoformat(), "dados": dados}])
+    assert resposta["resultados"][0].status == "aceita"
+    saida = sql("SELECT saida_em FROM emprestimos", um=True)[0]
+    assert abs((saida - ontem).total_seconds()) < 1
+
+
+@pytest.mark.parametrize("deslocamento, trecho", [(timedelta(days=8), "mais de 7 dias"),
+                                                 (timedelta(hours=-1), "no futuro")])
+def test_data_do_aparelho_fora_do_limite_e_recusada(banco, sql, deslocamento, trecho):
+    quando = datetime.now() - deslocamento
+    resposta = sincronizar([{"id": "op-fora-limite", "tipo": "emprestimo_registrar",
+                             "criada_em": quando.isoformat(), "dados": _emprestimo()}])
+    assert resposta["resultados"][0].status == "recusada"
+    assert trecho in resposta["resultados"][0].mensagem
+    assert sql("SELECT count(*) FROM emprestimos", um=True)[0] == 0
+
+
+def test_devolucao_anterior_a_saida_e_conflito(banco):
+    sincronizar([op("op-saida-0001", "emprestimo_registrar", _emprestimo(), minutos=60)])
+    emprestimo_id = sincronizar([op("op-saida-0001", "emprestimo_registrar", _emprestimo(), minutos=60)])["resultados"][0].resultado["emprestimo_id"]
+    resposta = sincronizar([op("op-volta-0001", "emprestimo_devolver", {"emprestimo_id": emprestimo_id}, minutos=0)])
+    assert resposta["resultados"][0].status == "conflito"

@@ -63,7 +63,7 @@ LOCAL_DO_BEM = """
 REGISTRAR_CONFERENCIA = """
     UPDATE inventario_itens
     SET situacao = %(situacao)s, setor_encontrado_id = %(setor)s, estado_encontrado = %(estado)s,
-        observacao = %(obs)s, conferido_por = %(usuario)s, conferido_em = NOW()
+        observacao = %(obs)s, conferido_por = %(usuario)s, conferido_em = COALESCE(%(quando)s, NOW())
     WHERE id = %(item)s
 """
 
@@ -73,7 +73,7 @@ INSERIR_EXCEDENTE = """
         (inventario_id, setor_esperado_id, bem_id, codigo_tombamento, nome, estado_esperado,
          situacao, setor_encontrado_id, estado_encontrado, observacao, conferido_por, conferido_em)
     SELECT %(inv)s, %(setor_atual)s, b.id, b.codigo_tombamento, b.nome, b.estado_conservacao,
-           'outro_setor', %(setor)s, %(estado)s, %(obs)s, %(usuario)s, NOW()
+           'outro_setor', %(setor)s, %(estado)s, %(obs)s, %(usuario)s, COALESCE(%(quando)s, NOW())
     FROM bens b WHERE b.id = %(bem)s
     RETURNING id
 """
@@ -81,7 +81,8 @@ INSERIR_EXCEDENTE = """
 INSERIR_NAO_CADASTRADO = """
     INSERT INTO inventario_itens
         (inventario_id, codigo_tombamento, nome, situacao, setor_encontrado_id, observacao, conferido_por, conferido_em)
-    VALUES (%(inv)s, %(codigo)s, %(descricao)s, 'nao_cadastrado', %(setor)s, %(obs)s, %(usuario)s, NOW())
+    VALUES (%(inv)s, %(codigo)s, %(descricao)s, 'nao_cadastrado', %(setor)s, %(obs)s, %(usuario)s,
+            COALESCE(%(quando)s, NOW()))
     RETURNING id
 """
 

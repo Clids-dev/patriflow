@@ -4,12 +4,13 @@ Concorrência: conferências travam o inventário em modo compartilhado (FOR SHA
 modo exclusivo (FOR UPDATE). Assim várias pessoas conferem ao mesmo tempo, mas nenhuma conferência
 é gravada depois que o fechamento começou.
 """
-from datetime import date
+from datetime import date, datetime
 
 from fastapi import HTTPException
 from psycopg2 import errors
 
 from core.database import DataBase
+from core.tempo import momento_da_operacao
 from core.tombamento import require_valid_tombo
 from modules.inventario import queries as q
 from modules.inventario.repository import InventarioRepository
@@ -79,7 +80,9 @@ class InventarioService:
         return self.detalhar(inventario_id)
 
     # --- Conferência -----------------------------------------------------------------------------
-    def conferir(self, inventario_id: int, dados: Conferencia, usuario: dict):
+    def conferir(self, inventario_id: int, dados: Conferencia, usuario: dict, ocorrido_em: datetime | None = None):
+        """`ocorrido_em`: quando o bem foi lido no aparelho (sem rede); None = agora."""
+        quando = momento_da_operacao(ocorrido_em)
         _exigir_conferente(usuario, dados.setor_id)
         require_valid_tombo(dados.codigo_tombamento)
         with DataBase().transacao() as cur:
@@ -93,7 +96,7 @@ class InventarioService:
             if not ativo:
                 raise HTTPException(status_code=409, detail="Este bem foi baixado. Informe o patrimônio.")
             params = {"setor": dados.setor_id, "estado": dados.estado_encontrado, "obs": dados.observacao,
-                      "usuario": usuario["id"]}
+                      "usuario": usuario["id"], "quando": quando}
             cur.execute(q.ITEM_DO_BEM, (inventario_id, bem_id))
             item = cur.fetchone()
             if item is None:
@@ -110,7 +113,9 @@ class InventarioService:
                 cur.execute(q.REGISTRAR_CONFERENCIA, {**params, "situacao": situacao, "item": item_id})
         return self.repo.item(item_id)
 
-    def registrar_nao_cadastrado(self, inventario_id: int, dados: NaoCadastrado, usuario: dict):
+    def registrar_nao_cadastrado(self, inventario_id: int, dados: NaoCadastrado, usuario: dict,
+                                 ocorrido_em: datetime | None = None):
+        quando = momento_da_operacao(ocorrido_em)
         _exigir_conferente(usuario, dados.setor_id)
         codigo = dados.codigo_lido.upper() if dados.codigo_lido else None
         with DataBase().transacao() as cur:
@@ -122,7 +127,7 @@ class InventarioService:
                                         detail="Este tombo está cadastrado. Faça a conferência pelo código.")
             cur.execute(q.INSERIR_NAO_CADASTRADO, {"inv": inventario_id, "codigo": codigo, "descricao": dados.descricao,
                                                    "setor": dados.setor_id, "obs": dados.observacao,
-                                                   "usuario": usuario["id"]})
+                                                   "usuario": usuario["id"], "quando": quando})
             item_id = cur.fetchone()[0]
         return self.repo.item(item_id)
 

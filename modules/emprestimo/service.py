@@ -3,11 +3,12 @@
 O bem continua sob a guarda do setor de origem: a localização não muda, e enquanto o empréstimo
 estiver aberto o bem não pode ser transferido, emprestado de novo nem enviado para manutenção.
 """
-from datetime import date
+from datetime import date, datetime
 
 from fastapi import HTTPException
 
 from core.database import DataBase
+from core.tempo import momento_da_operacao
 from modules.bem import guarda
 from modules.emprestimo.repository import EmprestimoRepository
 from modules.emprestimo.schemas import EmprestimoCreate
@@ -17,26 +18,31 @@ class EmprestimoService:
     def __init__(self, repository: EmprestimoRepository | None = None):
         self.repo = repository or EmprestimoRepository()
 
-    def registrar(self, dados: EmprestimoCreate, usuario: dict):
-        if dados.devolucao_prevista < date.today():
+    def registrar(self, dados: EmprestimoCreate, usuario: dict, ocorrido_em: datetime | None = None):
+        """`ocorrido_em`: quando aconteceu no aparelho (operação feita sem rede); None = agora."""
+        quando = momento_da_operacao(ocorrido_em)
+        if dados.devolucao_prevista < (quando.date() if quando else date.today()):
             raise HTTPException(status_code=400, detail="A devolução prevista não pode ser uma data passada.")
         with DataBase().transacao() as cur:
             bem = guarda.travar_bem(cur, dados.bem_id)
             guarda.exigir_guarda(cur, usuario, bem["id"])
             guarda.exigir_livre(cur, bem)
-            emprestimo_id = self.repo.inserir(cur, dados, usuario["id"])
+            emprestimo_id = self.repo.inserir(cur, dados, usuario["id"], quando)
         return self.repo.buscar(emprestimo_id)
 
-    def devolver(self, emprestimo_id: int, observacao: str | None, usuario: dict):
+    def devolver(self, emprestimo_id: int, observacao: str | None, usuario: dict, ocorrido_em: datetime | None = None):
+        quando = momento_da_operacao(ocorrido_em)
         with DataBase().transacao() as cur:
             atual = self.repo.travar_aberto(cur, emprestimo_id)
             if atual is None:
                 raise HTTPException(status_code=404, detail=f"Empréstimo com id {emprestimo_id} não encontrado")
-            bem_id, devolvido_em = atual
+            bem_id, devolvido_em, saida_em = atual
             if devolvido_em is not None:
                 raise HTTPException(status_code=409, detail="Este empréstimo já foi devolvido.")
+            if quando is not None and quando < saida_em:
+                raise HTTPException(status_code=409, detail="A devolução não pode ser anterior à saída do empréstimo.")
             guarda.exigir_guarda(cur, usuario, bem_id)
-            self.repo.encerrar(cur, emprestimo_id, usuario["id"], observacao or None)
+            self.repo.encerrar(cur, emprestimo_id, usuario["id"], observacao or None, quando)
         return self.repo.buscar(emprestimo_id)
 
     def listar(self, situacao: str, bem_id: int | None):

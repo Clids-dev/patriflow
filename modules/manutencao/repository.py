@@ -41,28 +41,28 @@ class ManutencaoRepository:
         return [_modelo(r) for r in rows]
 
     @staticmethod
-    def inserir(cur, dados, status_anterior: str, usuario_id: int) -> int:
+    def inserir(cur, dados, status_anterior: str, usuario_id: int, quando=None) -> int:
         cur.execute(
-            """INSERT INTO manutencoes (bem_id, descricao, destino, enviado_por, status_anterior)
-               VALUES (%s, %s, %s, %s, %s) RETURNING id""",
-            (dados.bem_id, dados.descricao, dados.destino, usuario_id, status_anterior),
+            """INSERT INTO manutencoes (bem_id, descricao, destino, enviado_por, status_anterior, enviado_em)
+               VALUES (%s, %s, %s, %s, %s, COALESCE(%s, NOW())) RETURNING id""",
+            (dados.bem_id, dados.descricao, dados.destino, usuario_id, status_anterior, quando),
         )
         return cur.fetchone()[0]
 
     @staticmethod
     def travar(cur, manutencao_id: int):
-        """(bem_id, retorno_em, status_anterior) com a manutenção travada, ou None."""
-        cur.execute("SELECT bem_id, retorno_em, status_anterior FROM manutencoes WHERE id = %s FOR UPDATE",
+        """(bem_id, retorno_em, status_anterior, enviado_em) com a manutenção travada, ou None."""
+        cur.execute("SELECT bem_id, retorno_em, status_anterior, enviado_em FROM manutencoes WHERE id = %s FOR UPDATE",
                     (manutencao_id,))
         return cur.fetchone()
 
     @staticmethod
-    def encerrar(cur, manutencao_id: int, usuario_id: int, dados) -> None:
+    def encerrar(cur, manutencao_id: int, usuario_id: int, dados, quando=None) -> None:
         cur.execute(
-            """UPDATE manutencoes SET retorno_em = NOW(), recebido_por = %s, servico_realizado = %s,
+            """UPDATE manutencoes SET retorno_em = COALESCE(%s, NOW()), recebido_por = %s, servico_realizado = %s,
                       estado_retorno = %s
                WHERE id = %s""",
-            (usuario_id, dados.servico_realizado, dados.estado_retorno, manutencao_id),
+            (quando, usuario_id, dados.servico_realizado, dados.estado_retorno, manutencao_id),
         )
 
     @staticmethod

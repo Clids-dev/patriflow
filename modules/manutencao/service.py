@@ -6,7 +6,10 @@ O bem continua sob a guarda do setor de origem (a localização não muda).
 """
 from fastapi import HTTPException
 
+from datetime import datetime
+
 from core.database import DataBase
+from core.tempo import momento_da_operacao
 from modules.auditoria.service import registrar_acao
 from modules.bem import guarda
 from modules.manutencao.repository import ManutencaoRepository
@@ -19,30 +22,34 @@ class ManutencaoService:
     def __init__(self, repository: ManutencaoRepository | None = None):
         self.repo = repository or ManutencaoRepository()
 
-    def enviar(self, dados: ManutencaoCreate, usuario: dict):
+    def enviar(self, dados: ManutencaoCreate, usuario: dict, ocorrido_em: datetime | None = None):
+        quando = momento_da_operacao(ocorrido_em)
         with DataBase().transacao() as cur:
             bem = guarda.travar_bem(cur, dados.bem_id)
             guarda.exigir_guarda(cur, usuario, bem["id"])
             # Bens marcados como "Manutenção" pela edição antiga, sem registro aberto, podem ser registrados.
             guarda.exigir_livre(cur, bem, aceitar_status_manutencao=True)
             anterior = bem["status"] if bem["status"] != guarda.STATUS_MANUTENCAO else STATUS_PADRAO
-            manutencao_id = self.repo.inserir(cur, dados, anterior, usuario["id"])
+            manutencao_id = self.repo.inserir(cur, dados, anterior, usuario["id"], quando)
             self.repo.atualizar_bem(cur, bem["id"], guarda.STATUS_MANUTENCAO)
             registrar_acao("bem", bem["id"], "enviar_manutencao", usuario, {"status": bem["status"]},
                            {"status": guarda.STATUS_MANUTENCAO, "manutencao_id": manutencao_id}, cur=cur)
         return self.repo.buscar(manutencao_id)
 
-    def registrar_retorno(self, manutencao_id: int, dados: Retorno, usuario: dict):
+    def registrar_retorno(self, manutencao_id: int, dados: Retorno, usuario: dict, ocorrido_em: datetime | None = None):
+        quando = momento_da_operacao(ocorrido_em)
         with DataBase().transacao() as cur:
             atual = self.repo.travar(cur, manutencao_id)
             if atual is None:
                 raise HTTPException(status_code=404, detail=f"Manutenção com id {manutencao_id} não encontrada")
-            bem_id, retorno_em, status_anterior = atual
+            bem_id, retorno_em, status_anterior, enviado_em = atual
             if retorno_em is not None:
                 raise HTTPException(status_code=409, detail="O retorno desta manutenção já foi registrado.")
+            if quando is not None and quando < enviado_em:
+                raise HTTPException(status_code=409, detail="O retorno não pode ser anterior ao envio para manutenção.")
             bem = guarda.travar_bem(cur, bem_id)
             guarda.exigir_guarda(cur, usuario, bem_id)
-            self.repo.encerrar(cur, manutencao_id, usuario["id"], dados)
+            self.repo.encerrar(cur, manutencao_id, usuario["id"], dados, quando)
             self.repo.atualizar_bem(cur, bem_id, status_anterior, dados.estado_retorno)
             registrar_acao("bem", bem_id, "retorno_manutencao", usuario,
                            {"status": bem["status"], "estado_conservacao": bem["estado_conservacao"]},

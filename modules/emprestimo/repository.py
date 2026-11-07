@@ -45,26 +45,26 @@ class EmprestimoRepository:
         return [_modelo(r) for r in rows]
 
     @staticmethod
-    def inserir(cur, dados, usuario_id: int) -> int:
+    def inserir(cur, dados, usuario_id: int, quando=None) -> int:
         cur.execute(
-            """INSERT INTO emprestimos (bem_id, tomador, motivo, devolucao_prevista, registrado_por)
-               VALUES (%s, %s, %s, %s, %s) RETURNING id""",
-            (dados.bem_id, dados.tomador, dados.motivo, dados.devolucao_prevista, usuario_id),
+            """INSERT INTO emprestimos (bem_id, tomador, motivo, devolucao_prevista, registrado_por, saida_em)
+               VALUES (%s, %s, %s, %s, %s, COALESCE(%s, NOW())) RETURNING id""",
+            (dados.bem_id, dados.tomador, dados.motivo, dados.devolucao_prevista, usuario_id, quando),
         )
         return cur.fetchone()[0]
 
     @staticmethod
     def travar_aberto(cur, emprestimo_id: int):
-        """(bem_id, devolvido_em) com o empréstimo travado, ou None."""
-        cur.execute("SELECT bem_id, devolvido_em FROM emprestimos WHERE id = %s FOR UPDATE", (emprestimo_id,))
+        """(bem_id, devolvido_em, saida_em) com o empréstimo travado, ou None."""
+        cur.execute("SELECT bem_id, devolvido_em, saida_em FROM emprestimos WHERE id = %s FOR UPDATE", (emprestimo_id,))
         return cur.fetchone()
 
     @staticmethod
-    def encerrar(cur, emprestimo_id: int, usuario_id: int, observacao: str | None) -> None:
+    def encerrar(cur, emprestimo_id: int, usuario_id: int, observacao: str | None, quando=None) -> None:
         cur.execute(
-            """UPDATE emprestimos SET devolvido_em = NOW(), recebido_por = %s, observacao_devolucao = %s
+            """UPDATE emprestimos SET devolvido_em = COALESCE(%s, NOW()), recebido_por = %s, observacao_devolucao = %s
                WHERE id = %s""",
-            (usuario_id, observacao, emprestimo_id),
+            (quando, usuario_id, observacao, emprestimo_id),
         )
 
     @staticmethod

@@ -57,51 +57,52 @@ def _exigir_etapa(movimentacao_id: int, etapa: str) -> None:
                             detail=f"A transferência mudou desde que a operação foi feita (situação atual: {mov.status}).")
 
 
-def _conferencia(d: s.ConferenciaOp, usuario):
-    item = InventarioService().conferir(d.inventario_id, Conferencia(**d.model_dump(exclude={"inventario_id"})), usuario)
+def _conferencia(d: s.ConferenciaOp, usuario, quando):
+    item = InventarioService().conferir(d.inventario_id, Conferencia(**d.model_dump(exclude={"inventario_id"})), usuario,
+                                        quando)
     return {"item_id": item.id, "situacao": item.situacao}
 
 
-def _nao_cadastrado(d: s.NaoCadastradoOp, usuario):
+def _nao_cadastrado(d: s.NaoCadastradoOp, usuario, quando):
     item = InventarioService().registrar_nao_cadastrado(
-        d.inventario_id, NaoCadastrado(**d.model_dump(exclude={"inventario_id"})), usuario)
+        d.inventario_id, NaoCadastrado(**d.model_dump(exclude={"inventario_id"})), usuario, quando)
     return {"item_id": item.id}
 
 
-def _solicitar(d: MovimentacaoCreate, usuario):
+def _solicitar(d: MovimentacaoCreate, usuario, quando):
     mov = MovimentacaoService().add_movimentacao(d, usuario)
     return {"movimentacao_id": mov.id, "status": mov.status}
 
 
 def _avancar(etapa: str):
-    def aplicar(d: s.TransferenciaEtapa, usuario):
+    def aplicar(d: s.TransferenciaEtapa, usuario, quando):
         _exigir_etapa(d.movimentacao_id, etapa)
         mov = MovimentacaoService().decidir_movimentacao(d.movimentacao_id, usuario, aprovar=True)
         return {"movimentacao_id": mov.id, "status": mov.status}
     return aplicar
 
 
-def _recusar(d: s.TransferenciaRecusa, usuario):
+def _recusar(d: s.TransferenciaRecusa, usuario, quando):
     _exigir_etapa(d.movimentacao_id, d.etapa)
     mov = MovimentacaoService().decidir_movimentacao(d.movimentacao_id, usuario, aprovar=False, motivo=d.motivo)
     return {"movimentacao_id": mov.id, "status": mov.status}
 
 
-def _emprestar(d: EmprestimoCreate, usuario):
-    return {"emprestimo_id": EmprestimoService().registrar(d, usuario).id}
+def _emprestar(d: EmprestimoCreate, usuario, quando):
+    return {"emprestimo_id": EmprestimoService().registrar(d, usuario, quando).id}
 
 
-def _devolver(d: s.EmprestimoDevolucao, usuario):
-    return {"emprestimo_id": EmprestimoService().devolver(d.emprestimo_id, d.observacao, usuario).id}
+def _devolver(d: s.EmprestimoDevolucao, usuario, quando):
+    return {"emprestimo_id": EmprestimoService().devolver(d.emprestimo_id, d.observacao, usuario, quando).id}
 
 
-def _enviar_manutencao(d: ManutencaoCreate, usuario):
-    return {"manutencao_id": ManutencaoService().enviar(d, usuario).id}
+def _enviar_manutencao(d: ManutencaoCreate, usuario, quando):
+    return {"manutencao_id": ManutencaoService().enviar(d, usuario, quando).id}
 
 
-def _retorno_manutencao(d: s.ManutencaoRetorno, usuario):
+def _retorno_manutencao(d: s.ManutencaoRetorno, usuario, quando):
     retorno = Retorno(servico_realizado=d.servico_realizado, estado_retorno=d.estado_retorno)
-    return {"manutencao_id": ManutencaoService().registrar_retorno(d.manutencao_id, retorno, usuario).id}
+    return {"manutencao_id": ManutencaoService().registrar_retorno(d.manutencao_id, retorno, usuario, quando).id}
 
 
 OPERACOES: dict[str, tuple[type[BaseModel], Callable]] = {
@@ -153,7 +154,9 @@ class SincronizacaoService:
             if op.tipo not in OPERACOES:
                 raise HTTPException(status_code=400, detail=f"Tipo de operação desconhecido: {op.tipo}.")
             modelo, aplicar = OPERACOES[op.tipo]
-            resultado = aplicar(modelo.model_validate(op.dados), usuario)
+            # Empréstimo, manutenção e conferência usam a data do aparelho (D8); transferências, a do
+            # servidor, porque envolvem duas pessoas em sequência.
+            resultado = aplicar(modelo.model_validate(op.dados), usuario, op.criada_em)
         except ValidationError as erro:
             status, mensagem = "recusada", _mensagem_de_validacao(erro)
         except HTTPException as erro:
